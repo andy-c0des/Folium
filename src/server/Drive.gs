@@ -119,10 +119,9 @@ function plantosRebuildDeploymentAssets_(opts) {
         try { row[careDocUrlCol] = DriveApp.getFileById(String(row[careDocIdCol])).getUrl(); } catch (e) {}
       }
       if (qrFileIdCol >= 0 && !plantosSafeStr_(row[qrFileIdCol]).trim()) {
-        try { const qrFile = plantosEnsurePlantQr_(qrRoot, uid, primary, plantPageUrl); row[qrFileIdCol] = qrFile.getId(); if (qrUrlCol >= 0) row[qrUrlCol] = qrFile.getUrl(); } catch (e) {}
-      } else if (qrUrlCol >= 0 && qrFileIdCol >= 0 && plantosSafeStr_(row[qrFileIdCol]).trim() && !plantosSafeStr_(row[qrUrlCol]).trim()) {
-        try { row[qrUrlCol] = plantosDriveRetry_('getUrl(QR)', () => DriveApp.getFileById(String(row[qrFileIdCol])).getUrl(), 2); } catch (e) {}
+        try { const qrFile = plantosEnsurePlantQr_(qrRoot, uid, primary, plantPageUrl); row[qrFileIdCol] = qrFile.getId(); } catch (e) {}
       }
+      if (qrUrlCol >= 0 && !plantosSafeStr_(row[qrUrlCol]).trim()) row[qrUrlCol] = plantPageUrl;
       block[i] = row;
     }
     range.setValues(block);
