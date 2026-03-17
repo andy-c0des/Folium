@@ -93,6 +93,7 @@
 
     .scroll-y {
       overflow-y: auto;
+      overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
     }
@@ -11107,7 +11108,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
             React.createElement(PlantCard, { title: "PLANT" },
                 React.createElement(StatusMessage, { type: "loading", message: "Loading plant..." }))));
     }
-    return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '1100px' : '680px', margin: '0 auto' } },
+    return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '1100px' : '680px', margin: '0 auto', overflowX: 'hidden' } },
         state === 'loading' && React.createElement(PlantCard, null,
             React.createElement(StatusMessage, { type: "loading", message: "Loading specimen..." })),
         state === 'error' && React.createElement(PlantCard, { title: "PLANT" },
@@ -11169,8 +11170,8 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     flex: 1, minHeight: 44,
                                 })
                             }, '\uD83C\uDF3E FERTILIZE NOW')),
-                        React.createElement("div", { style: { marginBottom: 10, display: 'flex', alignItems: 'flex-start', gap: 12 } },
-                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                        React.createElement("div", { style: { marginBottom: 10, display: 'flex', flexDirection: isSmall ? 'column' : 'row', alignItems: isSmall ? 'stretch' : 'flex-start', gap: isSmall ? 8 : 12 } },
+                            React.createElement("div", { style: { flex: 1, minWidth: 0, overflow: 'hidden' } },
                                 // Health badge row
                                 React.createElement("div", { style: { display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 } },
                                     React.createElement("span", {
@@ -11185,13 +11186,13 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         className: "hero-health-badge",
                                         style: { color: 'var(--c-fert)', borderColor: 'var(--c-fert-border)', background: 'var(--c-fert-bg)' }
                                     }, '\uD83C\uDF3E FERT DUE')),
-                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '18px' : '22px', fontWeight: 900, color: theme.txtP, lineHeight: 1.2 }) }, titleLine),
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '16px' : '22px', fontWeight: 900, color: theme.txtP, lineHeight: 1.2, wordBreak: 'break-word', overflowWrap: 'anywhere' }) }, titleLine),
                                 showTax && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS, fontWeight: 800, fontStyle: 'italic', marginTop: 2 }), className: "truncate" }, taxLine),
                                 (isHybrid || hasCultivar || hasInfra) && React.createElement("div", { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 } },
                                     isHybrid && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '2px 6px', background: '#7b4f9e', color: '#fff' }) }, "\u00d7 HYBRID"),
                                     hasCultivar && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '2px 6px', background: theme.btnP.bg, color: '#fff' }) }, "'" + plant.cultivar + "'"),
                                     hasInfra && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', padding: '2px 6px', background: theme.rowBg, color: theme.txtS, border: '1px solid ' + theme.rowBorder }) }, plant.infraRank + ' ' + plant.infraEpithet)),
-                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, marginTop: 4 }) },
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '11px' : '13px', color: theme.txtS, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) },
                                     plant.location ? '\uD83D\uDCCD ' + plant.location + '  \u2022  ' : '',
                                     "UID ", plant.uid),
                                 // ── Streak + Age + Seasonal badges ──
@@ -11234,10 +11235,10 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         try { wdata = JSON.parse(wikiBlurb.slice(8)); } catch(e) {}
                                         if (!wdata) return null;
                                         return React.createElement("div", { style: { marginTop: 8 } },
-                                            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 } },
+                                            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5, flexWrap: 'wrap' } },
                                                 React.createElement("div", { style: { width: 14, height: 14, background: '#3366CC', color: '#fff', fontFamily: 'Georgia,serif', fontSize: '13px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } }, "W"),
-                                                React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '13px', color: '#5a8a6a', letterSpacing: '0.08em' } }, "WIKIPEDIA" + (wdata.fallbackLevel ? " \u00B7 " + wdata.fallbackLevel.toUpperCase() : "")),
-                                                wdata.url && React.createElement("a", { href: wdata.url, target: '_blank', rel: 'noopener', style: Object.assign({}, pxS, { fontSize: '13px', color: '#3366CC', textDecoration: 'none', fontWeight: 900, marginLeft: 'auto', flexShrink: 0 }) }, "Full article \u2192"),
+                                                React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: isSmall ? '11px' : '13px', color: '#5a8a6a', letterSpacing: '0.08em' } }, "WIKIPEDIA" + (wdata.fallbackLevel ? " \u00B7 " + wdata.fallbackLevel.toUpperCase() : "")),
+                                                wdata.url && React.createElement("a", { href: wdata.url, target: '_blank', rel: 'noopener', style: Object.assign({}, pxS, { fontSize: isSmall ? '11px' : '13px', color: '#3366CC', textDecoration: 'none', fontWeight: 900, marginLeft: 'auto', flexShrink: 0 }) }, "Full article \u2192"),
                                                 React.createElement("button", { type: 'button', onClick: function() { setWikiBlurb(null); }, style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: theme.txtS, opacity: 0.3, padding: '0 0 0 4px' } }, "\u2715")
                                             ),
                                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: isSmall ? '11px' : '12px', color: theme.txtS, lineHeight: 1.7 }) }, wdata.text)
@@ -11246,18 +11247,18 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     return null;
                                 })()
                             ),
-                            React.createElement("div", { style: { flexShrink: 0, width: 76, display: 'flex', flexDirection: 'column', gap: 5 } },
+                            React.createElement("div", { style: { flexShrink: 0, width: isSmall ? '100%' : 76, display: 'flex', flexDirection: isSmall ? 'row' : 'column', gap: 5 } },
                                 React.createElement("div", { style: {
                                     background: plant.nextDue && new Date(plant.nextDue) <= new Date() ? '#6A0808' : 'rgba(0,0,0,0.08)',
                                     border: '2px solid ' + (plant.nextDue && new Date(plant.nextDue) <= new Date() ? '#C03030' : theme.rowBorder),
-                                    padding: '5px 6px', textAlign: 'center',
+                                    padding: '5px 6px', textAlign: 'center', flex: isSmall ? 1 : undefined,
                                 }},
                                     React.createElement("div", { style: { fontSize: 18, lineHeight: 1, marginBottom: 3 } }, '\uD83D\uDCA7'),
                                     React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '13px', color: plant.nextDue && new Date(plant.nextDue) <= new Date() ? '#FF8888' : theme.txtS, lineHeight: 1.4 } },
                                         plant.nextDue ? (new Date(plant.nextDue) <= new Date() ? 'DUE!' : 'in ' + Math.ceil((new Date(plant.nextDue) - new Date()) / 86400000) + 'd') : 'no sched'
                                     )
                                 ),
-                                React.createElement("div", { style: { background: 'rgba(0,0,0,0.08)', border: '2px solid ' + theme.rowBorder, padding: '5px 6px', textAlign: 'center' } },
+                                React.createElement("div", { style: { background: 'rgba(0,0,0,0.08)', border: '2px solid ' + theme.rowBorder, padding: '5px 6px', textAlign: 'center', flex: isSmall ? 1 : undefined } },
                                     React.createElement("div", { style: { fontSize: 18, lineHeight: 1, marginBottom: 3 } }, '\uD83E\uDEB4'),
                                     React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '13px', color: theme.txtS, lineHeight: 1.4 } },
                                         plant.lastRepotted ? Math.floor((new Date() - new Date(plant.lastRepotted)) / 86400000) + 'd ago' : 'no repot'
@@ -11912,6 +11913,7 @@ function plantSanityChecks(plant) {
 
 function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, onSaveFertInterval }) {
     const theme = useTheme();
+    const { isSmall } = useScreenSize();
     const { updatePlant } = usePlantData();
 
     const [activeTab, setActiveTab] = React.useState('status');
@@ -12147,8 +12149,8 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
             onClick: function() { setActiveTab(props.id); },
             style: {
                 fontFamily: "'Press Start 2P', cursive",
-                fontSize: '11px', letterSpacing: '0.04em',
-                padding: '10px 12px', cursor: 'pointer', flex: 1,
+                fontSize: isSmall ? '9px' : '11px', letterSpacing: '0.04em',
+                padding: isSmall ? '8px 6px' : '10px 12px', cursor: 'pointer', flex: 1,
                 minHeight: 44,
                 border: '3px solid ' + theme.cardBorder,
                 borderBottom: isActive ? '3px solid ' + theme.cardBg : '3px solid ' + theme.cardBorder,
