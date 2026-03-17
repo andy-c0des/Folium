@@ -284,6 +284,30 @@ function plantosUploadPlantPhoto(uid, dataUrl, originalName) {
   return { ok: true, photo };
 }
 
+function plantosGetAllPhotos(uid) {
+  uid = String(uid || '').trim();
+  if (!uid) return { ok: false, reason: 'Missing uid' };
+  const plantsRoot = plantosGetPlantsRoot_();
+  const photosFolder = plantosEnsureSubfolder_(plantosResolveOrCreatePlantFolder_(plantsRoot, uid), PLANTOS_BACKEND_CFG.PHOTOS_SUBFOLDER);
+  const files = photosFolder.getFiles();
+  const photos = [];
+  while (files.hasNext()) {
+    const f = files.next();
+    const mt = f.getMimeType ? f.getMimeType() : '';
+    if (mt && !mt.startsWith('image/')) continue;
+    const fileId = f.getId();
+    photos.push({
+      fileId: fileId,
+      viewUrl: f.getUrl(),
+      thumbUrl: plantosDriveThumbUrl_(fileId, 300),
+      name: f.getName(),
+      updated: (f.getLastUpdated ? f.getLastUpdated() : new Date(0)).toISOString()
+    });
+  }
+  photos.sort(function(a, b) { return b.updated < a.updated ? -1 : b.updated > a.updated ? 1 : 0; });
+  return { ok: true, photos: photos };
+}
+
 function plantosGetLatestPhoto(uid) {
   uid = String(uid || '').trim();
   if (!uid) return { ok: false, reason: 'Missing uid' };
