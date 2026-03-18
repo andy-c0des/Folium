@@ -14,7 +14,7 @@ function doGet(e) {
     if (!mode) mode = 'home';
     const ml = mode.toLowerCase();
     if (ml === 'locations' || ml === 'plants') mode = 'my-plants';
-    const t = HtmlService.createTemplateFromFile('App');
+    const t = HtmlService.createTemplateFromFile('client/App');
     t.baseUrl = baseUrl; t.mode = mode; t.uid = uid; t.loc = loc; t.openAdd = openAdd;
     return t.evaluate().setTitle('PlantOS').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   } catch (err) {
