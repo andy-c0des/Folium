@@ -59,25 +59,11 @@
       font-family: 'Press Start 2P';
       src: local('Press Start 2P');
       font-display: swap;
-      unicode-range: U+0000-U+1EFF, U+2000-U+259F, U+2800-U+F8FF;
-    }
-    @font-face {
-      font-family: 'Press Start 2P';
-      src: local('Apple Color Emoji'), local('Segoe UI Emoji'), local('Noto Color Emoji'), local('Segoe UI Symbol');
-      font-display: swap;
-      unicode-range: U+200D, U+2600-U+27BF, U+FE00-U+FEFF, U+1F000-U+1FFFF, U+2702-U+27B0, U+25A0-U+25FF, U+2B05-U+2B07, U+2B1B-U+2B1C, U+231A-U+231B, U+23E9-U+23FA;
     }
     @font-face {
       font-family: 'Pixelify Sans';
       src: local('Pixelify Sans');
       font-display: swap;
-      unicode-range: U+0000-U+1EFF, U+2000-U+259F, U+2800-U+F8FF;
-    }
-    @font-face {
-      font-family: 'Pixelify Sans';
-      src: local('Apple Color Emoji'), local('Segoe UI Emoji'), local('Noto Color Emoji'), local('Segoe UI Symbol');
-      font-display: swap;
-      unicode-range: U+200D, U+2600-U+27BF, U+FE00-U+FEFF, U+1F000-U+1FFFF, U+2702-U+27B0, U+25A0-U+25FF, U+2B05-U+2B07, U+2B1B-U+2B1C, U+231A-U+231B, U+23E9-U+23FA;
     }
 
     html, body {
@@ -5300,6 +5286,18 @@ function PlantButton({ children, variant = 'primary', onClick, disabled = false,
     const theme = useTheme();
     const cfg = variant === 'primary' ? theme.btnP : variant === 'secondary' ? theme.btnS : theme.btnG;
     const shadow = cfg.shadow || theme.cardBorder;
+    var processed = children;
+    if (typeof children === 'string') {
+        var parts = children.split(/(\p{Emoji_Presentation}\uFE0F?|\p{Extended_Pictographic}\uFE0F?)/u);
+        if (parts.length > 1) {
+            processed = parts.map(function(p, i) {
+                if (/\p{Emoji_Presentation}|\p{Extended_Pictographic}/u.test(p)) {
+                    return React.createElement('span', { key: i, style: { fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, p);
+                }
+                return p;
+            });
+        }
+    }
     return React.createElement("button", {
         type: "button", onClick: onClick, disabled: disabled,
         className: `btn-press hover-lift ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`,
@@ -5316,7 +5314,7 @@ function PlantButton({ children, variant = 'primary', onClick, disabled = false,
             textShadow: '1px 1px 0 rgba(0,0,0,0.4)',
             cursor: disabled ? 'not-allowed' : 'pointer',
         }
-    }, children);
+    }, processed);
 }
 function StatusMessage({ type, message }) {
     const colors = {
@@ -11511,7 +11509,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                                 }
                             },
-                                React.createElement('span', { style: { fontSize: '18px', lineHeight: 1 } }, '🪴'),
+                                React.createElement('span', { style: { fontSize: '18px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '🪴'),
                                 'REPOT'
                             ),
                             React.createElement("button", {
@@ -11526,7 +11524,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                                 }
                             },
-                                React.createElement('span', { style: { fontSize: '18px', lineHeight: 1 } }, '✏️'),
+                                React.createElement('span', { style: { fontSize: '18px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '✏️'),
                                 'EDIT'
                             )
                         )
@@ -11548,7 +11546,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         borderBottom: 'none',
                         padding: 20,
                     }},
-                        React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '12px', color: theme.txtP, marginBottom: 14 } }, "\uD83E\uDEB4 REPOT"),
+                        React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '12px', color: theme.txtP, marginBottom: 14 } }, React.createElement('span', { style: { fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '\uD83E\uDEB4'), ' REPOT'),
                         React.createElement("div", { className: "space-y-2" },
                             React.createElement("div", null,
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "New Pot Size"),
