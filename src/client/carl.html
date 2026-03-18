@@ -1817,6 +1817,15 @@ function CarlNPCPanel({ plant, pxS, theme, activeChar, setActiveChar, kbEnabled,
     const [chatHistoryLoading, setChatHistoryLoading] = React.useState(false);
     const savedCountRef = React.useRef(0);
     const bottomRef = React.useRef(null);
+    var [aiOnline, setAiOnline] = React.useState(true);
+    var [savedMsgs, setSavedMsgs] = React.useState({});
+    var [trainOpen, setTrainOpen] = React.useState(false);
+    var [trainText, setTrainText] = React.useState('');
+    var [trainGenus, setTrainGenus] = React.useState('');
+    var [trainStatus, setTrainStatus] = React.useState(null);
+    var [trainLoading, setTrainLoading] = React.useState(false);
+    var [missesOpen, setMissesOpen] = React.useState(false);
+    var [misses, setMisses] = React.useState(null);
 
     // Resolve the history key: chatId prop > plant uid > null
     var historyKey = chatId || (plant && plant.uid ? String(plant.uid) : null);
@@ -2082,15 +2091,6 @@ For follow-ups, greetings, or simple answers: immediateActions should be [] and 
     }
 
     var isEmpty = messages.length === 0;
-    var [aiOnline, setAiOnline] = React.useState(true);
-    var [savedMsgs, setSavedMsgs] = React.useState({});
-    var [trainOpen, setTrainOpen] = React.useState(false);
-    var [trainText, setTrainText] = React.useState('');
-    var [trainGenus, setTrainGenus] = React.useState('');
-    var [trainStatus, setTrainStatus] = React.useState(null);
-    var [trainLoading, setTrainLoading] = React.useState(false);
-    var [missesOpen, setMissesOpen] = React.useState(false);
-    var [misses, setMisses] = React.useState(null);
 
     async function runTrain() {
         if (!trainText.trim() || trainLoading) return;
