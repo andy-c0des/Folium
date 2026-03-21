@@ -110,6 +110,8 @@
     }
 
     .pb-safe { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+    .pt-safe { padding-top: max(12px, env(safe-area-inset-top)); }
+    .mt-safe { margin-top: max(12px, env(safe-area-inset-top)); }
 
     .paper-texture { position: relative; }
     .paper-texture::before {
@@ -5579,7 +5581,7 @@ function HomeScreen() {
                     React.createElement(PlantCard, null,
                         React.createElement(NavGrid, null))))));
     }
-    return (React.createElement("div", { className: `flex flex-col ${pad} w-full pb-16 screen-enter`, style: { maxWidth: maxW, margin: '0 auto' } },
+    return (React.createElement("div", { className: `flex flex-col ${pad} w-full pb-16 screen-enter`, style: { maxWidth: maxW, margin: '0 auto', paddingTop: 'max(16px, env(safe-area-inset-top))' } },
         React.createElement(Header, null),
         React.createElement(HomeGreeting, null),
         React.createElement(StatsBar, null),
@@ -15925,9 +15927,9 @@ function AppContent() {
                 top: isDesktop ? 16 : 'calc(12px + env(safe-area-inset-top))',
                 left: isDesktop ? 16 : 12,
                 zIndex: 30
-            } }, canGoBack ? (React.createElement(PlantButton, { onClick: goBack, variant: "secondary", className: "px-3 py-2" }, "\u2190 Back")) : (React.createElement(PlantButton, { onClick: () => navigate('home'), variant: "secondary", className: "px-3 py-2" }, "\uD83C\uDFE0 Home")))),
+            } }, canGoBack ? (React.createElement(PlantButton, { onClick: goBack, variant: "secondary", className: "px-4 py-3" }, "\u2190 Back")) : (React.createElement(PlantButton, { onClick: () => navigate('home'), variant: "secondary", className: "px-4 py-3" }, "\uD83C\uDFE0 Home")))),
         React.createElement("div", { className: "scroll-y", style: { flex: 1, minHeight: 0, position: 'relative', zIndex: 10, overflowY: 'auto',
-                paddingTop: isDesktop ? 0 : 4 } }, render()),
+                paddingTop: isDesktop ? 0 : 'calc(56px + env(safe-area-inset-top))' } }, render()),
         React.createElement(BottomNav, { current: currentScreen, navigate: navigate, goBack: goBack })));
 }
 function GasBannerTip() {
