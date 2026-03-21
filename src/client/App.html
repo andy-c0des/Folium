@@ -16013,14 +16013,6 @@ function PlantOSAuthOverlay({ onSuccess }) {
     );
 }
 function PlantOSApp() {
-    const [authed, setAuthed] = useState(!!localStorage.getItem('plantos_auth_token'));
-    useEffect(function() {
-        window.__plantosHandleUnauth = function() { setAuthed(false); };
-        return function() { delete window.__plantosHandleUnauth; };
-    }, []);
-    if (!authed) {
-        return React.createElement(PlantOSAuthOverlay, { onSuccess: function() { setAuthed(true); } });
-    }
     return (React.createElement(ThemeProvider, null,
         React.createElement(NavigationProvider, null,
             React.createElement(PlantDataProvider, null,
