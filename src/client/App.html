@@ -15891,24 +15891,24 @@ function SettingsScreen() {
 <script type="text/javascript">
 function CarlHomeScreen() {
     const { navigate } = useNavigation();
-    const { plants, getAllPlantsLite } = usePlantData();
+    const { allPlantsCache, allPlantsCacheReady, getAllPlants } = usePlantData();
     const theme = useTheme();
     const [query, setQuery] = React.useState('');
-    const [loaded, setLoaded] = React.useState(false);
 
     React.useEffect(() => {
-        if (!loaded) { getAllPlantsLite().finally(() => setLoaded(true)); }
+        if (!allPlantsCacheReady) { getAllPlants().catch(() => {}); }
     }, []);
 
     const filtered = React.useMemo(() => {
-        if (!query.trim()) return (plants || []).slice(0, 20);
+        const list = allPlantsCache || [];
+        if (!query.trim()) return list.slice(0, 20);
         const q = query.toLowerCase();
-        return (plants || []).filter(p => {
+        return list.filter(p => {
             const name = (p.primary || p.genus || '').toLowerCase();
             const nick = (p.nickname || '').toLowerCase();
             return name.includes(q) || nick.includes(q);
         }).slice(0, 20);
-    }, [plants, query]);
+    }, [allPlantsCache, query]);
 
     return React.createElement("div", { className: "flex flex-col pb-16 screen-enter", style: { maxWidth: 480, margin: '0 auto', padding: '0 12px' } },
         React.createElement("div", { style: { textAlign: 'center', padding: '24px 16px 16px' } },
@@ -15927,8 +15927,8 @@ function CarlHomeScreen() {
                 fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box'
             }
         }),
-        !loaded && React.createElement("div", { style: { textAlign: 'center', color: theme.txtS, padding: 24 } }, "Loading plants..."),
-        loaded && filtered.length === 0 && React.createElement("div", { style: { textAlign: 'center', color: theme.txtS, padding: 24 } }, "No plants found."),
+        !allPlantsCacheReady && React.createElement("div", { style: { textAlign: 'center', color: theme.txtS, padding: 24 } }, "Loading plants..."),
+        allPlantsCacheReady && filtered.length === 0 && React.createElement("div", { style: { textAlign: 'center', color: theme.txtS, padding: 24 } }, "No plants found."),
         React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
             filtered.map(p => React.createElement("button", {
                 key: p.uid || p.primary,
