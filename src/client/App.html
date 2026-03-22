@@ -5387,7 +5387,7 @@ function HomeScreen() {
                     type: "button", onClick: () => navigate('watering'),
                     style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-urgent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 900 })
                 }, "See all \>")),
-            React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" },
+            React.createElement("div", { style: isDesktop ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } : { display: "flex", flexDirection: "column", gap: 8 } },
                 allUrgent.slice(0, cap).map((p, i) => React.createElement("div", {
                     key: (p._urgentType || '') + '-' + (p.uid || i),
                     className: "urgent-card stagger-item" + (p._urgentType === 'fert' ? " urgent-card-fert" : ""),
@@ -6224,13 +6224,13 @@ function WateringScreen() {
                 empty && React.createElement(StatusMessage, { type: "info", message: tab === 'both' ? 'No plants due for both within 7 days.' : 'No plants due for water right now.' }),
                 nowList.length > 0 && React.createElement("div", { className: "mb-3" },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: '#2C1000', marginBottom: 6 }) }, "Due now"),
-                    React.createElement("div", { className: "space-y-2" }, nowList.map(p => React.createElement(Row, { key: p.uid, p: p, bucket: "now" })))),
+                    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, nowList.map(p => React.createElement(Row, { key: p.uid, p: p, bucket: "now" })))),
                 upcomingList.length > 0 && React.createElement("div", { className: "mb-3" },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: '#2C1000', marginBottom: 6 }) }, "Upcoming (7 days)"),
-                    React.createElement("div", { className: "space-y-2" }, upcomingList.map(p => React.createElement(Row, { key: p.uid, p: p, bucket: "upcoming" })))),
+                    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, upcomingList.map(p => React.createElement(Row, { key: p.uid, p: p, bucket: "upcoming" })))),
                 restList.length > 0 && React.createElement("div", { className: "mb-3" },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: '#2C1000', marginBottom: 6 }) }, "On track"),
-                    React.createElement("div", { className: "space-y-2" }, restList.map(p => React.createElement(Row, { key: p.uid, p: p, bucket: "fine" }))))),
+                    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, restList.map(p => React.createElement(Row, { key: p.uid, p: p, bucket: "fine" }))))),
             tab === 'manual' && React.createElement(React.Fragment, null,
                 manualStatus && React.createElement(StatusMessage, { type: manualStatus.type, message: manualStatus.message }),
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: '#2C1000', marginBottom: 6 }) }, 'Log any plant ΓÇö not on the schedule'),
@@ -6480,7 +6480,7 @@ function QuickLogScreen() {
                         const cls = p.classification || '';
                         const loc = p.location || '';
                         return (React.createElement("div", { key: uid, className: " border-2 border-[#7A4A1A]  p-2 flex items-center justify-between gap-2" },
-                            React.createElement("div", { className: "flex items-center gap-2 min-w-0 flex-1" },
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 } },
                                 React.createElement(MiniThumb, { url: thumbs[uid] }),
                                 React.createElement("div", { className: "min-w-0 flex-1 cursor-pointer", onClick: () => open(uid) },
                                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: '#2C1000' }), className: "truncate" }, primary),
@@ -6535,7 +6535,7 @@ function QuickLogScreen() {
                             const primary = p.primary || p.nickname || p.gs || p.classification || uid;
                             const sub = [p.classification || '', p.substrate || p.medium || ''].filter(Boolean).join(' ΓÇó ');
                             return (React.createElement("div", { key: uid, className: " border-2 border-[#7A4A1A]  p-2 flex items-center justify-between gap-2" },
-                                React.createElement("div", { className: "flex items-center gap-2 min-w-0 flex-1" },
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 } },
                                     React.createElement(MiniThumb, { url: thumbs[uid] }),
                                     React.createElement("div", { className: "min-w-0 flex-1 cursor-pointer", onClick: () => open(uid) },
                                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: '#2C1000' }), className: "truncate" }, primary),
@@ -8363,14 +8363,14 @@ function MyPlantsScreen({ openTab, prefill }) {
                         const title = p.nickname ? String(p.nickname).trim() : (p.gs || p.classification || uid);
                         const tax = p.nickname ? (p.gs || p.classification || '') : '';
                         return React.createElement(React.Fragment, { key: uid },
-                            React.createElement("div", { className: "flex items-center gap-2 border-2 p-2 mb-1 plant-item", style: { borderColor: isEditing ? theme.btnP.border : theme.sep, background: isEditing ? theme.rowBg : theme.cardBg } },
-                                React.createElement("div", { className: "flex items-center gap-2 flex-1 min-w-0 cursor-pointer", onClick: () => navigate('plant', { uid }) },
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, border: "2px solid #5A3A18", padding: 8, marginBottom: 4, background: "#1A2A10" }, style: { borderColor: isEditing ? theme.btnP.border : theme.sep, background: isEditing ? theme.rowBg : theme.cardBg } },
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, cursor: "pointer" }, onClick: () => navigate('plant', { uid }) },
                                     React.createElement(MiniThumb, { url: thumbs[uid] }),
                                     React.createElement("div", { className: "flex-1 min-w-0" },
                                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: theme.txtP }), className: "truncate" }, title),
                                         tax && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS, fontWeight: 800 }), className: "truncate" }, tax),
                                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS }), className: "truncate" }, [p.location, p.birthday ? '\uD83C\uDF82 ' + p.birthday : ''].filter(Boolean).join('  \u2022  ')))),
-                                React.createElement("button", { type: "button", onClick: e => { e.stopPropagation(); isEditing ? closeEdit() : openEdit(p); }, className: "px-3 py-2 border-4 active:scale-[0.98]", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: isEditing ? theme.btnP.text : theme.txtP, fontSize: '12px', borderColor: isEditing ? theme.btnP.border : theme.sep, background: isEditing ? theme.btnP.bg : theme.cardBg }), title: isEditing ? "Close" : "Edit" }, isEditing ? "\u2715" : "\u270F\uFE0F")));
+                                React.createElement("button", { type: "button", onClick: e => { e.stopPropagation(); isEditing ? closeEdit() : openEdit(p); }, style: { padding: "6px 10px", border: "3px solid #5A3010", cursor: "pointer" }, style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: isEditing ? theme.btnP.text : theme.txtP, fontSize: '12px', borderColor: isEditing ? theme.btnP.border : theme.sep, background: isEditing ? theme.btnP.bg : theme.cardBg }), title: isEditing ? "Close" : "Edit" }, isEditing ? "\u2715" : "\u270F\uFE0F")));
                     }),
                     editUid && globalQ.trim() && React.createElement("div", { className: "mt-2", style: {
                             border: '4px solid ' + theme.btnP.border,
@@ -8384,7 +8384,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         ),
                         editStatus && React.createElement("div", { className: "mt-2 mb-2" },
                             React.createElement(StatusMessage, { type: editStatus.type, message: editStatus.message })),
-                        React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 } },
                             React.createElement("div", { className: "col-span-2" },
                                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Nickname"),
                                 React.createElement("input", { value: edit.nickname || '', onChange: e => setEdit(prev => Object.assign({}, prev, { nickname: e.target.value })), className: "w-full border-4 px-2 py-1.5 mt-1 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
@@ -8400,7 +8400,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 React.createElement("option", { value: "" }, "\u2014 no location \u2014"),
                                 (locations || []).map(loc => React.createElement("option", { key: loc, value: loc }, loc)),
                                 edit.location && !(locations || []).includes(edit.location) && React.createElement("option", { value: edit.location }, edit.location))),
-                        React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 } },
                             React.createElement("div", null,
                                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Water every (days)"),
                                 React.createElement("input", { value: edit.everyDays || '', onChange: e => setEdit(prev => Object.assign({}, prev, { everyDays: e.target.value.replace(/[^0-9]/g,'') })), placeholder: "e.g. 10", className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
@@ -8430,17 +8430,17 @@ function MyPlantsScreen({ openTab, prefill }) {
                                         })
                                     );
                                 })())),
-                        React.createElement("div", { className: "flex gap-2 mt-3" },
+                        React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 12 } },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")
                         )
                     ))) : (React.createElement(React.Fragment, null,
                     React.createElement("div", { className: "mb-3" },
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: '700', color: theme.txtP, marginBottom: '8px' }) }, "Browse by location:"),
-                        React.createElement("div", { className: "flex flex-wrap gap-2" },
+                        React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 } },
                             React.createElement(LocChip, { id: "__any__", label: "\uD83C\uDF0D Any", active: isAny, onClick: () => toggleLoc('__any__') }),
                             (locations || []).map(loc => (React.createElement(LocChip, { key: loc, id: loc, label: loc, active: !isAny && selectedLocs.includes(loc), onClick: () => toggleLoc(loc) }))),
-                            addingLoc ? (React.createElement("div", { className: "flex items-center gap-1" },
+                            addingLoc ? (React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 4 } },
                                 React.createElement("input", { autoFocus: true, value: newLocName, onChange: e => setNewLocName(e.target.value), onKeyDown: e => { if (e.key === 'Enter')
                                         handleAddLocation(); if (e.key === 'Escape') {
                                         setAddingLoc(false);
@@ -8454,9 +8454,9 @@ function MyPlantsScreen({ openTab, prefill }) {
                     hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-3" },
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, plants.length + ' plants loaded · ' + filteredPlants.length + ' showing'),
                         React.createElement("input", { value: plantFilter, onChange: e => setPlantFilter(e.target.value), placeholder: "Filter plants...", className: "w-full border-4  p-2 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
-                    loading && React.createElement("div", { className: "space-y-2" },
+                    loading && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
                         Array.from({ length: 6 }).map(function(_, i) {
-                            return React.createElement("div", { key: 'skel-' + i, className: "flex items-center gap-2 border-2 p-2", style: { borderColor: '#7A4A1A', opacity: 1 - i * 0.1 } },
+                            return React.createElement("div", { key: 'skel-' + i, style: { display: "flex", alignItems: "center", gap: 8, border: "2px solid #5A3A18", padding: 8 }, style: { borderColor: '#7A4A1A', opacity: 1 - i * 0.1 } },
                                 React.createElement("div", { className: "skeleton-shimmer", style: { width: 40, height: 40, borderRadius: 4, flexShrink: 0 } }),
                                 React.createElement("div", { className: "flex-1", style: { minWidth: 0 } },
                                     React.createElement("div", { className: "skeleton-shimmer", style: { height: 14, width: '60%', marginBottom: 6 } }),
@@ -8485,7 +8485,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                             React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, color: theme.txtS, letterSpacing: '0.08em', whiteSpace: 'nowrap' }) }, "\uD83C\uDF3F IDENTITY"),
                             React.createElement("div", { style: { height: 2, flex: 1, background: theme.sep, opacity: 0.4 } })
                         ),
-                        React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 } },
                             React.createElement("div", { className: "col-span-2" },
                                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Nickname"),
                                 React.createElement("input", { value: edit.nickname || '', onChange: e => setEdit(prev => Object.assign({}, prev, { nickname: e.target.value })), className: "w-full border-4 px-2 py-1.5 mt-1 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
@@ -8517,7 +8517,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 React.createElement("option", { value: "Soil mix" }, "Soil mix"),
                                 React.createElement("option", { value: "Custom soil mix" }, "\uD83C\uDF31 Custom soil mix...")),
                             isCustomMix(edit.substrate) && React.createElement(CustomMixBuilder, { value: edit.substrate, onChange: function(enc) { setEdit(function(prev) { return Object.assign({}, prev, { substrate: enc }); }); }, growingMethod: 'substrate', pxS: pxS, theme: theme }),
-                        React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 } },
                             React.createElement("div", null,
                                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Pot Material"),
                                 React.createElement("select", { value: edit.potMaterial || '', onChange: e => setEdit(prev => Object.assign({}, prev, { potMaterial: e.target.value })), className: "w-full border-4 px-2 py-1.5 mt-1", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
@@ -8546,7 +8546,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 ? "\u2713 Setup filled in \u2014 estimates will be meaningful. Leave schedule blank to let the system suggest."
                                 : "\u26A0 Add substrate & pot for a meaningful schedule estimate, or enter values manually."
                         ),
-                        React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 } },
                             React.createElement("div", null,
                                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Water every (days)"),
                                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginBottom: 2 }) }, "blank = system estimates"),
@@ -8570,7 +8570,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         })
     );
 })(edit.everyDays, edit.fertilizeEveryDays || '', e => setEdit(prev => Object.assign({}, prev, { fertilizeEveryDays: e.target.value })), pxS, theme))),
-                        React.createElement("div", { className: "flex gap-2 mt-3" },
+                        React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 12 } },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")))),
                     plants.length > 10 && React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
@@ -8602,9 +8602,9 @@ function MyPlantsScreen({ openTab, prefill }) {
                         var healthChipClass = isOverdue ? 'chip-urgent' : isDueSoon ? 'chip-soon' : dueDate ? 'chip-happy' : '';
                         var healthLabel = isOverdue ? '\uD83D\uDCA7 OVERDUE' : isDueSoon ? '\uD83D\uDCA7 ' + daysDiff + 'd' : dueDate ? '\uD83D\uDCA7 ' + daysDiff + 'd' : '';
                         var cardClass = isOverdue ? 'overdue-card' : isDueSoon ? 'due-soon-card' : '';
-                        return (React.createElement("div", { key: uid, className: "flex items-center justify-between border-2 p-2 gap-2 " + cardClass,
+                        return (React.createElement("div", { key: uid, className: cardClass, style: { display: "flex", alignItems: "center", justifyContent: "space-between", border: "2px solid #7A4A1A", padding: 8, gap: 8 },
                             style: { borderColor: showSchedWarning && !isOverdue && !isDueSoon ? '#C87820' : '#7A4A1A', background: showSchedWarning && !isOverdue && !isDueSoon ? 'rgba(200,120,32,0.04)' : undefined, transition: 'background 0.2s ease' } },
-                            React.createElement("div", { className: "flex items-center gap-2 min-w-0 flex-1" },
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 } },
                                 React.createElement(MiniThumb, { url: thumbs[uid] }),
                                 React.createElement("div", { className: "flex-1 min-w-0 cursor-pointer", onClick: () => openPlant(uid) },
                                     // Health chip + next action at top
@@ -8615,7 +8615,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: isOverdue ? 'var(--c-urgent)' : theme.txtP, fontWeight: 900 }), className: "truncate" }, title),
                                     subtitle && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS, fontWeight: 800 }), className: "truncate" }, subtitle))),
                             React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end', flexShrink: 0 } },
-                                React.createElement("button", { type: "button", onClick: () => openEdit(q), className: "px-3 py-2 border-4 border-[#7A4A1A] bg-[#D4A86A] hover:bg-[#C49050] active:scale-[0.98]", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: '#2C1000', fontSize: '12px' }), title: "Edit" }, "\u270F\uFE0F"),
+                                React.createElement("button", { type: "button", onClick: () => openEdit(q), style: Object.assign({}, pxS, { padding: "6px 10px", border: "3px solid #5A3010", background: "#D4A86A", cursor: "pointer" }), style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: '#2C1000', fontSize: '12px' }), title: "Edit" }, "\u270F\uFE0F"),
                                 showSchedWarning && React.createElement("button", {
                                     type: "button",
                                     onClick: function() { openEdit(q); setTimeout(function() { var el = document.getElementById('sched-section-' + uid); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 120); },
@@ -11532,7 +11532,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         padding: 20,
                     }},
                         React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '12px', color: theme.txtP, marginBottom: 14 } }, React.createElement('span', { style: { fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '\uD83E\uDEB4'), ' REPOT'),
-                        React.createElement("div", { className: "space-y-2" },
+                        React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
                             React.createElement("div", null,
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "New Pot Size"),
                                 React.createElement("input", { value: repotPot, onChange: e => setRepotPot(e.target.value), placeholder: "e.g. 6 inch", className: "w-full border-4 px-3 py-2 mt-1 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
