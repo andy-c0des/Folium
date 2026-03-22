@@ -7949,6 +7949,7 @@ function MyPlantsScreen({ openTab, prefill }) {
     }
     useEffect(() => {
         let alive = true;
+        console.log('[PLANTOS-DEBUG] plants effect fired! selectedLocs:', JSON.stringify(selectedLocs), 'hasSelection:', hasSelection);
         (async () => {
             if (!hasSelection) {
                 setPlants([]);
@@ -7994,10 +7995,13 @@ function MyPlantsScreen({ openTab, prefill }) {
                 });
                 if (!alive) return;
                 setFetchError(envelopeWarnings.length > 0 ? envelopeWarnings.join(' | ') : '');
-                setPlants(processPlants(combined));
+                var processed = processPlants(combined);
+                console.log('[PLANTOS-DEBUG] setPlants called with', processed.length, 'plants, alive=', alive);
+                setPlants(processed);
             }
             catch (e) {
                 if (!alive) return;
+                console.log('[PLANTOS-DEBUG] CATCH: setPlants([]) due to error:', e && e.message);
                 setPlants([]);
                 setFetchError(String((e && e.message) ? e.message : e));
             }
