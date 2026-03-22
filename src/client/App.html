@@ -8580,7 +8580,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("button", { type: "button", onClick: function() { setPlantPage(function(p) { return Math.min(Math.ceil(plants.length / 10) - 1, p + 1); }); }, disabled: plantPage >= Math.ceil(plants.length / 10) - 1,
                             style: { fontFamily: "'Press Start 2P', monospace", fontSize: 10, padding: '6px 12px', cursor: plantPage >= Math.ceil(plants.length / 10) - 1 ? 'default' : 'pointer', opacity: plantPage >= Math.ceil(plants.length / 10) - 1 ? 0.4 : 1, background: 'transparent', border: '2px solid #7A4A1A', color: '#3C1800' } }, "NEXT >")
                     ),
-                    plants.length > 0 && (React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, plants.slice(plantPage * 10, (plantPage + 1) * 10).map(p => {
+                    plants.length > 0 && (React.createElement("div", { style: isDesktop ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } : { display: "flex", flexDirection: "column", gap: 8 } }, plants.slice(plantPage * 10, (plantPage + 1) * 10).map(p => {
                         const uid = String(p.uid || '');
                         const sharedPatch = getSharedPatch ? getSharedPatch(uid) : null;
                         const q = sharedPatch ? Object.assign({}, p, sharedPatch) : p;
