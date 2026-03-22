@@ -15943,7 +15943,7 @@ function CarlHomeScreen() {
 }
 
 function AppContent() {
-    React.useEffect(() => { if (!DEMO_MODE) kbCacheLoad(); }, []);
+    React.useEffect(() => { if (!DEMO_MODE && typeof kbCacheLoad === 'function') kbCacheLoad(); }, []);
     const { route, navigate, goBack, canGoBack } = useNavigation();
     const { isDesktop } = useScreenSize();
     const currentScreen = route && route.screen ? route.screen : 'home';
