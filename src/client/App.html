@@ -8010,29 +8010,14 @@ function MyPlantsScreen({ openTab, prefill }) {
         return () => { alive = false; };
     }, [selectedLocs]);
     useEffect(() => {
-        let alive = true;
-        (async () => {
-            const list = [...(plants || []), ...(globalResults || [])];
-            const next = {};
-            for (let i = 0; i < list.length; i++) {
-                const uid = String(list[i].uid || '');
-                if (!uid)
-                    continue;
-                if (thumbs[uid] || next[uid])
-                    continue;
-                try {
-                    const res = await getLatestPhoto(uid);
-                    if (res && res.ok && res.photo && res.photo.thumbUrl)
-                        next[uid] = res.photo.thumbUrl;
-                }
-                catch (e) { }
-            }
-            if (!alive)
-                return;
-            if (Object.keys(next).length)
-                setThumbs(prev => (Object.assign(Object.assign({}, prev), next)));
-        })();
-        return () => { alive = false; };
+        // Build thumbs map directly from plant data (thumbUrl is included in plantosGetAllPlantsLite)
+        const list = [...(plants || []), ...(globalResults || [])];
+        const next = {};
+        list.forEach(function(p) {
+            var uid = String(p.uid || '');
+            if (uid && p.thumbUrl) next[uid] = p.thumbUrl;
+        });
+        if (Object.keys(next).length) setThumbs(function(prev) { return Object.assign({}, prev, next); });
     }, [plants, globalResults]);
     function openPlant(uid) { navigate('plant', { uid }); }
     useEffect(() => {
@@ -8376,7 +8361,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         )
     );
 
-    return (React.createElement(React.Fragment, null, locModalEl, React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '1100px' : '680px', margin: '0 auto' } },
+    return (React.createElement(React.Fragment, null, locModalEl, React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '1100px' : '680px', margin: '0 auto', background: theme.cardBg } },
         React.createElement(PlantCard, { title: "MY PLANTS" },
             React.createElement(TabBar, null),
             activeTab === 'plants' && (React.createElement(React.Fragment, null,
