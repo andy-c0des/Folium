@@ -8599,6 +8599,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "flex gap-2 mt-3" },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")))),
+                    filteredPlants.length > 0 && React.createElement("div", { style: {color:'lime',background:'#111',padding:8,marginBottom:8} }, 'GRID TRIGGERED: ' + filteredPlants.length + ' plants'),
                     filteredPlants.length > 0 && (React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, filteredPlants.map(p => {
                         const uid = String(p.uid || '');
                         const sharedPatch = getSharedPatch ? getSharedPatch(uid) : null;
