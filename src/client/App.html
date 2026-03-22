@@ -7993,7 +7993,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                 setFetchError(String((e && e.message) ? e.message : e));
             }
             finally {
-                if (alive) setLoading(false);
+                setLoading(false);
             }
         })();
         return () => { alive = false; };
