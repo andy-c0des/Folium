@@ -2118,16 +2118,8 @@ function taxonCommonNames(genus) {
 
 function gasCall(fn, ...args) {
     return new Promise(function(resolve, reject) {
-        var token = localStorage.getItem('plantos_auth_token');
-        if (!token && fn !== 'plantosValidateToken') {
-            var err = new Error('Authentication required');
-            err.needsAuth = true;
-            window.__plantosHandleUnauth && window.__plantosHandleUnauth();
-            reject(err);
-            return;
-        }
-        var body = { fn: fn, args: args };
-        if (token) body.token = token;
+        var token = localStorage.getItem('plantos_auth_token') || '';
+        var body = { fn: fn, args: args, token: token };
         fetch(PLANTOS_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
