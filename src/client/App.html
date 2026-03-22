@@ -8499,7 +8499,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                     !loading && hasSelection && plants.length > 0 && fetchError && React.createElement(StatusMessage, { type: 'warning', message: 'Partial load: ' + plants.length + ' plants loaded, but some rows had errors: ' + fetchError }),
                     !loading && hasSelection && plants.length > 0 && filteredPlants.length === 0 && React.createElement(StatusMessage, { type: "info", message: "No plants match your filter." }),
                     React.createElement("div", {style:{background:'navy',color:'white',padding:4,fontSize:12}}, 'PRE-EDIT: plants=' + plants.length + ' editUid=[' + editUid + ']'),
-                    editUid && (React.createElement("div", { className: "mb-3 mt-2", style: {
+                    false && (React.createElement("div", { className: "mb-3 mt-2", style: {
                             border: '4px solid ' + theme.btnP.border,
                             background: theme.cardBg,
                             padding: 12,
