@@ -3473,7 +3473,7 @@ const SYMPTOMS = {
     sooty_mold:       { label: 'Black sooty coating', category: 'pests', emoji: '≡ƒûñ' },
     visible_insects:  { label: 'Visible insects on plant', category: 'pests', emoji: '≡ƒÉ¢' },
     silver_streaks:   { label: 'Silver/bronze streaks on leaves', category: 'pests', emoji: 'ΓÜí' },
-    stippling:        { label: 'Tiny pale dots/stippling', category: 'pests', emoji: '┬╖' },
+    stippling:        { label: 'Tiny pale dots/stippling', category: 'pests', emoji: '·' },
     black_dots:       { label: 'Tiny black dots on leaves', category: 'pests', emoji: 'ΓÜ½' },
     white_powder:     { label: 'White powdery coating', category: 'pests', emoji: 'Γ¼£' },
     grey_fuzz:        { label: 'Grey fuzzy mold', category: 'pests', emoji: '≡ƒ⌐╢' },
@@ -5318,7 +5318,7 @@ function StatusMessage({ type, message }) {
         info: 'bg-[#3498DB] border-[#2980B9] text-white',
         loading: 'bg-[#F39C12] border-[#E67E22] text-white'
     };
-    const icons = { success: 'Γ£ô', error: 'Γ£ù', warning: 'ΓÜá', info: 'Γä╣', loading: React.createElement("span", { className: "loading-spinner" }, "\uD83C\uDF3F") };
+    const icons = { success: '✓', error: 'Γ£ù', warning: 'ΓÜá', info: 'Γä╣', loading: React.createElement("span", { className: "loading-spinner" }, "\uD83C\uDF3F") };
     return (React.createElement("div", { className: `${colors[type]} border-4  px-4 py-3 mb-4 flex items-center gap-3 shadow-lg status-glow fade-in` },
         React.createElement("span", { className: "text-2xl" }, icons[type]),
         React.createElement("span", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '14px', fontWeight: '600' } }, message)));
@@ -5752,7 +5752,7 @@ function CustomMixBuilder({ value, onChange, growingMethod, pxS, theme }) {
             }) }, ratioStr),
             React.createElement('div', { style: Object.assign({}, pxS, {
                 fontSize: '10px', color: theme.txtS, flex: 1,
-            }) }, dryLabel + '  ┬╖  rot ' + rotLabel)
+            }) }, dryLabel + '  ·  rot ' + rotLabel)
         )
     );
 }
@@ -7037,7 +7037,7 @@ function CareBriefPanel({ plant, physics, env, recentTimeline, onBriefGenerated,
 
     const verdictStyle = {
         thriving: { bg: '#27ae60', label: '≡ƒî┐ Thriving' },
-        stable:   { bg: '#2980b9', label: 'Γ£ô Stable' },
+        stable:   { bg: '#2980b9', label: '✓ Stable' },
         watch:    { bg: '#e67e22', label: '≡ƒæÇ Watch' },
         act:      { bg: '#c0392b', label: 'ΓÜá∩╕Å Act Now' },
     };
@@ -7649,7 +7649,7 @@ function AddScreen() {
                             background: '#43A047', color: '#fff', border: 'none', cursor: 'pointer',
                             opacity: (waterEveryDays && fertilizeEveryDays) ? 0.4 : 1,
                         })
-                    }, (waterEveryDays && fertilizeEveryDays) ? 'Γ£ô Schedule set' : 'Use these estimates Γåæ')
+                    }, (waterEveryDays && fertilizeEveryDays) ? '✓ Schedule set' : 'Use these estimates Γåæ')
                 ) : React.createElement("div", { style: Object.assign({}, pxS, {
                     fontSize: '12px', color: theme.txtS, lineHeight: 1.5, marginBottom: 8,
                     padding: '5px 8px', background: 'rgba(90,48,24,0.10)', borderLeft: '3px solid #C87820',
@@ -8186,7 +8186,7 @@ function MyPlantsScreen({ openTab, prefill }) {
     }
     function LocChip({ id, label, active, onClick }) {
         return (React.createElement("button", { type: "button", onClick: onClick, className: "btn-press  border-4 px-3 py-1.5 transition-colors", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, borderColor: active ? theme.btnP.border : theme.sep, background: active ? theme.btnP.bg : theme.cardBg, color: active ? theme.btnP.text : theme.txtP, boxShadow: active ? '0 2px 8px rgba(0,0,0,0.30)' : undefined }) },
-            active ? 'Γ£ô ' : '',
+            active ? '✓ ' : '',
             label));
     }
     async function handleAddLocation() {
@@ -8220,7 +8220,7 @@ function MyPlantsScreen({ openTab, prefill }) {
             React.createElement(CompassRoseSVG, { heading: locLiveHeading, snapped: locSnapped, isSouthern: locIsSouthern, size: 220 }),
             locSnapped && React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 14, color: sunColorLoc(estSun(locSnapped, locObstruction, locIsSouthern)), textAlign: 'center' } }, 'ΓÿÇ∩╕Å ' + sunLabelLoc(estSun(locSnapped, locObstruction, locIsSouthern))),
             React.createElement('div', { style: { display: 'flex', gap: 12, marginTop: 4 } },
-                React.createElement('button', { type: 'button', onClick: () => closeLocCompass(true, false), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: '#2A6018', color: '#C8E8A8', border: '2px solid #4A9838', padding: '12px 22px', cursor: 'pointer' } }, 'Γ£ô LOCK ' + (locSnapped || '')),
+                React.createElement('button', { type: 'button', onClick: () => closeLocCompass(true, false), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: '#2A6018', color: '#C8E8A8', border: '2px solid #4A9838', padding: '12px 22px', cursor: 'pointer' } }, '✓ LOCK ' + (locSnapped || '')),
                 React.createElement('button', { type: 'button', onClick: () => closeLocCompass(false, false), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, background: 'transparent', color: '#5A7A48', border: '1px solid #1A3018', padding: '12px 16px', cursor: 'pointer' } }, 'Cancel')
             )
         ),
@@ -8230,7 +8230,7 @@ function MyPlantsScreen({ openTab, prefill }) {
             React.createElement('div', { style: { fontFamily:"'Press Start 2P',monospace", fontSize: 11, color: '#8AC868', letterSpacing: '0.1em' } }, '≡ƒº¡ POINT AT SPOT'),
             React.createElement(CompassRoseSVG, { heading: subEnvLiveHeading, snapped: subEnvSnapped, isSouthern: locIsSouthern, size: 200 }),
             React.createElement('div', { style: { display: 'flex', gap: 12 } },
-                React.createElement('button', { type: 'button', onClick: () => closeLocCompass(true, true), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: '#2A6018', color: '#C8E8A8', border: '2px solid #4A9838', padding: '10px 18px', cursor: 'pointer' } }, 'Γ£ô LOCK ' + (subEnvSnapped || '')),
+                React.createElement('button', { type: 'button', onClick: () => closeLocCompass(true, true), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: '#2A6018', color: '#C8E8A8', border: '2px solid #4A9838', padding: '10px 18px', cursor: 'pointer' } }, '✓ LOCK ' + (subEnvSnapped || '')),
                 React.createElement('button', { type: 'button', onClick: () => closeLocCompass(false, true), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, background: 'transparent', color: '#5A7A48', border: '1px solid #1A3018', padding: '10px 14px', cursor: 'pointer' } }, 'Cancel')
             )
         ),
@@ -8268,9 +8268,9 @@ function MyPlantsScreen({ openTab, prefill }) {
                 LOC_TYPES_LIST.find(t => t.id === locType) && LOC_TYPES_LIST.find(t => t.id === locType).hasDir && locDirection && React.createElement('div', null,
                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 12, color: '#5A7A48', marginBottom: 5 } }, 'Obstruction / overhang'),
                     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 3 } },
-                        Object.entries(OBS_LABELS).map(([k, v]) => React.createElement('button', { key: k, type: 'button', onClick: () => setLocObstruction(k), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 12, background: locObstruction === k ? '#1A3A10' : 'transparent', border: `1px solid ${locObstruction === k ? '#4A9838' : '#1A3018'}`, color: locObstruction === k ? '#C8E8A8' : '#5A7A48', padding: '7px 10px', cursor: 'pointer', textAlign: 'left' } }, (locObstruction === k ? 'Γ£ô ' : '  ') + v))
+                        Object.entries(OBS_LABELS).map(([k, v]) => React.createElement('button', { key: k, type: 'button', onClick: () => setLocObstruction(k), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 12, background: locObstruction === k ? '#1A3A10' : 'transparent', border: `1px solid ${locObstruction === k ? '#4A9838' : '#1A3018'}`, color: locObstruction === k ? '#C8E8A8' : '#5A7A48', padding: '7px 10px', cursor: 'pointer', textAlign: 'left' } }, (locObstruction === k ? '✓ ' : '  ') + v))
                     ),
-                    (function() { const s = estSun(locDirection, locObstruction, locIsSouthern); return s != null && React.createElement('div', { style: { marginTop: 8, padding: '9px 12px', background: '#0A140A', border: `2px solid ${sunColorLoc(s)}`, fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: sunColorLoc(s) } }, 'ΓÿÇ∩╕Å ' + locDirection + '-facing ┬╖ ' + sunLabelLoc(s), locIsSouthern && React.createElement('div', { style: { fontSize: 11, color: '#5A7A48', marginTop: 3 } }, '≡ƒôì Southern hemisphere adjusted')); })()
+                    (function() { const s = estSun(locDirection, locObstruction, locIsSouthern); return s != null && React.createElement('div', { style: { marginTop: 8, padding: '9px 12px', background: '#0A140A', border: `2px solid ${sunColorLoc(s)}`, fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: sunColorLoc(s) } }, 'ΓÿÇ∩╕Å ' + locDirection + '-facing · ' + sunLabelLoc(s), locIsSouthern && React.createElement('div', { style: { fontSize: 11, color: '#5A7A48', marginTop: 3 } }, '≡ƒôì Southern hemisphere adjusted')); })()
                 ),
                 locType === 'garden' && React.createElement('div', null,
                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 12, color: '#5A7A48', marginBottom: 5 } }, 'Soil type'),
@@ -8295,8 +8295,8 @@ function MyPlantsScreen({ openTab, prefill }) {
                             const isOutdoor = LOC_TYPES_LIST.find(t => t.id === locType) && LOC_TYPES_LIST.find(t => t.id === locType).hasDir;
                             const s = isOutdoor ? estSun(se.direction || locDirection, se.obstruction, locIsSouthern) : null;
                             const badge = isOutdoor
-                                ? (se.direction ? se.direction + ' ┬╖ ' : '') + sunLabelLoc(s)
-                                : [se.lightLevel, se.heatSource !== 'none' ? '≡ƒîí ' + se.heatSource : null, se.humidity !== 'average' ? '≡ƒÆº ' + se.humidity : null, se.airflow !== 'still' ? '≡ƒÆ¿ ' + se.airflow : null].filter(Boolean).join(' ┬╖ ');
+                                ? (se.direction ? se.direction + ' · ' : '') + sunLabelLoc(s)
+                                : [se.lightLevel, se.heatSource !== 'none' ? '≡ƒîí ' + se.heatSource : null, se.humidity !== 'average' ? '≡ƒÆº ' + se.humidity : null, se.airflow !== 'still' ? '≡ƒÆ¿ ' + se.airflow : null].filter(Boolean).join(' · ');
                             return React.createElement('div', { key: idx, style: { background: '#0A140A', border: '1px solid #1A3018', padding: '7px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
                                 React.createElement('div', null,
                                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: '#C8E8A8' } }, se.name || '(unnamed)'),
@@ -8355,12 +8355,12 @@ function MyPlantsScreen({ openTab, prefill }) {
                         ),
                         React.createElement('input', { value: subEnvDraft.notes, onChange: e => setSubEnvDraft(d => Object.assign({}, d, { notes: e.target.value })), placeholder: 'Notes (optional)', style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 12, background: '#060D04', border: '1px solid #1A3018', color: '#C8E8A8', padding: '6px 9px', width: '100%', boxSizing: 'border-box' } }),
                         React.createElement('div', { style: { display: 'flex', gap: 6 } },
-                            React.createElement('button', { type: 'button', onClick: () => { if (subEnvDraft.name.trim()) { const isOD = LOC_TYPES_LIST.find(t=>t.id===locType)&&LOC_TYPES_LIST.find(t=>t.id===locType).hasDir; const s = isOD ? estSun(subEnvDraft.direction || locDirection, subEnvDraft.obstruction, locIsSouthern) : null; setSubEnvs(prev => [...prev, Object.assign({}, subEnvDraft, { sunH: s })]); setAddingSubEnv(false); } }, style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: '#2A6018', color: '#C8E8A8', border: '2px solid #4A9838', padding: '8px 14px', cursor: 'pointer', flex: 1 } }, 'Γ£ô ADD'),
+                            React.createElement('button', { type: 'button', onClick: () => { if (subEnvDraft.name.trim()) { const isOD = LOC_TYPES_LIST.find(t=>t.id===locType)&&LOC_TYPES_LIST.find(t=>t.id===locType).hasDir; const s = isOD ? estSun(subEnvDraft.direction || locDirection, subEnvDraft.obstruction, locIsSouthern) : null; setSubEnvs(prev => [...prev, Object.assign({}, subEnvDraft, { sunH: s })]); setAddingSubEnv(false); } }, style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: '#2A6018', color: '#C8E8A8', border: '2px solid #4A9838', padding: '8px 14px', cursor: 'pointer', flex: 1 } }, '✓ ADD'),
                             React.createElement('button', { type: 'button', onClick: () => setAddingSubEnv(false), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, background: 'transparent', color: '#5A7A48', border: '1px solid #1A3018', padding: '8px 12px', cursor: 'pointer' } }, 'Cancel')
                         )
                     )
                 ),
-                React.createElement('button', { type: 'button', onClick: saveLocModal, disabled: !newLocName.trim(), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: newLocName.trim() ? '#2A6018' : '#1A2A10', color: newLocName.trim() ? '#C8E8A8' : '#3A5A28', border: `2px solid ${newLocName.trim() ? '#4A9838' : '#1A3018'}`, padding: '13px 0', cursor: newLocName.trim() ? 'pointer' : 'default', letterSpacing: '0.06em', width: '100%', marginTop: 4 } }, 'Γ£ô SAVE LOCATION')
+                React.createElement('button', { type: 'button', onClick: saveLocModal, disabled: !newLocName.trim(), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: newLocName.trim() ? '#2A6018' : '#1A2A10', color: newLocName.trim() ? '#C8E8A8' : '#3A5A28', border: `2px solid ${newLocName.trim() ? '#4A9838' : '#1A3018'}`, padding: '13px 0', cursor: newLocName.trim() ? 'pointer' : 'default', letterSpacing: '0.06em', width: '100%', marginTop: 4 } }, '✓ SAVE LOCATION')
             )
         )
     );
@@ -8469,7 +8469,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                             selectedLocs.length,
                             " locations selected"))),
                     hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-3" },
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, plants.length + ' plants loaded ┬╖ ' + filteredPlants.length + ' showing'),
+                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, plants.length + ' plants loaded · ' + filteredPlants.length + ' showing'),
                         React.createElement("input", { value: plantFilter, onChange: e => setPlantFilter(e.target.value), placeholder: "Filter plants...", className: "w-full border-4  p-2 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
                     loading && React.createElement("div", { className: "space-y-2" },
                         Array.from({ length: 6 }).map(function(_, i) {
@@ -8590,7 +8590,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "flex gap-2 mt-3" },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")))),
-                    !loading && filteredPlants.length > 0 && (React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, filteredPlants.map(p => {
+                    filteredPlants.length > 0 && (React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, filteredPlants.map(p => {
                         const uid = String(p.uid || '');
                         const sharedPatch = getSharedPatch ? getSharedPatch(uid) : null;
                         const q = sharedPatch ? Object.assign({}, p, sharedPatch) : p;
@@ -10063,8 +10063,8 @@ function PropsSection({ locations, prefill }) {
                                 prop.graduatedUID))),
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
                             prop.hybridType
-                                ? `${prop.pollinationMethod || 'Hand pollinated'} ┬╖ ${prop.crossDate || prop.startDate || ''}`
-                                : `${prop.propType} ┬╖ ${prop.substrate}${days !== null ? ` ┬╖ Day ${days}` : ''}`,
+                                ? `${prop.pollinationMethod || 'Hand pollinated'} · ${prop.crossDate || prop.startDate || ''}`
+                                : `${prop.propType} · ${prop.substrate}${days !== null ? ` · Day ${days}` : ''}`,
                             prop.hybridType && prop.motherGenus && prop.fatherGenus && (React.createElement("span", null,
                                 " \u00B7 \u2640 ",
                                 prop.motherGenus,
@@ -10086,7 +10086,7 @@ function PropsSection({ locations, prefill }) {
                             const active = i === curStep;
                             return (React.createElement("div", { key: step, style: { flex: 1, textAlign: 'center', padding: '6px 4px', border: `2px solid ${theme.cardBorder}`, borderRight: i < STEPS.length - 1 ? 'none' : `2px solid ${theme.cardBorder}`, background: done ? theme.btnP.bg : active ? theme.rowBg : 'transparent' } },
                                 React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: done ? theme.btnP.text : active ? theme.txtP : theme.txtS }) },
-                                    done ? 'Γ£ô ' : active ? 'Γû╢ ' : '',
+                                    done ? '✓ ' : active ? 'Γû╢ ' : '',
                                     step)));
                         })))),
                     /* ΓöÇΓöÇ PROP INFO CARD ΓöÇΓöÇ */
@@ -10148,7 +10148,7 @@ function PropsSection({ locations, prefill }) {
                                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "NOTES"),
                                     React.createElement("textarea", { value: ef.notes || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {notes: e.target.value}); }); }, rows: 2, className: "w-full border-4 px-2 py-1.5 resize-none input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
                                 /* save/status */
-                                editPropStatus && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: editPropStatus.ok ? '#2ecc71' : '#e74c3c', marginBottom: 6 }) }, editPropStatus.ok ? 'Γ£ô Saved' : editPropStatus.msg),
+                                editPropStatus && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: editPropStatus.ok ? '#2ecc71' : '#e74c3c', marginBottom: 6 }) }, editPropStatus.ok ? '✓ Saved' : editPropStatus.msg),
                                 React.createElement(PlantButton, { onClick: function(){ handleSavePropEdit(prop.propId); }, disabled: editPropSaving, className: "py-1 px-4" }, editPropSaving ? 'Saving...' : '≡ƒÆ╛ Save Changes')));
                     })(),
                     /* ΓöÇΓöÇ PARENT/HYBRID ΓöÇΓöÇ */
@@ -10181,14 +10181,14 @@ function PropsSection({ locations, prefill }) {
                         React.createElement("div", { style: { display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' } },
                             React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS }) },
                                 prop.pollinationMethod || 'Hand pollinated',
-                                prop.crossDate ? ` ┬╖ ${prop.crossDate}` : ''),
+                                prop.crossDate ? ` · ${prop.crossDate}` : ''),
                             prop.generation && (() => {
                                 const c = genBadgeColor(prop.generation);
                                 return (React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, padding: '2px 8px', background: c, color: '#fff' }) },
                                     prop.generation.str,
                                     !prop.generationConfirmed && React.createElement("span", { style: { fontSize: '12px', opacity: 0.8 } }, " (auto)")));
                             })(),
-                            prop.isIntrageneric !== undefined && (React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS }) }, prop.isIntrageneric ? 'Intrageneric' : `Intergeneric${prop.nothogenus ? ` ┬╖ ${prop.nothogenus}` : ''}`))))),
+                            prop.isIntrageneric !== undefined && (React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS }) }, prop.isIntrageneric ? 'Intrageneric' : `Intergeneric${prop.nothogenus ? ` · ${prop.nothogenus}` : ''}`))))),
                     prop.siblingPropIds && prop.siblingPropIds.length > 0 && (React.createElement("div", { style: { marginBottom: 8 } },
                         React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "\uD83C\uDF3F Siblings: "),
                         React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtP }) }, prop.siblingPropIds.join(', ')))),
@@ -11110,7 +11110,7 @@ function PlantScreen({ uid }) {
     }, [plant, env]);
     if (!safe) {
             function plantLabel(uid){const p=relatedPlants[uid];if(!p)return 'UID '+uid;return p.nickname||[p.genus,p.species||p.taxon].filter(Boolean).join(' ')||'UID '+uid;}
-    function plantLabelFull(uid){const p=relatedPlants[uid];if(!p)return 'UID '+uid;const tax=[p.genus,p.species||p.taxon].filter(Boolean).join(' ');if(p.nickname&&tax&&p.nickname!==tax)return p.nickname+' ┬╖ '+tax;return p.nickname||tax||'UID '+uid;}
+    function plantLabelFull(uid){const p=relatedPlants[uid];if(!p)return 'UID '+uid;const tax=[p.genus,p.species||p.taxon].filter(Boolean).join(' ');if(p.nickname&&tax&&p.nickname!==tax)return p.nickname+' · '+tax;return p.nickname||tax||'UID '+uid;}
 return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : 'p-4'} max-w-2xl mx-auto w-full` },
             React.createElement(PlantCard, { title: "PLANT" },
                 React.createElement(StatusMessage, { type: "loading", message: "Loading plant..." }))));
@@ -11447,7 +11447,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     boxShadow: logWater ? '0 3px 0 #091820' : `0 3px 0 ${theme.rowBorder}`,
                                     filter: logWater ? 'drop-shadow(0 0 6px rgba(79,195,247,0.5))' : 'none',
                                 })
-                            }, logWater ? 'Γ£ô ≡ƒÆº Water' : '≡ƒÆº Water'),
+                            }, logWater ? '✓ ≡ƒÆº Water' : '≡ƒÆº Water'),
                             React.createElement("button", {
                                 type: "button", onClick: () => setLogFert(v => !v),
                                 className: "btn-press" + (logFert ? " fert-active" : ""),
@@ -11459,7 +11459,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     boxShadow: logFert ? '0 3px 0 #1E0800' : `0 3px 0 ${theme.rowBorder}`,
                                     filter: logFert ? 'drop-shadow(0 0 6px rgba(251,191,36,0.5))' : 'none',
                                 })
-                            }, logFert ? 'Γ£ô ≡ƒî╛ Fert' : '≡ƒî╛ Fert')
+                            }, logFert ? '✓ ≡ƒî╛ Fert' : '≡ƒî╛ Fert')
                         ),
                         (logWater || logFert) && React.createElement("button", {
                             type: "button", onClick: doCommit, className: "btn-press w-full",
@@ -11677,7 +11677,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             marginBottom: 6,
                         }},
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, letterSpacing: '0.07em', color: (editWaterEvery && editFertEvery) ? '#2A7A18' : '#C87820', marginBottom: 8 }) },
-                                (editWaterEvery && editFertEvery) ? 'Γ£ô SCHEDULE SET' : 'ΓÜá SCHEDULE INCOMPLETE'
+                                (editWaterEvery && editFertEvery) ? '✓ SCHEDULE SET' : 'ΓÜá SCHEDULE INCOMPLETE'
                             ),
                             React.createElement("div", { style: { marginBottom: 8 } },
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "≡ƒÆº Water Every (days)"),
@@ -12103,7 +12103,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
             'Something is a bit off ΓÇö your plant is not at its best. It may be overdue for water or fertilizer, or the environment is not ideal. Give it a check soon.'
         ),
         'GOOD': React.createElement('span', null,
-            React.createElement('strong', { style: { color: '#AED581', display: 'block', marginBottom: 4 } }, 'Γ£ô DOING WELL'),
+            React.createElement('strong', { style: { color: '#AED581', display: 'block', marginBottom: 4 } }, '✓ DOING WELL'),
             'Your plant is in good shape. Keep up the current routine ΓÇö just stay on top of the watering schedule.'
         ),
         'THRIVING': React.createElement('span', null,
@@ -12449,7 +12449,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                 React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '6px 8px 3px', opacity: 0.6 }) }, 'HISTORY & SETUP'),
                 React.createElement(FactRow, { label: '\uD83E\uDEB4 Last Repot', value: plant.lastRepotted, accent: theme.cardBorder }),
                 React.createElement(FactRow, { label: '\uD83C\uDF82 Birthday', value: plant.birthday, accent: theme.cardBorder }),
-                React.createElement(FactRow, { label: '\uD83E\uDEB4 Pot', value: [plant.potSize, plant.potMaterial, plant.potShape].filter(Boolean).join(' ┬╖ ') || null, accent: theme.cardBorder }),
+                React.createElement(FactRow, { label: '\uD83E\uDEB4 Pot', value: [plant.potSize, plant.potMaterial, plant.potShape].filter(Boolean).join(' · ') || null, accent: theme.cardBorder }),
                 React.createElement(FactRow, { label: '\uD83E\uDDF1 Substrate', value: isCustomMix(plant.substrate || plant.medium) ? customMixLabel(plant.substrate || plant.medium) : (plant.substrate || plant.medium), accent: theme.cardBorder })
             ),
 
@@ -12472,7 +12472,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
             var part = DAY_NAMES_S[d.getDay()] + ' ' + d.getDate() + ' ' + MON_NAMES_S[d.getMonth()];
             if (diff === 0) return 'today';
             if (diff === 1) return 'yesterday';
-            return diff + 'd ago ┬╖ ' + part;
+            return diff + 'd ago · ' + part;
         }
         function fmtNext(dateStr) {
             if (!dateStr) return null;
@@ -12480,8 +12480,8 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
             var diff = Math.round((d - today) / 86400000);
             var part = DAY_NAMES_S[d.getDay()] + ' ' + d.getDate() + ' ' + MON_NAMES_S[d.getMonth()];
             if (diff <= 0) return null; // overdue ΓÇö don't show next
-            if (diff === 1) return 'tomorrow ┬╖ ' + part;
-            if (diff <= 6) return 'in ' + diff + 'd ┬╖ ' + part;
+            if (diff === 1) return 'tomorrow · ' + part;
+            if (diff <= 6) return 'in ' + diff + 'd · ' + part;
             return part;
         }
 
@@ -12548,7 +12548,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                     fontSize: '12px', padding: '4px 10px', fontWeight: 900, whiteSpace: 'nowrap',
                     background: recColor, color: '#fff', border: 'none', cursor: 'pointer',
                 })
-            }, 'Set to ' + suggested + 'd Γ£ô'),
+            }, 'Set to ' + suggested + 'd ✓'),
         ) : null;
 
         var suggestedFert = (function() {
@@ -12593,7 +12593,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                     fontSize: '12px', padding: '4px 10px', fontWeight: 900, whiteSpace: 'nowrap',
                     background: fertRecColor, color: '#fff', border: 'none', cursor: 'pointer',
                 })
-            }, 'Set to ' + suggestedFert + 'd Γ£ô'),
+            }, 'Set to ' + suggestedFert + 'd ✓'),
         ) : null;
 
         var ageSched = (function() {
@@ -13185,8 +13185,8 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
         if (diffDays === 0) return 'today (' + datePart + ')';
         if (diffDays === 1) return 'tomorrow (' + datePart + ')';
         if (diffDays === -1) return 'yesterday (' + datePart + ')';
-        if (diffDays > 1 && diffDays <= 6) return 'in ' + diffDays + 'd ┬╖ ' + datePart;
-        if (diffDays < -1 && diffDays >= -6) return Math.abs(diffDays) + 'd ago ┬╖ ' + datePart;
+        if (diffDays > 1 && diffDays <= 6) return 'in ' + diffDays + 'd · ' + datePart;
+        if (diffDays < -1 && diffDays >= -6) return Math.abs(diffDays) + 'd ago · ' + datePart;
         return datePart;
     }
     function fmtLastDate(dateStr) {
@@ -13199,7 +13199,7 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
         var datePart = dayName + ' ' + d.getDate() + ' ' + MON_NAMES[d.getMonth()];
         if (diffDays === 0) return 'today';
         if (diffDays === 1) return 'yesterday';
-        return diffDays + 'd ago ┬╖ ' + datePart;
+        return diffDays + 'd ago · ' + datePart;
     }
 
     function SchedRow(props) {
@@ -13253,10 +13253,10 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
             isBaseline
                 ? 'algo estimate: every ' + suggested + 'd (no schedule yet)'
             : !deltaSignificant
-                ? 'Γ£ô schedule on track ┬╖ algo agrees every ' + suggested + 'd'
+                ? '✓ schedule on track · algo agrees every ' + suggested + 'd'
             : delta < 0
-                ? 'algo suggests every ' + suggested + 'd ┬╖ yours is ' + everyD + 'd (water more)'
-                : 'algo suggests every ' + suggested + 'd ┬╖ yours is ' + everyD + 'd (ease off)'
+                ? 'algo suggests every ' + suggested + 'd · yours is ' + everyD + 'd (water more)'
+                : 'algo suggests every ' + suggested + 'd · yours is ' + everyD + 'd (ease off)'
         ),
         onSaveInterval && (deltaSignificant || isBaseline) && React.createElement('button', {
             type: 'button',
@@ -13504,7 +13504,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
         const p = relatedPlants[uid];
         if (!p) return 'UID ' + uid;
         const tax = [p.genus, p.species || p.taxon].filter(Boolean).join(' ');
-        return (p.nickname && tax && p.nickname !== tax) ? (p.nickname + ' ┬╖ ' + tax) : (p.nickname || tax || 'UID ' + uid);
+        return (p.nickname && tax && p.nickname !== tax) ? (p.nickname + ' · ' + tax) : (p.nickname || tax || 'UID ' + uid);
     }
 
     function PlantChip({ uid, color, label }) {
@@ -13586,7 +13586,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
                 React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '3px 10px', background: bg, color: '#fff' }) }, plant.generation.str),
                 React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS }) },
                     plant.pollinationMethod || 'Hand pollinated',
-                    plant.crossDate ? ' ┬╖ ' + plant.crossDate : ''
+                    plant.crossDate ? ' · ' + plant.crossDate : ''
                 )
             );
         })(),
@@ -13620,7 +13620,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
                 plant.parentUID && React.createElement(PlantChip, { uid: plant.parentUID, color: '#3A7A1A' })
             ),
             isHybrid && plant.isIntrageneric !== undefined && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginTop: 4 }) },
-                plant.isIntrageneric ? 'Intrageneric hybrid (same genus)' : 'Intergeneric hybrid' + (plant.nothogenus ? ' ┬╖ nothogenus: ' + plant.nothogenus : '')
+                plant.isIntrageneric ? 'Intrageneric hybrid (same genus)' : 'Intergeneric hybrid' + (plant.nothogenus ? ' · nothogenus: ' + plant.nothogenus : '')
             )
         ),
 
@@ -14005,7 +14005,7 @@ function WarningBadge({ plant }) {
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, marginLeft: 'auto', flexShrink: 0 }) },
                         w.source === 'prop' ? 'Prop failed' : 'Lost',
                         " ",
-                        w.date ? `┬╖ ${w.date}` : '',
+                        w.date ? `· ${w.date}` : '',
                         w.matchedGenus && w.matchedGenus.toLowerCase() !== String(plant.genus || '').toLowerCase() &&
                             React.createElement("span", { style: { marginLeft: 4, color: theme.btnP.bg } },
                                 "(via ",
@@ -14216,14 +14216,14 @@ function PhyloScreen({ inline }) {
                     'Horsetail': '≡ƒÄï', 'Basal Angiosperm': '≡ƒ¬╖', 'Unknown': 'Γ¥ô',
                 };
                 var CLADE_DESC = {
-                    'Monocot': 'Single seed leaf ┬╖ includes grasses, palms, aroids, orchids',
-                    'Dicot': 'Two seed leaves ┬╖ the largest group of flowering plants',
-                    'Magnoliid': 'Ancient lineage ┬╖ includes magnolias, laurels, peppers',
-                    'Fern': 'Vascular non-seed plants ┬╖ spore reproduction',
-                    'Gymnosperm': 'Naked seeds ┬╖ conifers, cycads, ginkgo',
-                    'Lycophyte': 'Club mosses ┬╖ among oldest vascular plants',
-                    'Horsetail': 'Ancient jointed stems ┬╖ single genus Equisetum',
-                    'Basal Angiosperm': 'Early diverging flowering plants ┬╖ water lilies',
+                    'Monocot': 'Single seed leaf · includes grasses, palms, aroids, orchids',
+                    'Dicot': 'Two seed leaves · the largest group of flowering plants',
+                    'Magnoliid': 'Ancient lineage · includes magnolias, laurels, peppers',
+                    'Fern': 'Vascular non-seed plants · spore reproduction',
+                    'Gymnosperm': 'Naked seeds · conifers, cycads, ginkgo',
+                    'Lycophyte': 'Club mosses · among oldest vascular plants',
+                    'Horsetail': 'Ancient jointed stems · single genus Equisetum',
+                    'Basal Angiosperm': 'Early diverging flowering plants · water lilies',
                     'Unknown': 'Classification not found',
                 };
                 var accentColor = CLADE_COLORS[clade] || '#555';
@@ -14247,7 +14247,7 @@ function PhyloScreen({ inline }) {
                             React.createElement('span', { style: { fontSize: '11px', color: accentColor, opacity: 0.7, fontWeight: 900 } }, isGOpen ? 'Γû╛' : 'Γû╕'),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, fontStyle: 'italic' }) }, genus),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginLeft: 2 }) },
-                                plantList.length + ' owned' + (knownSpecies.length > 0 ? ' ┬╖ ' + knownSpecies.length + ' spp known' : '')
+                                plantList.length + ' owned' + (knownSpecies.length > 0 ? ' · ' + knownSpecies.length + ' spp known' : '')
                             ),
                             taxonInfo && taxonInfo.notes && React.createElement('span', {
                                 title: taxonInfo.notes,
@@ -14281,7 +14281,7 @@ function PhyloScreen({ inline }) {
                             knownSpecies.length > 0 && React.createElement('div', { style: { marginTop: 4 } },
                                 React.createElement('div', { style: Object.assign({}, pxS, {
                                     fontSize: '11px', color: theme.txtS, opacity: 0.55, marginBottom: 3, letterSpacing: '0.05em'
-                                }) }, 'KNOWN SPECIES: ' + knownSpecies.slice(0, 12).join(' ┬╖ ') + (knownSpecies.length > 12 ? ' +' + (knownSpecies.length - 12) + ' more' : ''))
+                                }) }, 'KNOWN SPECIES: ' + knownSpecies.slice(0, 12).join(' · ') + (knownSpecies.length > 12 ? ' +' + (knownSpecies.length - 12) + ' more' : ''))
                             )
                         )
                     );
@@ -14306,7 +14306,7 @@ function PhyloScreen({ inline }) {
                                 border: '1px solid ' + accentColor + '40',
                             }) }, family),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
-                                genera.length + (genera.length !== 1 ? ' genera' : ' genus') + ' ┬╖ ' + familyCount + ' plants'
+                                genera.length + (genera.length !== 1 ? ' genera' : ' genus') + ' · ' + familyCount + ' plants'
                             )
                         ),
                         isFOpen && React.createElement('div', { style: { paddingTop: 2 } },
@@ -14330,7 +14330,7 @@ function PhyloScreen({ inline }) {
                             React.createElement('span', { style: { fontSize: '13px', color: accentColor } }, isOOpen ? 'Γû╛' : 'Γû╕'),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 700, color: theme.txtP }) }, order),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
-                                families.length + (families.length !== 1 ? ' families' : ' family') + ' ┬╖ ' + orderTotal + ' plants'
+                                families.length + (families.length !== 1 ? ' families' : ' family') + ' · ' + orderTotal + ' plants'
                             )
                         ),
                         isOOpen && React.createElement('div', { style: { paddingTop: 2 } },
@@ -14357,7 +14357,7 @@ function PhyloScreen({ inline }) {
                             React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' } },
                                 React.createElement('span', { style: Object.assign({}, px8, { fontSize: '13px', color: accentColor, letterSpacing: '0.08em' }) }, clade.toUpperCase()),
                                 React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
-                                    orderCount + (orderCount !== 1 ? ' orders' : ' order') + ' ┬╖ ' + count + (count !== 1 ? ' plants' : ' plant')
+                                    orderCount + (orderCount !== 1 ? ' orders' : ' order') + ' · ' + count + (count !== 1 ? ' plants' : ' plant')
                                 ),
                                 React.createElement('span', { style: { fontSize: '11px', color: accentColor, fontWeight: 900 } }, isOpen ? 'Γû╛' : 'Γû╕')
                             ),
@@ -15652,7 +15652,7 @@ function GalleryScreen({ uid, name }) {
                 photos.length > 1 && React.createElement('button', { onClick: function(e) { e.stopPropagation(); setLightbox(function(lb) { var next = (lb.idx + 1) % photos.length; return { url: photos[next].viewUrl, name: photos[next].name, idx: next }; }); }, style: { position: 'absolute', right: -40, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, 'ΓÇ║')
             ),
             React.createElement('div', { style: Object.assign({}, pxS, { color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginTop: 10 }) },
-                (lightbox.idx + 1) + ' / ' + photos.length + (lightbox.name ? '  ┬╖  ' + formatDate(lightbox.name) : '') + '  ┬╖  tap outside to close'
+                (lightbox.idx + 1) + ' / ' + photos.length + (lightbox.name ? '  ·  ' + formatDate(lightbox.name) : '') + '  ·  tap outside to close'
             )
         )
     );
