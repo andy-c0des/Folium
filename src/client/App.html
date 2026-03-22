@@ -7714,6 +7714,7 @@ function MyPlantsScreen({ openTab, prefill }) {
     const [activeTab, setActiveTab] = useState(openTab || 'plants'); // 'plants' | 'props' | 'phylo'
     const [selectedLocs, setSelectedLocs] = useState(['__any__']); // default to 'Any' so plants load on open
     const [plants, setPlants] = useState([]);
+    const [plantPage, setPlantPage] = useState(0);
     const [loading, setLoading] = useState(false);
     const [fetchError, setFetchError] = useState('');
     const [thumbs, setThumbs] = useState({});
@@ -8590,7 +8591,20 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "flex gap-2 mt-3" },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")))),
-                    true && (React.createElement("div", { style: { overflowY: 'auto', maxHeight: '60vh' } }, React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, plants.map(p => {
+                    (function() {
+                        var PAGE_SIZE = 10;
+                        var pageList = plantFilter.trim() ? filteredPlants : plants;
+                        var totalPages = Math.ceil(pageList.length / PAGE_SIZE);
+                        var pagePlants = pageList.slice(plantPage * PAGE_SIZE, (plantPage + 1) * PAGE_SIZE);
+                        return React.createElement(React.Fragment, null,
+                            pageList.length > PAGE_SIZE && React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+                                React.createElement("button", { type: "button", onClick: function() { setPlantPage(function(p) { return Math.max(0, p - 1); }); }, disabled: plantPage === 0,
+                                    style: { fontFamily: "'Press Start 2P', monospace", fontSize: 11, padding: '6px 12px', cursor: plantPage === 0 ? 'default' : 'pointer', opacity: plantPage === 0 ? 0.4 : 1, background: 'transparent', border: '2px solid #7A4A1A', color: '#3C1800' } }, "< PREV"),
+                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans', sans-serif", fontSize: 13, color: '#3C1800' } }, (plantPage * PAGE_SIZE + 1) + "-" + Math.min((plantPage + 1) * PAGE_SIZE, pageList.length) + " of " + pageList.length),
+                                React.createElement("button", { type: "button", onClick: function() { setPlantPage(function(p) { return Math.min(totalPages - 1, p + 1); }); }, disabled: plantPage >= totalPages - 1,
+                                    style: { fontFamily: "'Press Start 2P', monospace", fontSize: 11, padding: '6px 12px', cursor: plantPage >= totalPages - 1 ? 'default' : 'pointer', opacity: plantPage >= totalPages - 1 ? 0.4 : 1, background: 'transparent', border: '2px solid #7A4A1A', color: '#3C1800' } }, "NEXT >")
+                            ),
+                            React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, pagePlants.map(p => {
                         const uid = String(p.uid || '');
                         const sharedPatch = getSharedPatch ? getSharedPatch(uid) : null;
                         const q = sharedPatch ? Object.assign({}, p, sharedPatch) : p;
@@ -8636,7 +8650,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                     })
                                 }, '+ Schedule')
                             )));
-                    }))))))))),
+                    })))); })()),
             activeTab === 'props' && React.createElement(PropsSection, { locations: locations, prefill: prefill }),
             activeTab === 'phylo' && React.createElement(PhyloScreen, { inline: true }),
             React.createElement("div", { className: "mt-4 flex gap-2" },
@@ -10350,6 +10364,7 @@ function BatchWaterScreen() {
     const { isSmall, isDesktop } = useScreenSize();
     const [selectedLoc, setSelectedLoc] = useState('');
     const [plants, setPlants] = useState([]);
+    const [plantPage, setPlantPage] = useState(0);
     const [selected, setSelected] = useState({});
     const [action, setAction] = useState('Watered');
     const [status, setStatus] = useState(null);
@@ -10447,6 +10462,7 @@ function BatchFertilizeScreen() {
     const { isSmall, isDesktop } = useScreenSize();
     const [selectedLoc, setSelectedLoc] = useState('');
     const [plants, setPlants] = useState([]);
+    const [plantPage, setPlantPage] = useState(0);
     const [selected, setSelected] = useState({});
     const [action, setAction] = useState('Fertilized');
     const [status, setStatus] = useState(null);
