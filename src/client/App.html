@@ -15888,7 +15888,7 @@ function CarlHomeScreen() {
     const [query, setQuery] = React.useState('');
 
     React.useEffect(() => {
-        if (!allPlantsCacheReady) { getAllPlants().catch(() => {}); }
+        getAllPlants().catch(() => {});
     }, []);
 
     const filtered = React.useMemo(() => {
