@@ -8494,6 +8494,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "empty-sub" }, DEMO_MODE ? "Try selecting a different location or add some plants." : "Check that the location name matches your sheet exactly (case-sensitive)."))),
                     !loading && hasSelection && plants.length > 0 && fetchError && React.createElement(StatusMessage, { type: 'warning', message: 'Partial load: ' + plants.length + ' plants loaded, but some rows had errors: ' + fetchError }),
                     !loading && hasSelection && plants.length > 0 && filteredPlants.length === 0 && React.createElement(StatusMessage, { type: "info", message: "No plants match your filter." }),
+                    React.createElement("div", {style:{background:'navy',color:'white',padding:4,fontSize:12}}, 'PRE-EDIT: plants=' + plants.length + ' editUid=[' + editUid + ']'),
                     editUid && (React.createElement("div", { className: "mb-3 mt-2", style: {
                             border: '4px solid ' + theme.btnP.border,
                             background: theme.cardBg,
@@ -8599,7 +8600,6 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "flex gap-2 mt-3" },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")))),
-                    React.createElement("div", {style:{background:'navy',color:'white',padding:8}}, 'STATE: plants=' + plants.length + ' loading=' + loading + ' hasSelection=' + hasSelection),
                     plants.length > 0 && (React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, (plantFilter.trim() ? filteredPlants : plants).map(p => {
                         const uid = String(p.uid || '');
                         const sharedPatch = getSharedPatch ? getSharedPatch(uid) : null;
