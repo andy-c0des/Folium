@@ -8011,15 +8011,31 @@ function MyPlantsScreen({ openTab, prefill }) {
         return () => { alive = false; };
     }, [selectedLocs]);
     useEffect(() => {
-        // Build thumbs map directly from plant data (thumbUrl is included in plantosGetAllPlantsLite)
-        const list = [...(plants || []), ...(globalResults || [])];
-        const next = {};
-        list.forEach(function(p) {
-            var uid = String(p.uid || '');
-            if (uid && p.thumbUrl) next[uid] = p.thumbUrl;
-        });
+        // First pass: use thumbUrl from plant data if available (fast)
+        var list = [...(plants || []), ...(globalResults || [])];
+        var next = {};
+        list.forEach(function(p) { var uid = String(p.uid || ''); if (uid && p.thumbUrl) next[uid] = p.thumbUrl; });
         if (Object.keys(next).length) setThumbs(function(prev) { return Object.assign({}, prev, next); });
-    }, [plants, globalResults]);
+        // Second pass: fetch individually for visible page plants that have no thumb
+        var pagePlants = plants.slice(plantPage * 10, (plantPage + 1) * 10);
+        var missing = pagePlants.filter(function(p) { var uid = String(p.uid||''); return uid && !thumbs[uid] && !next[uid]; });
+        if (missing.length === 0 || DEMO_MODE) return;
+        var alive = true;
+        (async function() {
+            for (var i = 0; i < missing.length; i++) {
+                if (!alive) break;
+                var uid = String(missing[i].uid || '');
+                try {
+                    var res = await getLatestPhoto(uid);
+                    if (res && res.ok && res.photo && res.photo.thumbUrl) {
+                        var url = res.photo.thumbUrl;
+                        setThumbs(function(prev) { var n = Object.assign({}, prev); n[uid] = url; return n; });
+                    }
+                } catch(e) {}
+            }
+        })();
+        return function() { alive = false; };
+    }, [plants, globalResults, plantPage]);
     function openPlant(uid) { navigate('plant', { uid }); }
     useEffect(() => {
         let alive = true;
