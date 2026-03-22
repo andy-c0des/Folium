@@ -6033,8 +6033,7 @@ function WateringScreen() {
         const locOk = !locFilter || String(meta.location || '').trim().toLowerCase() === String(locFilter).trim().toLowerCase();
         const txt = String(meta.subText || '').toLowerCase();
         const free = String(subContains || '').trim().toLowerCase();
-        const semihydroKeys = ['leca', 'lechuza pon', 'perlite', 'pumice', 'fluval stratum', 'semi-hydro', 'hydro mix', '100% perlite'];
-        const presetOk = !subPreset || (subPreset === '__semihydro__' ? semihydroKeys.some(k => txt.includes(k)) : txt.includes(String(subPreset).toLowerCase()));
+        const presetOk = !subPreset || txt === String(subPreset).toLowerCase();
         const freeOk = !free || txt.includes(free);
         return locOk && presetOk && freeOk;
     }
@@ -6203,53 +6202,18 @@ function WateringScreen() {
                 React.createElement(TabButton, { id: "manual", label: "Manual", icon: "\u270F" })),
             React.createElement("div", { className: "  border-2 border-[#7A4A1A] shadow-sm p-3 mb-3" },
                 React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: '#2C1000', marginBottom: '8px' }) }, "FILTERS"),
-                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: '#2C1000', marginBottom: 6 }) }, "Location"),
-                React.createElement("div", { className: "flex flex-wrap gap-2 mb-3" },
-                    React.createElement("button", { type: "button", onClick: () => setLocFilter(''),
-                        className: "px-3 py-1 border-2",
-                        style: { fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-                            background: !locFilter ? '#3C1800' : 'transparent',
-                            color: !locFilter ? '#F5E8D0' : '#3C1800',
-                            borderColor: '#3C1800' } }, "All"),
-                    (locations || []).map(function(loc) {
-                        var active = locFilter === loc;
-                        return React.createElement("button", { key: loc, type: "button", onClick: () => setLocFilter(active ? '' : loc),
-                            className: "px-3 py-1 border-2",
-                            style: { fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-                                background: active ? '#3C1800' : 'transparent',
-                                color: active ? '#F5E8D0' : '#3C1800',
-                                borderColor: '#3C1800' } }, loc);
-                    })
-                ),
-                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: '#2C1000', marginBottom: 4 }) }, "Substrate"),
-                React.createElement("div", { className: "flex flex-wrap gap-2 mb-2" },
-                    [
-                        { label: 'All', key: '' },
-                        { label: '🌿 All Semi-Hydro', key: '__semihydro__' },
-                        { label: 'LECA', key: 'leca' },
-                        { label: 'Lechuza Pon', key: 'lechuza pon' },
-                        { label: 'Perlite', key: 'perlite' },
-                        { label: 'Pumice', key: 'pumice' },
-                        { label: 'Fluval Stratum', key: 'fluval stratum' },
-                        { label: 'Aroid Mix', key: 'aroid mix' },
-                        { label: 'Chunky Aroid', key: 'chunky aroid' },
-                        { label: 'Soil Mix', key: 'soil mix' },
-                        { label: 'Sphagnum', key: 'sphagnum' },
-                        { label: 'Coco Coir', key: 'coco coir' },
-                        { label: 'Semi-Hydro (PON)', key: 'semi-hydro (pon)' },
-                        { label: 'Semi-Hydro (LECA)', key: 'semi-hydro (leca)' },
-                        { label: 'Custom Mix', key: 'custom mix' },
-                    ].map(function(s) {
-                        var active = subPreset === s.key;
-                        return React.createElement("button", { key: s.key || 'all', type: "button",
-                            onClick: () => setSubPreset(active ? '' : s.key),
-                            className: "px-3 py-1 border-2",
-                            style: { fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                background: active ? '#1A3A0A' : 'transparent',
-                                color: active ? '#C8E8A8' : '#2C1000',
-                                borderColor: active ? '#4A8A1A' : '#3C1800' } }, s.label);
-                    })
-                ),
+                React.createElement("div", { className: "flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-between" },
+                    React.createElement("div", { className: "flex-1" },
+                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: '#2C1000' }) }, "Location"),
+                        React.createElement("select", { value: locFilter, onChange: e => setLocFilter(e.target.value), className: "mt-1 w-full border-4 border-[#3C1800]  p-2", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: '#2C1000' }) },
+                            React.createElement("option", { value: "" }, "All"),
+                            (locations || []).map(loc => (React.createElement("option", { key: loc, value: loc }, loc))))),
+                    React.createElement("button", { type: "button", onClick: clearFilters, className: "underline", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: '#2C1000', fontWeight: 900 }) }, "Clear filters")),
+                React.createElement("div", { className: "mt-3" },
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: '#2C1000', marginBottom: 4 }) }, "Medium"),
+                    React.createElement("select", { value: subPreset, onChange: function(e) { setSubPreset(e.target.value); }, className: "w-full border-4 border-[#3C1800] p-2", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: '#2C1000' }) },
+                        SUB_PRESETS.map(function(p) { return React.createElement("option", { key: p.key || 'all', value: p.key }, p.label); })
+                    ),
                     filtersActive && (React.createElement("div", { className: "mt-2 flex items-center justify-between gap-2 flex-wrap" },
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: '#2C1000', fontWeight: 900 }) },
                             "Showing ",
