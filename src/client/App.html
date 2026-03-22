@@ -8590,7 +8590,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "flex gap-2 mt-3" },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")))),
-                    plants.length > 0 && (React.createElement("div", { style: { overflowY: 'auto', maxHeight: '60vh' } }, React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, plants.map(p => {
+                    true && (React.createElement("div", { style: { overflowY: 'auto', maxHeight: '60vh' } }, React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" }, plants.map(p => {
                         const uid = String(p.uid || '');
                         const sharedPatch = getSharedPatch ? getSharedPatch(uid) : null;
                         const q = sharedPatch ? Object.assign({}, p, sharedPatch) : p;
