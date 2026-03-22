@@ -110,8 +110,6 @@
     }
 
     .pb-safe { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-    .pt-safe { padding-top: max(12px, env(safe-area-inset-top)); }
-    .mt-safe { margin-top: max(12px, env(safe-area-inset-top)); }
 
     .paper-texture { position: relative; }
     .paper-texture::before {
@@ -659,8 +657,7 @@
 const { useState, useEffect, useRef, createContext, useContext, useMemo } = React;
 const BOOT = window.PLANTOS_BOOT || {};
 const HAS_GAS = !!(window.google && google.script && google.script.run);
-const DEMO_MODE = false;
-const PLANTOS_API_URL = 'https://script.google.com/macros/s/AKfycbw1EMhF1Mhqxtq6pQnM-K-1JkHw5rTesHwsBpaz6FFoNzc5vyzDMLwa8aIJsyjP5_cbyA/exec';
+const DEMO_MODE = !HAS_GAS;
 const pxS = { fontFamily: "'Pixelify Sans', cursive" };
 const px8 = { fontFamily: "'Press Start 2P', cursive" };
 
@@ -2117,27 +2114,27 @@ function taxonCommonNames(genus) {
 }
 
 function gasCall(fn, ...args) {
-    return new Promise(function(resolve, reject) {
-        var token = localStorage.getItem('plantos_auth_token') || '';
-        var body = { fn: fn, args: args, token: token };
-        fetch(PLANTOS_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(body)
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(res) {
-            if (res && res.error === 'Unauthorized') {
-                localStorage.removeItem('plantos_auth_token');
-                var err = new Error('Authentication required');
-                err.needsAuth = true;
-                window.__plantosHandleUnauth && window.__plantosHandleUnauth();
-                reject(err);
-                return;
-            }
-            resolve(res);
-        })
-        .catch(reject);
+    return new Promise((resolve, reject) => {
+        if (!(window.google && google.script && google.script.run)) {
+            reject(new Error("Apps Script runtime unavailable — open via Google Sheets"));
+            return;
+        }
+        var runner = google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(function(err) {
+                var msg = (err && (err.message || err.toString())) || ('Server error calling ' + fn);
+                if (msg.indexOf('not found') !== -1 || msg.indexOf('not a function') !== -1) {
+                    msg = 'Redeploy needed: "' + fn + '" is not in your deployed Apps Script. Go to Deploy → Manage Deployments → New Version.';
+                }
+                reject(new Error(msg));
+            });
+        try {
+            var method = runner[fn];
+            if (!method || typeof method !== 'function') throw new Error('not a function');
+            method.apply(runner, args);
+        } catch(applyErr) {
+            reject(new Error('Redeploy needed: "' + fn + '" is not in your deployed Apps Script. Go to Deploy → Manage Deployments → New Version.'));
+        }
     });
 }
 
@@ -5483,7 +5480,7 @@ function HomeScreen() {
             className: "nav-grid-btn hover-lift relative",
             style: { borderColor: '#2E7A2E', background: '#1A3A1A', color: '#A8E89C', boxShadow: '0 3px 0 #1A5A1A' }
         },
-            React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
+            React.createElement(CarlBust, { px: 2 }),
             React.createElement("span", null, "Carl"),
             React.createElement("span", { style: { position: 'absolute', top: -6, right: -6, background: '#2E7A2E', border: '2px solid #A8E89C', color: '#A8E89C', fontSize: '10px', fontFamily: "'Press Start 2P', cursive", padding: '1px 5px', lineHeight: 1.4 } }, "AI")),
         React.createElement("button", { type: "button", onClick: () => navigate('add'),
@@ -5573,7 +5570,7 @@ function HomeScreen() {
                     React.createElement(PlantCard, null,
                         React.createElement(NavGrid, null))))));
     }
-    return (React.createElement("div", { className: `flex flex-col ${pad} w-full pb-16 screen-enter`, style: { maxWidth: maxW, margin: '0 auto', paddingTop: 'max(16px, env(safe-area-inset-top))' } },
+    return (React.createElement("div", { className: `flex flex-col ${pad} w-full pb-16 screen-enter`, style: { maxWidth: maxW, margin: '0 auto' } },
         React.createElement(Header, null),
         React.createElement(HomeGreeting, null),
         React.createElement(StatsBar, null),
@@ -9078,7 +9075,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                 system: SYSTEM,
                 messages: [...claudeHistory, { role: 'user', content: queryText }]
             };
-            if (!PLANTOS_API_URL) throw new Error('No API URL configured.');
+            if (!HAS_GAS) throw new Error('Not connected to Google Apps Script. Open via Google Sheets to use Carl AI.');
             const gasResp = await gasCall('callClaude', JSON.stringify(gasPayload));
             if (!gasResp || gasResp.error) throw new Error((gasResp && gasResp.error) || 'GAS proxy failed');
 
@@ -9281,7 +9278,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                         React.createElement('div', { style: { position: 'absolute', top: 5, left: 6, fontSize: 11, opacity: 0.6, color: '#C8A84B' } }, '✦'),
                         React.createElement('div', { style: { position: 'absolute', top: 12, right: 5, fontSize: 8, opacity: 0.5, color: '#C8A84B' } }, '✧'),
                         React.createElement('div', { style: { position: 'absolute', top: 4, left: '50%', fontSize: 9, opacity: 0.4, color: '#C8A84B' } }, '⋆'),
-                        React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
+                        React.createElement(CarlBust, { px: 4 }),
                         React.createElement('div', { style: {
                             width: '100%',
                             background: 'linear-gradient(180deg, #D4B050 0%, #A87828 100%)',
@@ -9387,7 +9384,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                             background: '#0E0A04',
                             overflow: 'hidden', lineHeight: 0,
                         }},
-                            React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F")
+                            React.createElement(CarlBust, { px: 2 })
                         ),
                         React.createElement('div', { style: Object.assign({}, pxS, {
                             fontSize: '12px', padding: '10px 12px', maxWidth: '90%', lineHeight: 1.6,
@@ -15881,69 +15878,8 @@ function SettingsScreen() {
 <?!= include('client/carl') ?>
 
 <script type="text/javascript">
-function CarlHomeScreen() {
-    const { navigate } = useNavigation();
-    const { allPlantsCache, allPlantsCacheReady, getAllPlants } = usePlantData();
-    const theme = useTheme();
-    const [query, setQuery] = React.useState('');
-
-    React.useEffect(() => {
-        getAllPlants().catch(() => {});
-    }, []);
-
-    const filtered = React.useMemo(() => {
-        const list = allPlantsCache || [];
-        if (!query.trim()) return list.slice(0, 20);
-        const q = query.toLowerCase();
-        return list.filter(p => {
-            const name = (p.primary || p.genus || '').toLowerCase();
-            const nick = (p.nickname || '').toLowerCase();
-            return name.includes(q) || nick.includes(q);
-        }).slice(0, 20);
-    }, [allPlantsCache, query]);
-
-    return React.createElement("div", { className: "flex flex-col pb-16 screen-enter", style: { maxWidth: 480, margin: '0 auto', padding: '0 12px' } },
-        React.createElement("div", { style: { textAlign: 'center', padding: '24px 16px 16px' } },
-            React.createElement("div", { style: { fontSize: 48, marginBottom: 8 } }, "🌿"),
-            React.createElement("div", { style: { fontFamily: 'var(--font-pixel)', fontSize: 13, color: theme.txtP, marginBottom: 6 } }, "CARL"),
-            React.createElement("div", { style: { fontSize: 13, color: theme.txtS, lineHeight: 1.5, maxWidth: 300, margin: '0 auto' } },
-                "Plant pathologist. Pick a plant to ask Carl about it.")),
-        React.createElement("input", {
-            type: "search",
-            placeholder: "Search your plants...",
-            value: query,
-            onChange: e => setQuery(e.target.value),
-            style: {
-                width: '100%', padding: '10px 14px', borderRadius: 8, border: '2px solid ' + theme.cardBorder,
-                background: theme.cardBg, color: theme.txtP, fontSize: 15, marginBottom: 12,
-                fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box'
-            }
-        }),
-        !allPlantsCacheReady && React.createElement("div", { style: { textAlign: 'center', color: theme.txtS, padding: 24 } }, "Loading plants..."),
-        allPlantsCacheReady && filtered.length === 0 && React.createElement("div", { style: { textAlign: 'center', color: theme.txtS, padding: 24 } }, "No plants found."),
-        React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
-            filtered.map(p => React.createElement("button", {
-                key: p.uid || p.primary,
-                type: "button",
-                onClick: () => navigate('plant', { uid: p.uid }),
-                style: {
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                    background: theme.cardBg, border: '2px solid ' + theme.cardBorder,
-                    borderRadius: 10, cursor: 'pointer', textAlign: 'left', width: '100%'
-                }
-            },
-                React.createElement("span", { style: { fontSize: 24 } }, "🌱"),
-                React.createElement("div", null,
-                    React.createElement("div", { style: { color: theme.txtP, fontWeight: 700, fontSize: 14 } }, p.nickname || p.primary || p.genus),
-                    p.nickname && React.createElement("div", { style: { color: theme.txtS, fontSize: 12 } }, p.primary || p.genus)
-                )
-            ))
-        )
-    );
-}
-
 function AppContent() {
-    React.useEffect(() => { if (!DEMO_MODE && typeof kbCacheLoad === 'function') kbCacheLoad(); }, []);
+    React.useEffect(() => { if (!DEMO_MODE) kbCacheLoad(); }, []);
     const { route, navigate, goBack, canGoBack } = useNavigation();
     const { isDesktop } = useScreenSize();
     const currentScreen = route && route.screen ? route.screen : 'home';
@@ -15955,7 +15891,7 @@ function AppContent() {
             case 'quick-log': return React.createElement(WateringScreen, null); // merged into watering
             case 'add': return React.createElement(AddScreen, null);
             case 'carl': return React.createElement(CarlHomeScreen, null);
-            case 'carl-chat': return React.createElement(CarlHomeScreen, null);
+            case 'carl-chat': return React.createElement(CarlClassicScreen, null);
             case 'my-plants': return React.createElement(MyPlantsScreen, { openTab: (route.params && route.params.openTab) ? route.params.openTab : null, prefill: (route.params && route.params.prefill) ? route.params.prefill : null });
             case 'environments': return React.createElement(EnvironmentsScreen, null);
             case 'archive': return React.createElement(ArchiveScreen, null);
@@ -15980,9 +15916,9 @@ function AppContent() {
                 top: isDesktop ? 16 : 'calc(12px + env(safe-area-inset-top))',
                 left: isDesktop ? 16 : 12,
                 zIndex: 30
-            } }, canGoBack ? (React.createElement(PlantButton, { onClick: goBack, variant: "secondary", className: "px-4 py-3" }, "\u2190 Back")) : (React.createElement(PlantButton, { onClick: () => navigate('home'), variant: "secondary", className: "px-4 py-3" }, "\uD83C\uDFE0 Home")))),
+            } }, canGoBack ? (React.createElement(PlantButton, { onClick: goBack, variant: "secondary", className: "px-3 py-2" }, "\u2190 Back")) : (React.createElement(PlantButton, { onClick: () => navigate('home'), variant: "secondary", className: "px-3 py-2" }, "\uD83C\uDFE0 Home")))),
         React.createElement("div", { className: "scroll-y", style: { flex: 1, minHeight: 0, position: 'relative', zIndex: 10, overflowY: 'auto',
-                paddingTop: isDesktop ? 0 : 'calc(56px + env(safe-area-inset-top))' } }, render()),
+                paddingTop: isDesktop ? 0 : 4 } }, render()),
         React.createElement(BottomNav, { current: currentScreen, navigate: navigate, goBack: goBack })));
 }
 function GasBannerTip() {
@@ -16001,71 +15937,6 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: '#5A8A38', fontWeight: 900, marginBottom: 2 }) }, "TIP: Add to Home Screen"),
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
-}
-function PlantOSAuthOverlay({ onSuccess }) {
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    function handleSubmit(e) {
-        e.preventDefault();
-        if (!password || loading) return;
-        setLoading(true);
-        setError('');
-        gasCall('plantosValidateToken', password)
-            .then(function(res) {
-                setLoading(false);
-                if (res && res.ok) {
-                    localStorage.setItem('plantos_auth_token', password);
-                    onSuccess();
-                } else {
-                    setError('Invalid password');
-                }
-            })
-            .catch(function() {
-                setLoading(false);
-                setError('Login failed. Check your connection.');
-            });
-    }
-    return React.createElement('div', {
-        style: { position: 'fixed', inset: 0, background: '#0E1A10',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }
-    },
-        React.createElement('div', {
-            style: { background: '#1A2C1E', border: '3px solid #3A6B28',
-                padding: '32px 28px', borderRadius: 8, minWidth: 280,
-                maxWidth: '90vw', textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }
-        },
-            React.createElement('div', { style: Object.assign({}, px8, { fontSize: 10, color: '#C8E8A8', marginBottom: 8 }) }, '🌿 PLANTOS'),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: 14, color: '#8ABF68', marginBottom: 24 }) }, 'Enter password to continue'),
-            React.createElement('form', { onSubmit: handleSubmit },
-                React.createElement('input', {
-                    type: 'password',
-                    value: password,
-                    onChange: function(e) { setPassword(e.target.value); },
-                    placeholder: 'Password',
-                    disabled: loading,
-                    autoFocus: true,
-                    style: { width: '100%', padding: '10px 12px', marginBottom: 12,
-                        background: '#0E1A10', border: '2px solid #3A6B28',
-                        color: '#C8E8A8', fontFamily: "'Pixelify Sans', cursive",
-                        fontSize: 14, borderRadius: 4, boxSizing: 'border-box', outline: 'none' }
-                }),
-                error ? React.createElement('div', {
-                    style: Object.assign({}, pxS, { color: '#E84B4B', fontSize: 12, marginBottom: 10 })
-                }, error) : null,
-                React.createElement('button', {
-                    type: 'submit',
-                    disabled: loading || !password,
-                    style: { width: '100%', padding: '10px 0',
-                        background: loading ? '#2A4B1E' : '#3A6B28',
-                        color: '#C8E8A8', border: '2px solid #5A8B48',
-                        fontFamily: "'Pixelify Sans', cursive", fontSize: 14,
-                        borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer',
-                        opacity: (loading || !password) ? 0.7 : 1 }
-                }, loading ? '...' : 'Login')
-            )
-        )
-    );
 }
 function PlantOSApp() {
     return (React.createElement(ThemeProvider, null,
