@@ -11785,7 +11785,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             React.createElement("div", { className: "flex gap-2 pt-2" },
                                 React.createElement(PlantButton, { block: false, onClick: submitRepot }, "Save Repot"),
                                 React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => setRepotOpen(false) }, "Cancel")))))),
-                editOpen && (console.log('[PlantOS] RENDERING edit modal'), React.createElement("div", {
+                editOpen && ReactDOM.createPortal(React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
                         zIndex: 9999,
@@ -11990,7 +11990,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 POT_SHAPE_NAMES.map(s => React.createElement("option", { key: s, value: s }, s)))),
                         React.createElement("div", { className: "flex gap-2 pt-1" },
                             React.createElement(PlantButton, { block: false, onClick: submitEdit }, "Save Changes"),
-                            React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => setEditOpen(false) }, "Cancel"))))))),
+                            React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => setEditOpen(false) }, "Cancel"))))), document.body),
         plant && React.createElement("div", { id: 'carl-section-' + plant.uid },
             React.createElement(ProblemsSection, { plant: plant, autoOpenAI: autoOpenAI, onAutoOpenDone: function() { setAutoOpenAI(false); } })),
         compostOpen && plant && (React.createElement(CompostModal, { plant: plant, onClose: () => setCompostOpen(false), onDone: () => { setCompostOpen(false); goBack(); } }))))))));
@@ -16018,7 +16018,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '2.8';
+const PLANTOS_VERSION = '2.9';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
