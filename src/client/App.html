@@ -556,9 +556,9 @@
     /* Sticky header */
     .sticky-header {
       position: sticky; top: 0; z-index: 50;
-      padding: 8px 12px;
+      padding: 12px 16px;
       border-bottom: 3px solid;
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 10px;
     }
     .header-nav-scroll {
       display: flex; gap: 6px; overflow-x: auto;
@@ -567,10 +567,10 @@
     }
     .header-nav-scroll::-webkit-scrollbar { display: none; }
     .header-nav-btn {
-      display: flex; align-items: center; gap: 5px;
-      padding: 6px 12px; border: 2px solid;
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 16px; border: 3px solid;
       font-family: var(--font-body);
-      font-weight: 900; font-size: var(--fs-small);
+      font-weight: 900; font-size: var(--fs-ui);
       cursor: pointer; white-space: nowrap; position: relative;
       transition: transform 0.08s ease;
     }
@@ -5497,15 +5497,23 @@ function HomeScreen() {
     // ΓöÇΓöÇ Upcoming Section (compact) ΓöÇΓöÇ
     const UpcomingSection = () => {
         if (upcoming.length === 0 && fertUpcoming.length === 0) return null;
+        const _upState = React.useState(false);
+        const upOpen = _upState[0], setUpOpen = _upState[1];
         const cap = isDesktop ? 6 : 4;
+        const total = upcoming.length + fertUpcoming.length;
         return React.createElement("div", { className: "mb-3" },
-            React.createElement("div", { className: "flex items-center gap-2 mb-2" },
-                React.createElement("span", { style: { fontSize: 14 } }, "\u23F0"),
-                React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: 'var(--c-soon)', letterSpacing: '0.04em' }) },
-                    "COMING UP (",
-                    upcoming.length + fertUpcoming.length,
-                    ")")),
-            React.createElement("div", { className: "space-y-1" },
+            React.createElement("button", {
+                type: "button",
+                className: "collapsible-toggle" + (upOpen ? " open" : ""),
+                onClick: () => setUpOpen(!upOpen),
+                style: { color: 'var(--c-soon)', padding: '8px 4px' }
+            },
+                React.createElement("div", { className: "flex items-center gap-2" },
+                    React.createElement("span", { style: { fontSize: 14 } }, "\u23F0"),
+                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, letterSpacing: '0.04em' }) },
+                        "COMING UP (" + total + ")")),
+                React.createElement("span", { className: "chevron", style: { fontSize: 14 } }, "\u25BC")),
+            upOpen && React.createElement("div", { className: "space-y-1" },
                 upcoming.slice(0, cap).map(p => React.createElement("div", {
                     key: 'w-' + p.uid,
                     onClick: () => navigate('plant', { uid: p.uid }),
@@ -5524,10 +5532,10 @@ function HomeScreen() {
                     React.createElement("span", { style: { fontSize: 14, flexShrink: 0 } }, "\uD83C\uDF3E"),
                     React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.primary),
                     React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: 'var(--c-fert)', flexShrink: 0 }) }, p.due))),
-                (upcoming.length + fertUpcoming.length) > cap && React.createElement("div", {
+                total > cap && React.createElement("div", {
                     style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-soon)', paddingLeft: 4, cursor: 'pointer' }),
                     onClick: () => navigate('watering')
-                }, "+" + ((upcoming.length + fertUpcoming.length) - cap) + " more \u2014 see all")));
+                }, "+" + (total - cap) + " more \u2014 see all")));
     };
 
     // -- Vertical Calendar (sidebar) --
@@ -15278,7 +15286,7 @@ function HomeGreeting() {
     });
     var allClearThisWeek = totalWater === 0 && totalFert === 0;
 
-    return React.createElement('div', { className: 'mb-3 fade-in', style: {
+    return React.createElement('div', { className: 'fade-in', style: {
         background: theme.cardBg,
         border: '4px solid ' + theme.cardBorder,
         outline: '2px solid ' + theme.cardInset,
@@ -16033,7 +16041,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '1.4';
+const PLANTOS_VERSION = '1.5';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
