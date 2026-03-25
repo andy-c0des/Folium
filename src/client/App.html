@@ -561,11 +561,13 @@
       border-top: 3px solid;
       display: flex; align-items: center; gap: 12px;
       margin-bottom: 12px;
+      overflow: visible;
     }
     .header-nav-scroll {
-      display: flex; gap: 8px; overflow-x: auto;
+      display: flex; gap: 8px; overflow-x: auto; overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none; flex: 1;
+      padding: 6px 0;
     }
     .header-nav-scroll::-webkit-scrollbar { display: none; }
     .header-nav-btn {
@@ -16011,7 +16013,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '1.7';
+const PLANTOS_VERSION = '1.8';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
