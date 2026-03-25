@@ -8334,8 +8334,8 @@ function MyPlantsScreen({ openTab, prefill }) {
         setEditUid(uid);
         populateEdit(p); // show immediately with what we have
         setEditStatus({ type: 'loading', message: 'Loading...' });
-        // Scroll to top so the edit form is visible
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Scroll edit form into view after React renders it
+        setTimeout(function() { var el = document.querySelector('[data-edit-form]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
         try {
             const full = await getPlant(uid);
             if (full) populateEdit(full);
@@ -8625,7 +8625,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS }), className: "truncate" }, [p.location, p.birthday ? '\uD83C\uDF82 ' + p.birthday : ''].filter(Boolean).join('  \u2022  ')))),
                                 React.createElement("button", { type: "button", onClick: e => { e.stopPropagation(); isEditing ? closeEdit() : openEdit(p); }, className: "px-3 py-2 border-4 active:scale-[0.98]", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: isEditing ? theme.btnP.text : theme.txtP, fontSize: '12px', borderColor: isEditing ? theme.btnP.border : theme.sep, background: isEditing ? theme.btnP.bg : theme.cardBg }), title: isEditing ? "Close" : "Edit" }, isEditing ? "\u2715" : "\u270F\uFE0F")));
                     }),
-                    editUid && globalQ.trim() && React.createElement("div", { className: "mt-2", style: {
+                    editUid && globalQ.trim() && React.createElement("div", { 'data-edit-form': true, className: "mt-2", style: {
                             border: '4px solid ' + theme.btnP.border,
                             background: theme.cardBg,
                             padding: 12,
@@ -8729,7 +8729,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "empty-sub" }, DEMO_MODE ? "Try selecting a different location or add some plants." : "Check that the location name matches your sheet exactly (case-sensitive)."))),
                     !loading && hasSelection && plants.length > 0 && fetchError && React.createElement(StatusMessage, { type: 'warning', message: 'Partial load: ' + plants.length + ' plants loaded, but some rows had errors: ' + fetchError }),
                     !loading && hasSelection && plants.length > 0 && filteredPlants.length === 0 && React.createElement(StatusMessage, { type: "info", message: "No plants match your filter." }),
-                    editUid && (React.createElement("div", { className: "mb-3 mt-2", style: {
+                    editUid && (React.createElement("div", { 'data-edit-form': true, className: "mb-3 mt-2", style: {
                             border: '4px solid ' + theme.btnP.border,
                             background: theme.cardBg,
                             padding: 12,
@@ -16051,7 +16051,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '3.8';
+const PLANTOS_VERSION = '3.9';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
