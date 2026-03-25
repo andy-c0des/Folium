@@ -6117,14 +6117,21 @@ function WateringScreen() {
                 if (s) seen.add(s);
             }
         });
+        // Also scan allPlantsCache directly for substrate data
+        (allPlantsCache || []).forEach(function(p) {
+            var s = normalizeSubText(p);
+            if (s) seen.add(s);
+        });
+        // Always include core substrate categories so filter is usable immediately
+        ['leca', 'sphagnum moss', 'perlite', 'bark mix', 'soil mix', 'water', 'pon', 'coco coir', 'pumice'].forEach(function(c) { seen.add(c); });
         var unique = Array.from(seen).sort();
         var btns = [{ label: 'All', key: '' }];
         unique.forEach(function(s) {
-            var label = s.length > 22 ? s.slice(0, 20) + 'ΓÇª' : s;
+            var label = s.length > 22 ? s.slice(0, 20) + '\u2026' : s;
             btns.push({ label: label, key: s });
         });
         return btns;
-    }, [metaByUid]);
+    }, [metaByUid, allPlantsCache]);
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '13px' };
     function normalizeSubText(p) {
         const a = String((p && p.substrate) ? p.substrate : '').trim();
@@ -16022,7 +16029,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '3.2';
+const PLANTOS_VERSION = '3.3';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
