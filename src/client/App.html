@@ -5710,11 +5710,38 @@ function HomeScreen() {
 
     const pad = isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4';
     const maxW = isDesktop ? '1200px' : '680px';
+    const PixelPlantIcon = ({ size }) => React.createElement('svg', {
+        width: size, height: size, viewBox: '0 0 32 32',
+        style: { display: 'block', imageRendering: 'pixelated' }
+    },
+        // Pot
+        React.createElement('rect', { x: 10, y: 20, width: 12, height: 2, fill: '#C87A48' }),
+        React.createElement('rect', { x: 11, y: 22, width: 10, height: 6, fill: '#A0522D' }),
+        React.createElement('rect', { x: 12, y: 28, width: 8, height: 2, fill: '#8B4513' }),
+        React.createElement('rect', { x: 10, y: 20, width: 12, height: 1, fill: '#D4956B' }),
+        // Soil
+        React.createElement('rect', { x: 12, y: 20, width: 8, height: 2, fill: '#5A3A1A' }),
+        // Stem
+        React.createElement('rect', { x: 15, y: 12, width: 2, height: 8, fill: '#3A7A18' }),
+        // Leaves
+        React.createElement('rect', { x: 11, y: 10, width: 4, height: 2, fill: '#5AAA30' }),
+        React.createElement('rect', { x: 9, y: 8, width: 4, height: 2, fill: '#6AC840' }),
+        React.createElement('rect', { x: 13, y: 6, width: 6, height: 2, fill: '#6AC840' }),
+        React.createElement('rect', { x: 17, y: 8, width: 4, height: 2, fill: '#5AAA30' }),
+        React.createElement('rect', { x: 19, y: 10, width: 4, height: 2, fill: '#4A9828' }),
+        React.createElement('rect', { x: 15, y: 4, width: 4, height: 2, fill: '#8AE858' }),
+        React.createElement('rect', { x: 11, y: 6, width: 2, height: 2, fill: '#4A9828' }),
+        React.createElement('rect', { x: 21, y: 12, width: 2, height: 2, fill: '#4A9828' }),
+        // Leaf highlights
+        React.createElement('rect', { x: 14, y: 5, width: 2, height: 1, fill: '#A8F870' }),
+        React.createElement('rect', { x: 10, y: 9, width: 2, height: 1, fill: '#8AE858' }),
+    );
+
     const HeaderLogo = () => React.createElement('div', {
         style: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, cursor: 'pointer' },
         onClick: () => navigate('home')
     },
-        React.createElement('span', { style: { fontSize: isSmall ? 28 : 36, lineHeight: 1 } }, '\uD83E\uDEB4'),
+        React.createElement(PixelPlantIcon, { size: isSmall ? 32 : 40 }),
         React.createElement('span', { style: {
             fontFamily: "'Press Start 2P', cursive",
             fontSize: isSmall ? 14 : 18,
@@ -5734,7 +5761,7 @@ function HomeScreen() {
                 className: "header-nav-btn hover-lift",
                 style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
             },
-                React.createElement("span", { className: "nav-icon" }, "\uD83E\uDEB4"),
+                React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
                 React.createElement("span", null, "My Plants"),
                 totalCount != null && React.createElement("span", { className: "nav-badge", style: { borderColor: '#E8F4D8', color: '#E8F4D8', background: 'rgba(0,0,0,0.15)' } }, totalCount)),
             React.createElement("button", { type: "button", onClick: () => navigate('watering'),
@@ -5748,7 +5775,7 @@ function HomeScreen() {
                 className: "header-nav-btn hover-lift relative",
                 style: { borderColor: '#3A6A20', background: '#2A5A14', color: '#C8E8A8', boxShadow: '0 2px 0 #1A4A08' }
             },
-                React.createElement("span", { className: "nav-icon" }, "\uD83E\uDDD1\u200D\uD83C\uDF3E"),
+                React.createElement("span", { className: "nav-icon" }, "\uD83D\uDC74"),
                 React.createElement("span", null, "Carl"),
                 React.createElement("span", { style: { position: 'absolute', top: -5, right: -5, background: '#3A6A20', border: '2px solid #C8E8A8', color: '#C8E8A8', fontSize: '8px', fontFamily: "'Press Start 2P', cursive", padding: '1px 4px', lineHeight: 1.4 } }, "AI")),
             React.createElement("button", { type: "button", onClick: () => navigate('add'),
@@ -16019,7 +16046,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '2.1';
+const PLANTOS_VERSION = '2.2';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
