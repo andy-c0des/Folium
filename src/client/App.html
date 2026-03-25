@@ -5714,7 +5714,7 @@ function HomeScreen() {
         style: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, cursor: 'pointer' },
         onClick: () => navigate('home')
     },
-        React.createElement('span', { style: { fontSize: isSmall ? 28 : 36, lineHeight: 1 } }, '\uD83C\uDF31'),
+        React.createElement('span', { style: { fontSize: isSmall ? 28 : 36, lineHeight: 1 } }, '\uD83E\uDEB4'),
         React.createElement('span', { style: {
             fontFamily: "'Press Start 2P', cursive",
             fontSize: isSmall ? 14 : 18,
@@ -5734,7 +5734,7 @@ function HomeScreen() {
                 className: "header-nav-btn hover-lift",
                 style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
             },
-                React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
+                React.createElement("span", { className: "nav-icon" }, "\uD83E\uDEB4"),
                 React.createElement("span", null, "My Plants"),
                 totalCount != null && React.createElement("span", { className: "nav-badge", style: { borderColor: '#E8F4D8', color: '#E8F4D8', background: 'rgba(0,0,0,0.15)' } }, totalCount)),
             React.createElement("button", { type: "button", onClick: () => navigate('watering'),
@@ -5748,7 +5748,7 @@ function HomeScreen() {
                 className: "header-nav-btn hover-lift relative",
                 style: { borderColor: '#3A6A20', background: '#2A5A14', color: '#C8E8A8', boxShadow: '0 2px 0 #1A4A08' }
             },
-                React.createElement("span", { className: "nav-icon" }, "\uD83E\uDDD4"),
+                React.createElement("span", { className: "nav-icon" }, "\uD83E\uDDD1\u200D\uD83C\uDF3E"),
                 React.createElement("span", null, "Carl"),
                 React.createElement("span", { style: { position: 'absolute', top: -5, right: -5, background: '#3A6A20', border: '2px solid #C8E8A8', color: '#C8E8A8', fontSize: '8px', fontFamily: "'Press Start 2P', cursive", padding: '1px 4px', lineHeight: 1.4 } }, "AI")),
             React.createElement("button", { type: "button", onClick: () => navigate('add'),
@@ -16019,7 +16019,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '2.0';
+const PLANTOS_VERSION = '2.1';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
