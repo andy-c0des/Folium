@@ -11127,6 +11127,8 @@ function PlantScreen({ uid }) {
         setTimeout(() => setPhotoMsg(null), 2000);
     }
     function openEdit(p) {
+        console.log('[PlantOS] openEdit called', p && p.uid, 'plant=', !!p);
+        if (!p) { console.error('[PlantOS] openEdit: plant is null!'); return; }
         const genus = p.genus || '';
         setEditGenus(genus);
         setEditTaxon(p.species || p.taxon || '');
@@ -11152,6 +11154,7 @@ function PlantScreen({ uid }) {
         setEditNickname(p.nickname || '');
         setAutofillStatus(null);
         setAutofillPreview(null);
+        console.log('[PlantOS] openEdit: setting editOpen=true');
         setEditOpen(true);
     }
     async function submitNick() {
@@ -11782,10 +11785,10 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             React.createElement("div", { className: "flex gap-2 pt-2" },
                                 React.createElement(PlantButton, { block: false, onClick: submitRepot }, "Save Repot"),
                                 React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => setRepotOpen(false) }, "Cancel")))))),
-                editOpen && (React.createElement("div", {
+                editOpen && (console.log('[PlantOS] RENDERING edit modal'), React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
-                        zIndex: 999,
+                        zIndex: 9999,
                         background: 'rgba(0,0,0,0.55)',
                         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                     },
@@ -16015,7 +16018,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '2.6';
+const PLANTOS_VERSION = '2.7';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
