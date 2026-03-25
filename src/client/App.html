@@ -5113,7 +5113,7 @@ function PlantDataProvider({ children }) {
     const batchFertilize = (uids, actionLabel) => {
         if (DEMO_MODE) {
             const label = String(actionLabel || 'Fertilized');
-            (uids || []).forEach(uid => quickLog(uid, { water: false, fertilize: true, repot: false, notes: label }));
+            (uids || []).forEach(uid => quickLog(uid, { water: true, fertilize: true, repot: false, notes: label }));
             return Promise.resolve({ ok: true });
         }
         return gasCall('plantosBatchFertilize', uids || [], actionLabel || '');
@@ -6541,7 +6541,7 @@ function QuickLogScreen() {
             if (kind === 'water')
                 await quickLog(uid, { water: true, fertilize: false, repot: false, notes: '' });
             if (kind === 'fert')
-                await quickLog(uid, { water: false, fertilize: true, repot: false, notes: '' });
+                await quickLog(uid, { water: true, fertilize: true, repot: false, notes: '' });
             setStatus({ type: 'success', message: 'Saved Γ£à' });
         }
         catch (e) {
@@ -11111,14 +11111,17 @@ function PlantScreen({ uid }) {
             return Object.assign({}, prev, {
                 lastFertilized: today,
                 nextFertDue: addDays(today, prev.fertilizeEveryDays) || prev.nextFertDue,
+                lastWatered: today,
+                nextDue: addDays(today, prev.everyDays) || prev.nextDue,
+                due: addDays(today, prev.everyDays) || prev.nextDue,
             });
         });
-        setTimeline(function(prev) { return [{ action: 'FERTILIZE', ts: today, details: note }].concat(prev || []); });
+        setTimeline(function(prev) { return [{ action: 'WATERED+FERTILIZED', ts: today, details: note }].concat(prev || []); });
         playCareSound('fert');
-        setMsg({ type: 'success', text: 'Fertilized \uD83C\uDF3E' });
+        setMsg({ type: 'success', text: 'Fertilized + Watered \uD83C\uDF3E\uD83D\uDCA7' });
         setTimeout(() => setMsg(null), 1300);
         try {
-            await quickLog(plant.uid, { water: false, fertilize: true, repot: false, notes: note });
+            await quickLog(plant.uid, { water: true, fertilize: true, repot: false, notes: note });
             await loadCurrent();
         }
         catch (_a) {
