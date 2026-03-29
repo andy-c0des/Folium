@@ -1,0 +1,2142 @@
+const KB = {
+  IMPORT:   '📥 Knowledge Import Zone',
+  PLANT_KB: '🌿 Plant Knowledge Base',
+  PEST_KB:  '🐛 Pest & Disease Library',
+
+  PASTE_START_ROW: 11,
+
+  HEADERS: [
+    'Knowledge ID','Scope','Subject','Predicate','Object',
+    'Qualifier','Confidence','Tags','Source','Interpretation','Notes',
+  ],
+
+  PEST_SUBJECTS: new Set([
+    'thrips','spider_mites','spider mites','broad_mites','broad mites',
+    'fungus_gnats','fungus gnats','mealybugs','mealybug','root_mealybugs',
+    'scale','scale_insects','aphids','aphid','whitefly','whiteflies',
+    'root_rot','root rot','powdery_mildew','powdery mildew',
+    'leaf_spot','leaf spot','botrytis','grey_mould','gray_mold',
+    'crown_rot','crown rot','edema','oedema',
+    'sunburn','overwatering','underwatering','low_humidity','nutrient_deficiency',
+    'sap_suckers','mites','soil_pest','fungal_leaf_disease','bacterial_leaf_disease',
+    'spinosad','insecticidal_soap','horticultural_oil','neem_oil',
+    'bti','predatory_nematodes','isopropyl_alcohol','yellow_sticky_traps',
+    'quarantine','airflow','hydrogen_peroxide_drench',
+    'silver_streaking','black_specks_on_leaves','fine_webbing','stippling',
+    'distorted_new_growth','cottony_white_masses','hard_brown_bumps_on_stems',
+    'sticky_honeydew','sooty_mould','white_cloud_when_disturbed',
+    'tiny_flies_near_soil','mushy_roots_foul_smell','white_powder_on_leaves',
+    'wilting_despite_moist_soil',
+  ]),
+
+  PEST_TAG_FRAGMENTS: [
+    'pest','disease','treatment','physiological','enemy',
+    'gnat','mite','mealybug','scale','aphid','whitefly',
+    'thrips','botrytis','mildew','root_rot','fungal','bacterial',
+  ],
+
+  CONF_RANK:  { confirmed:5, high:4, medium:3, low:2, anecdotal:1, experimental:1, inferred:1 },
+  SCOPE_RANK: { SPECIMEN:7, CULTIVAR:6, SPECIES:5, HYBRID:4, GENUS:3, FAMILY:2, GROUP:1, GENERAL:0 },
+
+  PREDICATES: [
+    ['prefers_light',           'care',        'soft',   'bright_indirect / low / direct'],
+    ['light_hours',             'care',        'soft',   'photoperiod — long_day / short_day_triggers_dormancy'],
+    ['prefers_moisture',        'care',        'soft',   'evenly_moist / dry_cycles / constantly_moist'],
+    ['water_interval_days',     'care',        'soft',   'number — guideline only'],
+    ['water_quality_constraint','care',        'hard',   'distilled_only / low_tds / no_fluoride'],
+    ['prefers_humidity',        'care',        'soft',   'low / medium / high or % range'],
+    ['temperature_range',       'care',        'soft',   'e.g. 18-28C'],
+    ['temperature_minimum',     'care',        'hard',   'cold damage threshold'],
+    ['fertilizer_interval',     'care',        'soft',   'e.g. every_30_days'],
+    ['fertilizer_constraint',   'care',        'hard',   'low_nitrogen / never / dilute_only'],
+    ['growth_rate',             'care',        'soft',   'slow / medium / fast'],
+    ['dormancy_period',         'care',        'soft',   'season or trigger conditions'],
+    ['repot_frequency',         'care',        'soft',   'every_2_years / when_rootbound'],
+    ['repot_trigger',           'care',        'soft',   'roots_through_drainage / prefers_tight_pot'],
+    ['suitable_medium',         'medium',      'hard',   'allowed substrates'],
+    ['forbidden_medium',        'medium',      'hard',   'HARD LIMIT — never recommend for this plant'],
+    ['medium_constraint',       'medium',      'hard',   'mineral_free / low_nutrient / acidic'],
+    ['drainage_requirement',    'medium',      'soft',   'fast / moderate / slow'],
+    ['propagates_by',           'propagation', 'soft',   'node_cutting / offsets / seed / division / leaf'],
+    ['rooting_medium',          'propagation', 'soft',   'water / sphagnum / perlite / LECA'],
+    ['propagation_difficulty',  'propagation', 'soft',   'easy / medium / hard'],
+    ['propagation_season',      'propagation', 'soft',   'season or conditions for best success'],
+    ['hybridizes_with',         'hybrid',      'soft',   'taxon → taxon'],
+    ['cross_possible',          'hybrid',      'soft',   ''],
+    ['cross_unlikely',          'hybrid',      'soft',   ''],
+    ['sterile_hybrid',          'hybrid',      'soft',   ''],
+    ['root_type',               'trait',       'soft',   'aerial / rhizome / tap / fibrous / tuberous'],
+    ['growth_form',             'trait',       'soft',   'epiphyte / terrestrial / lithophyte / hemiepiphyte'],
+    ['native_habitat',          'trait',       'soft',   'biome or region'],
+    ['plant_family',            'trait',       'soft',   'e.g. Araceae / Cactaceae'],
+    ['toxic_to_pets',           'trait',       'hard',   'true / false / unknown'],
+    ['toxicity_detail',         'trait',       'hard',   'toxin, affected animals, severity'],
+    ['companion_risk',          'trait',       'soft',   'pest magnet or allelopathic risk'],
+    ['symptom_of',              'diagnosis',   'medium', 'symptom → cause'],
+    ['causes_symptom',          'diagnosis',   'medium', 'pest/disease/condition → symptom'],
+    ['risk_factor',             'diagnosis',   'soft',   'conditions that increase likelihood of a problem'],
+    ['precondition',            'diagnosis',   'medium', 'rule only fires IF this condition is true'],
+    ['confused_with',           'diagnosis',   'soft',   'lookalike pest, disease, or abiotic condition'],
+    ['weak_to',                 'treatment',   'hard',   'kryptonite — most reliably effective treatment'],
+    ['treated_by',              'treatment',   'medium', 'treatment options'],
+    ['prevented_by',            'treatment',   'soft',   'prevention measures'],
+    ['resistant_to',            'treatment',   'soft',   'treatments that commonly fail'],
+    ['treatment_interval',      'treatment',   'soft',   'how often to repeat'],
+    ['targets',                 'treatment',   'medium', 'what this treatment is effective against'],
+    ['has_lifecycle_stage',     'enemy',       'soft',   'egg / larva / nymph / pupa / adult'],
+    ['lifecycle_duration',      'enemy',       'soft',   'with qualifier e.g. "at 25C"'],
+    ['reproduces_by',           'enemy',       'soft',   'eggs / spores / parthenogenesis'],
+    ['overwinters_as',          'enemy',       'soft',   'how it survives unfavourable season'],
+    ['thrives_in',              'enemy',       'soft',   'optimal conditions for pest/disease'],
+    ['inhibited_by',            'enemy',       'soft',   'conditions that slow or stop it'],
+    ['spreads_by',              'enemy',       'medium', 'airborne / water_splash / contact / new_plants'],
+    ['affects_host',            'enemy',       'medium', 'specific taxon, family, or "most houseplants"'],
+    ['telltale_sign',           'enemy',       'medium', 'visible symptom or physical sign'],
+    ['exception_rule',          'override',    'hard',   'SPECIMEN-level override — beats all defaults'],
+    ['observed_behavior',       'override',    'soft',   'empirical note tied to a specific plant UID'],
+    ['ai_hint',                 'ai',          'medium', 'plain-English context for AI before giving advice'],
+    ['trivia',                  'trivia',      'soft',   'fun/interesting fact — surfaces on plant card'],
+    ['common_name',             'trait',       'soft',   'common name or alias'],
+    ['common_pest',             'diagnosis',   'medium', 'pest that commonly affects this genus/species'],
+  ],
+};
+
+function _kbGetSpreadsheet_() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) return ss;
+  } catch (e) {}
+  const ssId = PropertiesService.getScriptProperties().getProperty('PLANTOS_SS_ID');
+  if (!ssId) return null;
+  return SpreadsheetApp.openById(ssId);
+}
+
+function _kbRoute(subject, tags) {
+  const s = (subject || '').toLowerCase().trim();
+  const t = (tags    || '').toLowerCase();
+  if (KB.PEST_SUBJECTS.has(s)) return KB.PEST_KB;
+  if (KB.PEST_TAG_FRAGMENTS.some(f => t.includes(f))) return KB.PEST_KB;
+  return KB.PLANT_KB;
+}
+
+function kbSetup() {
+  const ss = _kbGetSpreadsheet_();
+  _kbBuildKnowledgeSheet(ss, KB.PLANT_KB, '#1B5E20');
+  _kbBuildKnowledgeSheet(ss, KB.PEST_KB,  '#B71C1C');
+  _kbBuildImportSheet(ss);
+  SpreadsheetApp.getUi().alert(
+    '✅ PlantOS Knowledge System ready!\n\n' +
+    '📥 Knowledge Import Zone  ← paste ANYTHING here\n' +
+    '🌿 Plant Knowledge Base\n' +
+    '🐛 Pest & Disease Library\n\n' +
+    'Plants and pests sort themselves on import.'
+  );
+}
+
+function _kbBuildKnowledgeSheet(ss, name, color) {
+  let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+  sh.clear();
+  sh.setTabColor(color);
+  const hRow = sh.getRange(1, 1, 1, KB.HEADERS.length);
+  hRow.setValues([KB.HEADERS]).setFontWeight('bold')
+      .setBackground(color).setFontColor('#FFFFFF');
+  sh.setFrozenRows(1);
+  [90,90,180,160,200,160,90,150,180,240,300].forEach((w,i) => sh.setColumnWidth(i+1,w));
+  sh.getRange(2,2,sh.getMaxRows()-1,1).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(['GENUS','SPECIES','CULTIVAR','SPECIMEN','HYBRID','GENERAL','FAMILY','GROUP'],true)
+      .setAllowInvalid(true).build());
+  sh.getRange(2,7,sh.getMaxRows()-1,1).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(['high','medium','low','anecdotal','experimental','inferred','confirmed'],true)
+      .setAllowInvalid(true).build());
+  sh.getRange(1,1,1,KB.HEADERS.length).createFilter();
+}
+
+function _kbBuildImportSheet(ss) {
+  const C = { dark:'#1A237E', mid:'#283593', light:'#E8EAF6', amber:'#F57F17', note:'#FFF9C4' };
+  let sh = ss.getSheetByName(KB.IMPORT);
+  if (!sh) sh = ss.insertSheet(KB.IMPORT);
+  sh.clear();
+  sh.setTabColor(C.dark);
+  sh.setRowHeight(1,8);
+  sh.setRowHeight(2,40);
+  sh.getRange(2,1,1,5).merge()
+    .setValue('📥  PLANTOS UNIVERSAL KNOWLEDGE IMPORT')
+    .setFontSize(13).setFontWeight('bold')
+    .setBackground(C.dark).setFontColor('#FFFFFF')
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sh.setRowHeight(3,22);
+  sh.getRange(3,1,1,5).merge()
+    .setValue('Paste plants AND pests in any order — the script reads the tags and sorts everything automatically.')
+    .setFontSize(9).setFontStyle('italic')
+    .setBackground(C.mid).setFontColor('#C5CAE9').setVerticalAlignment('middle');
+  sh.setRowHeight(4,8);
+  sh.setRowHeight(5,20);
+  sh.getRange(5,1,1,5).merge()
+    .setValue('FORMAT:  Scope | Subject | Predicate | Object | Qualifier | Confidence | Tags | Source | Interpretation | Notes')
+    .setFontSize(8).setFontFamily('Courier New')
+    .setBackground(C.light).setFontColor(C.dark);
+  sh.setRowHeight(6,18);
+  sh.getRange(6,1,1,5).merge()
+    .setValue('Tags decide routing: "pest" / "disease" / "treatment" → 🐛 Pest Library.  Everything else → 🌿 Plant KB.')
+    .setFontSize(8).setBackground(C.note).setFontColor('#5D4037');
+  sh.setRowHeight(7,18);
+  sh.getRange(7,1,1,5).merge()
+    .setValue('Scope: GENUS  SPECIES  CULTIVAR  SPECIMEN  HYBRID  GENERAL  FAMILY  GROUP     Confidence: high  medium  low  anecdotal  confirmed')
+    .setFontSize(8).setBackground(C.note).setFontColor('#5D4037');
+  sh.setRowHeight(8,8);
+  sh.setRowHeight(9,26);
+  sh.getRange(9,1,1,5).merge()
+    .setValue('▼  PASTE YOUR ROWS BELOW — unlimited rows, plants and pests mixed freely')
+    .setFontWeight('bold').setFontSize(10)
+    .setBackground(C.amber).setFontColor('#FFFFFF')
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sh.setRowHeight(10,18);
+  sh.getRange(10,1,1,5).merge()
+    .setValue('# Lines starting with # are ignored. Blank lines ignored.')
+    .setFontSize(8).setFontStyle('italic')
+    .setBackground('#F5F5F5').setFontColor('#9E9E9E');
+  for (let r = KB.PASTE_START_ROW; r <= 510; r++) {
+    sh.setRowHeight(r,18);
+    sh.getRange(r,1,1,5).merge()
+      .setBackground(r % 2 === 0 ? '#F3F4FF' : '#FFFFFF').setWrap(false);
+  }
+  sh.getRange(KB.PASTE_START_ROW,1)
+    .setValue([
+      'GENUS | Monstera | prefers_light | bright_indirect | avoid direct midday sun | high | plant,light | horticulture | |',
+      'GENUS | Monstera | trivia | edible_fruit | tastes like pineapple and banana when ripe | medium | plant,trivia | botanical | |',
+      'SPECIES | Dionaea muscipula | forbidden_medium | PON | mineral content risk | high | plant,medium,safety | carnivorous plant society | |',
+      'GENERAL | thrips | telltale_sign | silver_streaking | leaf scarring | high | pest,thrips,symptom | entomology | |',
+      'GENERAL | thrips | weak_to | spinosad | repeat every 5-7 days x3 | high | pest,thrips,treatment | entomology | |',
+    ].join('\n'))
+    .setFontFamily('Courier New').setFontSize(8).setFontColor('#9E9E9E').setWrap(true);
+  sh.setRowHeight(KB.PASTE_START_ROW,100);
+  sh.setRowHeight(512,8);
+  sh.setRowHeight(513,28);
+  sh.getRange(513,1,1,5).merge()
+    .setValue('IMPORT STATUS — updated after each run')
+    .setFontSize(9).setBackground(C.light).setFontColor(C.dark)
+    .setFontStyle('italic').setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sh.setRowHeight(515,22);
+  sh.getRange(515,1,1,5).merge()
+    .setValue('PREDICATE REFERENCE')
+    .setFontWeight('bold').setFontSize(10)
+    .setBackground(C.dark).setFontColor('#FFFFFF').setHorizontalAlignment('center');
+  sh.setRowHeight(516,18);
+  ['Predicate','Type','Strength','Notes'].forEach((h,i) => {
+    sh.getRange(516,i+1).setValue(h).setFontWeight('bold').setFontSize(8)
+      .setBackground(C.mid).setFontColor('#FFFFFF');
+  });
+  KB.PREDICATES.forEach(([pred,type,strength,notes],idx) => {
+    const r = 517 + idx;
+    sh.setRowHeight(r,17);
+    const bg = idx % 2 === 0 ? C.light : '#FFFFFF';
+    [pred,type,strength,notes].forEach((v,c) => sh.getRange(r,c+1).setValue(v).setFontSize(8).setBackground(bg));
+  });
+  sh.setColumnWidth(1,700);
+  [2,3,4,5].forEach(c => sh.setColumnWidth(c,20));
+}
+
+function kbImport() {
+  const ss       = _kbGetSpreadsheet_();
+  const ui       = SpreadsheetApp.getUi();
+  const importSh = ss.getSheetByName(KB.IMPORT);
+  const plantSh  = ss.getSheetByName(KB.PLANT_KB);
+  const pestSh   = ss.getSheetByName(KB.PEST_KB);
+  if (!importSh || !plantSh || !pestSh) {
+    ui.alert('Missing sheets. Run ⚙ Setup Knowledge System first.');
+    return;
+  }
+  const lastRow = importSh.getLastRow();
+  if (lastRow < KB.PASTE_START_ROW) { ui.alert('Paste zone is empty.'); return; }
+  const raw = importSh
+    .getRange(KB.PASTE_START_ROW, 1, lastRow - KB.PASTE_START_ROW + 1, 1)
+    .getValues().flat();
+  const plantKeys = _kbGetExistingKeys(plantSh);
+  const pestKeys  = _kbGetExistingKeys(pestSh);
+  const toPlant = [], toPest = [];
+  let skipped = 0, invalid = 0;
+  raw.forEach(cellVal => {
+    String(cellVal || '').split('\n').forEach(line => {
+      line = line.trim();
+      if (!line || line.startsWith('#') || !line.includes('|')) return;
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length < 4) { invalid++; return; }
+      const [scope, subject, predicate, object] = parts;
+      if (!scope || !subject || !predicate || !object) { invalid++; return; }
+      const qualifier      = parts[4] || '';
+      const confidence     = parts[5] || '';
+      const tags           = parts[6] || '';
+      const source         = parts[7] || '';
+      const interpretation = parts[8] || '';
+      const notes          = parts[9] || '';
+      const dest   = _kbRoute(subject, tags);
+      const keys   = dest === KB.PEST_KB ? pestKeys  : plantKeys;
+      const bucket = dest === KB.PEST_KB ? toPest    : toPlant;
+      const key = [scope, subject, predicate, object, qualifier].join('|').toLowerCase();
+      if (keys.has(key)) { skipped++; return; }
+      keys.add(key);
+      bucket.push([null, scope, subject, predicate, object,
+                   qualifier, confidence, tags, source, interpretation, notes]);
+    });
+  });
+  if (toPlant.length) {
+    const start = plantSh.getLastRow() + 1;
+    const offset = Math.max(start - 2, 0);
+    toPlant.forEach((r,i) => { r[0] = 'KB_' + String(offset+i+1).padStart(6,'0'); });
+    plantSh.getRange(start, 1, toPlant.length, KB.HEADERS.length).setValues(toPlant);
+  }
+  if (toPest.length) {
+    const start = pestSh.getLastRow() + 1;
+    const offset = Math.max(start - 2, 0);
+    toPest.forEach((r,i) => { r[0] = 'PB_' + String(offset+i+1).padStart(6,'0'); });
+    pestSh.getRange(start, 1, toPest.length, KB.HEADERS.length).setValues(toPest);
+  }
+  const total = toPlant.length + toPest.length;
+  const msg = total
+    ? `✅ Imported ${total} rows\n\n🌿 Plant KB: +${toPlant.length}\n🐛 Pest & Disease: +${toPest.length}\n\nDuplicates skipped: ${skipped}  |  Invalid: ${invalid}`
+    : `Nothing new to import.\nDuplicates skipped: ${skipped}  |  Invalid: ${invalid}`;
+  _kbWriteStatus(importSh, msg.replace(/\n/g,'  '));
+  ui.alert(msg);
+}
+
+function kbClear() {
+  const ss = _kbGetSpreadsheet_();
+  const sh = ss.getSheetByName(KB.IMPORT);
+  if (!sh) return;
+  const last = sh.getLastRow();
+  if (last >= KB.PASTE_START_ROW)
+    sh.getRange(KB.PASTE_START_ROW, 1, last - KB.PASTE_START_ROW + 1, 1).clearContent();
+  _kbWriteStatus(sh, 'Paste zone cleared.');
+}
+
+function _kbWriteStatus(sh, msg) {
+  try { sh.getRange(513,1).setValue(msg + '  —  ' + new Date().toLocaleString()); } catch(e){}
+}
+
+function _kbGetExistingKeys(sh) {
+  const set = new Set();
+  const last = sh.getLastRow();
+  if (last < 2) return set;
+  sh.getRange(2, 2, last-1, 5).getValues().forEach(row => {
+    const key = row.map(v => String(v||'').trim()).join('|').toLowerCase();
+    if (key.replace(/\|/g,'').trim()) set.add(key);
+  });
+  return set;
+}
+
+function _kbReadSheet(sh) {
+  if (!sh) return [];
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  return sh.getRange(2, 1, last-1, 11).getValues().map(r => ({
+    id:             String(r[0]||'').trim(),
+    scope:          String(r[1]||'').trim().toUpperCase(),
+    subject:        String(r[2]||'').trim().toLowerCase(),
+    predicate:      String(r[3]||'').trim().toLowerCase(),
+    object:         String(r[4]||'').trim(),
+    qualifier:      String(r[5]||'').trim(),
+    confidence:     String(r[6]||'').trim().toLowerCase(),
+    tags:           String(r[7]||'').trim().toLowerCase(),
+    source:         String(r[8]||'').trim(),
+    interpretation: String(r[9]||'').trim(),
+    notes:          String(r[10]||'').trim(),
+  })).filter(r => r.subject && r.predicate && r.object);
+}
+
+function _kbQuerySubject(rows, genus, species) {
+  const g  = (genus   ||'').toLowerCase().trim();
+  const sp = (species ||'').toLowerCase().trim();
+  const targets = new Set();
+  if (g)  targets.add(g);
+  if (sp) targets.add(sp);
+  if (g && sp) targets.add(g+' '+sp);
+  return rows.filter(r =>
+    targets.has(r.subject) ||
+    r.scope === 'GENERAL'  ||
+    r.scope === 'GROUP'    ||
+    r.scope === 'FAMILY'
+  );
+}
+
+function _kbSortByPriority(rows) {
+  return rows.slice().sort((a,b) => {
+    const sp = (KB.SCOPE_RANK[b.scope]||0) - (KB.SCOPE_RANK[a.scope]||0);
+    if (sp !== 0) return sp;
+    return (KB.CONF_RANK[b.confidence]||0) - (KB.CONF_RANK[a.confidence]||0);
+  });
+}
+
+function _kbGet(rows, predicate) {
+  return _kbSortByPriority(rows.filter(r => r.predicate === predicate))[0] || null;
+}
+
+function _kbGetAll(rows, predicate) {
+  return _kbSortByPriority(rows.filter(r => r.predicate === predicate));
+}
+
+function _kbExtractKeywords(text) {
+  const lower = text.toLowerCase().trim();
+  const words = lower.split(/\s+/);
+  const NEGATION_WORDS = new Set(['good','great','fine','nice','healthy','okay','ok',
+    'normal','better','well','perfect','happy','beautiful','lovely']);
+  const DOUBLE_NEG = new Set(['not','never','no','nor','neither']);
+  function isNegated(phraseStart) {
+    const wordIdx = lower.slice(0, phraseStart).split(/\s+/).length - 1;
+    for (let d = -2; d <= 2; d++) {
+      const w = words[wordIdx + d];
+      if (!w || !NEGATION_WORDS.has(w.replace(/[^a-z]/g,''))) continue;
+      const lo = Math.min(wordIdx, wordIdx + d);
+      const hi = Math.max(wordIdx, wordIdx + d);
+      const between = words.slice(lo, hi);
+      if (between.some(bw => DOUBLE_NEG.has(bw.replace(/[^a-z]/g,'')))) continue;
+      return true;
+    }
+    return false;
+  }
+  const PHRASE_MAP = [
+    ['shell','scale'],['shells','scale'],['barnacle','scale'],['crusty','scale'],
+    ['hard bump','scale'],['waxy bump','scale'],['brown bump','scale'],['scab','scale'],
+    ['silver streak','silver_streaking'],['silver','silver_streaking'],['streak','silver_streaking'],
+    ['black speck','black_specks_on_leaves'],['frass','black_specks_on_leaves'],
+    ['thrip','thrips'],
+    ['webbing','fine_webbing'],['silk thread','fine_webbing'],
+    ['stippling','stippling'],['pale dot','stippling'],
+    ['mite','spider_mites'],
+    ['distorted','distorted_new_growth'],['curling','distorted_new_growth'],
+    ['twisted','distorted_new_growth'],['crinkled','distorted_new_growth'],
+    ['cottony','cottony_white_masses'],['white fluff','cottony_white_masses'],
+    ['fluffy white','cottony_white_masses'],['white blob','cottony_white_masses'],
+    ['mealybug','mealybugs'],['mealy bug','mealybugs'],
+    ['aphid','aphids'],['greenfly','aphids'],
+    ['whitefly','whitefly'],['white fly','whitefly'],
+    ['white cloud','white_cloud_when_disturbed'],
+    ['sticky leaf','sticky_honeydew'],['honeydew','sticky_honeydew'],
+    ['sooty mould','sooty_mould'],['sooty mold','sooty_mould'],
+    ['black mould','sooty_mould'],['black mold','sooty_mould'],
+    ['tiny flies','tiny_flies_near_soil'],['small flies','tiny_flies_near_soil'],
+    ['little flies','tiny_flies_near_soil'],['flies in soil','tiny_flies_near_soil'],
+    ['flies on soil','tiny_flies_near_soil'],['flies near soil','tiny_flies_near_soil'],
+    ['flies in pot','tiny_flies_near_soil'],['gnats','tiny_flies_near_soil'],['gnat','tiny_flies_near_soil'],
+    ['mushy root','mushy_roots_foul_smell'],['brown root','mushy_roots_foul_smell'],
+    ['slimy root','mushy_roots_foul_smell'],['foul smell','mushy_roots_foul_smell'],
+    ['bad smell','mushy_roots_foul_smell'],['smells bad','mushy_roots_foul_smell'],
+    ['smells rotten','mushy_roots_foul_smell'],['smells awful','mushy_roots_foul_smell'],
+    ['smells like rot','mushy_roots_foul_smell'],['smells like shit','mushy_roots_foul_smell'],
+    ['stinks','mushy_roots_foul_smell'],
+    ['root rot','root_rot'],['rotting','root_rot'],
+    ['white powder','white_powder_on_leaves'],['powdery','white_powder_on_leaves'],
+    ['mildew','white_powder_on_leaves'],['dusty white','white_powder_on_leaves'],
+    ['wilting','wilting_despite_moist_soil'],['wilting','underwatering'],
+    ['wilts','wilting_despite_moist_soil'],['wilts','underwatering'],
+    ['wilty','wilting_despite_moist_soil'],['wilty','underwatering'],
+    ['wilt','wilting_despite_moist_soil'],['wilt','underwatering'],
+    ['floppy','wilting_despite_moist_soil'],['floppy','underwatering'],
+    ['drooping','wilting_despite_moist_soil'],['drooping','underwatering'],
+    ['droopy','wilting_despite_moist_soil'],['droopy','underwatering'],
+    ['droop','wilting_despite_moist_soil'],['droop','underwatering'],
+    ['limp','wilting_despite_moist_soil'],['limp','underwatering'],
+    ['soft stem','wilting_despite_moist_soil'],
+    ['etiolat','low_light_stress'],['stretching','low_light_stress'],
+    ['stretched','low_light_stress'],['leggy','low_light_stress'],
+    ['pale new growth','low_light_stress'],['no growth','low_light_stress'],
+    ['slow growth','low_light_stress'],['not growing','low_light_stress'],
+    ['yellowing','overwatering'],['yellow leaves','overwatering'],
+    ['crispy tips','low_humidity'],['brown tips','low_humidity'],['brown edges','low_humidity'],
+    ['sunburnt','sunburn'],['scorched','sunburn'],
+    ['blistered','edema'],['corky','edema'],
+    ['bugs in soil','tiny_flies_near_soil'],['little bugs','mealybugs'],['bugs on stem','mealybugs'],
+    ['crispy','low_humidity'],['browning','low_humidity'],
+    ['brown leaves','leaf_scorch'],
+    ['dehydrated','underwatering'],['thirsty','underwatering'],
+    ['shrivelled','underwatering'],['shriveled','underwatering'],['bone dry','underwatering'],
+    ['overwatered','overwatering'],['waterlogged','overwatering'],['soggy','overwatering'],
+    ['flies','tiny_flies_near_soil'],['fly','tiny_flies_near_soil'],
+    ['fungus','tiny_flies_near_soil'],['worms','tiny_flies_near_soil'],
+    ['larvae','tiny_flies_near_soil'],['maggots','tiny_flies_near_soil'],
+    ['mold','sooty_mould'],['mould','sooty_mould'],
+    ['slime','mushy_roots_foul_smell'],
+    ['bugs','thrips'],['insects','thrips'],
+    ['rot','root_rot'],['spots','leaf_spot'],['spot','leaf_spot'],
+    ['holes','thrips'],['sticky','sticky_honeydew'],
+    ['webs','fine_webbing'],['web','fine_webbing'],
+  ];
+  const keywords = [];
+  for (const [phrase, mapped] of PHRASE_MAP) {
+    const pidx = lower.indexOf(phrase);
+    if (pidx !== -1 && !isNegated(pidx)) keywords.push(mapped);
+  }
+  return [...new Set(keywords)];
+}
+
+function kbDump() {
+  try {
+    const ss = _kbGetSpreadsheet_();
+    if (!ss) return { ok: false, error: 'Spreadsheet not found.' };
+    const pestSh  = ss.getSheetByName(KB.PEST_KB);
+    const plantSh = ss.getSheetByName(KB.PLANT_KB);
+    const allPlant = plantSh ? _kbReadSheet(plantSh) : [];
+    // Extract ai_hint rows for Carl's offline knowledge cache
+    const hints = allPlant
+      .filter(function(r) { return r.predicate === 'ai_hint'; })
+      .map(function(r) {
+        const actRaw = String(r.interpretation || '').trim();
+        return {
+          subject:    r.subject,
+          answer:     r.object,
+          keywords:   r.qualifier ? r.qualifier.split(',').map(function(k){ return k.trim(); }).filter(Boolean) : [],
+          confidence: r.confidence || 'medium',
+          actions:    actRaw ? actRaw.split(' | ').filter(Boolean) : [],
+          watch:      r.notes || '',
+        };
+      });
+    return {
+      ok:    true,
+      pests: pestSh  ? _kbReadSheet(pestSh)  : [],
+      plant: allPlant,
+      hints: hints,
+      ts:    new Date().toISOString(),
+    };
+  } catch(e) { return { ok: false, error: e.message }; }
+}
+
+function kbGetPlantFacts(genus, species) {
+  try {
+    const plantSh = _kbGetSpreadsheet_().getSheetByName(KB.PLANT_KB);
+    const pestSh  = _kbGetSpreadsheet_().getSheetByName(KB.PEST_KB);
+    if (!plantSh) return { ok:false, error:'Plant KB sheet not found. Run ⚙ Setup Knowledge System.' };
+    const plantRows = _kbReadSheet(plantSh);
+    const pestRows  = pestSh ? _kbReadSheet(pestSh) : [];
+    const relevant  = _kbQuerySubject(plantRows, genus, species);
+    if (!relevant.length) return {
+      ok:true, genus, species:species||null, dataCount:0, isEmpty:true,
+      message:`No KB entries for ${genus}${species?' '+species:''}. Add some via the Import Zone!`,
+    };
+    const light    = _kbGet(relevant, 'prefers_light');
+    const moisture = _kbGet(relevant, 'prefers_moisture');
+    const humidity = _kbGet(relevant, 'prefers_humidity');
+    const interval = _kbGet(relevant, 'water_interval_days');
+    const waterQ   = _kbGetAll(relevant, 'water_quality_constraint');
+    const medium   = _kbGetAll(relevant, 'suitable_medium');
+    const forbidden= _kbGetAll(relevant, 'forbidden_medium');
+    const dormancy = _kbGet(relevant, 'dormancy_period');
+    const repot    = _kbGet(relevant, 'repot_trigger');
+    const toxic    = _kbGet(relevant, 'toxic_to_pets');
+    const toxDetail= _kbGet(relevant, 'toxicity_detail');
+    const triviaRows = _kbGetAll(relevant, 'trivia');
+    const trivia   = triviaRows.length ? triviaRows[Math.floor(Math.random()*triviaRows.length)] : null;
+    const commonPests = _kbGetAll(relevant, 'common_pest').map(r => r.object);
+    const pestDetails = [];
+    if (pestRows.length && commonPests.length) {
+      commonPests.forEach(pestName => {
+        const pRows = pestRows.filter(r => r.subject === pestName.toLowerCase());
+        const sign  = pRows.find(r => r.predicate === 'telltale_sign');
+        const kryp  = pRows.find(r => r.predicate === 'weak_to');
+        if (sign || kryp) pestDetails.push({ name:pestName, sign:sign?sign.object:null, kryptonite:kryp?kryp.object:null });
+      });
+    }
+    return {
+      ok:true, genus, species:species||null, dataCount:relevant.length, isEmpty:false,
+      care: {
+        light:    light    ? {value:light.object,    qualifier:light.qualifier,    confidence:light.confidence}    : null,
+        moisture: moisture ? {value:moisture.object, qualifier:moisture.qualifier, confidence:moisture.confidence} : null,
+        humidity: humidity ? {value:humidity.object, qualifier:humidity.qualifier, confidence:humidity.confidence} : null,
+        interval: interval ? {value:interval.object, qualifier:interval.qualifier, confidence:interval.confidence} : null,
+        dormancy: dormancy ? {value:dormancy.object, qualifier:dormancy.qualifier} : null,
+        repot:    repot    ? {value:repot.object,    qualifier:repot.qualifier}    : null,
+      },
+      water:  { quality: waterQ.map(r => ({value:r.object, qualifier:r.qualifier, confidence:r.confidence})) },
+      medium: {
+        suitable:  medium.map(r => ({value:r.object, qualifier:r.qualifier})),
+        forbidden: forbidden.map(r => ({value:r.object, qualifier:r.qualifier, notes:r.notes})),
+      },
+      safety: { toxicToPets:toxic?toxic.object:null, detail:toxDetail?toxDetail.object:null },
+      trivia: trivia ? {fact:trivia.object, qualifier:trivia.qualifier, source:trivia.source, notes:trivia.notes} : null,
+      pests:  { common:commonPests, details:pestDetails },
+      hints:  _kbGetAll(relevant, 'ai_hint').map(r => r.object),
+    };
+  } catch(e) { return {ok:false, error:'KB query error: '+e.message}; }
+}
+
+function kbDiagnose(genus, symptomText) {
+  try {
+    const pestSh  = _kbGetSpreadsheet_().getSheetByName(KB.PEST_KB);
+    const plantSh = _kbGetSpreadsheet_().getSheetByName(KB.PLANT_KB);
+    if (!pestSh) return {ok:false, error:'Pest & Disease Library not found. Run ⚙ Setup.'};
+    const pestRows  = _kbReadSheet(pestSh);
+    const plantRows = plantSh ? _kbReadSheet(plantSh) : [];
+    const keywords  = _kbExtractKeywords(symptomText);
+    if (!keywords.length) return {
+      ok:true, results:[],
+      message:"Describe what you're seeing — e.g. \"silver streaks\", \"tiny flies near soil\".",
+    };
+    const scores = {}, matched = {};
+    pestRows.forEach(row => {
+      keywords.forEach(kw => {
+        if (row.subject === kw) {
+          scores[row.subject]  = (scores[row.subject]||0) + 4;
+          matched[row.subject] = matched[row.subject]||[];
+          if (!matched[row.subject].includes(kw)) matched[row.subject].push(kw);
+        }
+      });
+    });
+    const diagPreds = new Set(['telltale_sign','causes_symptom','symptom_of']);
+    pestRows.filter(r => diagPreds.has(r.predicate)).forEach(row => {
+      const objLower = row.object.toLowerCase();
+      keywords.forEach(kw => {
+        if (objLower.includes(kw) || kw.includes(objLower.split('_')[0])) {
+          const w = KB.CONF_RANK[row.confidence]||1;
+          scores[row.subject]  = (scores[row.subject]||0) + w*2;
+          matched[row.subject] = matched[row.subject]||[];
+          if (!matched[row.subject].includes(row.object)) matched[row.subject].push(row.object);
+        }
+      });
+    });
+    if (genus) {
+      const g = genus.toLowerCase();
+      plantRows.filter(r => r.subject===g && r.predicate==='common_pest')
+               .forEach(r => { if (scores[r.object.toLowerCase()]) scores[r.object.toLowerCase()]+=2; });
+    }
+    if (!Object.keys(scores).length) return {
+      ok:true, results:[], keywords,
+      message:'No matches found. Try describing more specifically, or add more data via the Import Zone.',
+    };
+    const maxScore = Math.max(...Object.values(scores));
+    const results = Object.entries(scores)
+      .sort((a,b)=>b[1]-a[1]).slice(0,5)
+      .map(([subject, score]) => {
+        const sRows    = pestRows.filter(r => r.subject===subject);
+        const conf     = Math.round((score/maxScore)*100);
+        return {
+          subject,
+          confidence:  conf,
+          confLabel:   conf>=70?'high':conf>=40?'medium':'low',
+          matchedOn:   matched[subject]||[],
+          signs:       _kbGetAll(sRows,'telltale_sign').slice(0,3).map(r=>r.object),
+          kryptonites: _kbGetAll(sRows,'weak_to').slice(0,3).map(r=>({treatment:r.object,qualifier:r.qualifier})),
+          interval:    (sRows.find(r=>r.predicate==='treatment_interval')||{}).object||null,
+          confused:    _kbGetAll(sRows,'confused_with').slice(0,2).map(r=>({with:r.object,note:r.qualifier})),
+          prevented:   _kbGetAll(sRows,'prevented_by').slice(0,2).map(r=>r.object),
+        };
+      });
+    return {
+      ok:true, results, keywords,
+      message:`Found ${results.length} possible match${results.length>1?'es':''} from your description.`,
+    };
+  } catch(e) { return {ok:false, error:'Diagnosis error: '+e.message}; }
+}
+
+function kbQueryGenus(genus) {
+  if (!genus) return [];
+  const ss = _kbGetSpreadsheet_();
+  const results = [];
+  [KB.PLANT_KB, KB.PEST_KB].forEach(sheetName => {
+    const sh = ss.getSheetByName(sheetName);
+    if (!sh) return;
+    const last = sh.getLastRow();
+    if (last < 2) return;
+    const genusLower = genus.toLowerCase().trim();
+    sh.getRange(2,1,last-1,11).getValues().forEach(row => {
+      const subject = String(row[2]||'').toLowerCase().trim();
+      if (subject === genusLower || subject === 'general') {
+        results.push({
+          scope:String(row[1]||''), subject:String(row[2]||''),
+          predicate:String(row[3]||''), object:String(row[4]||''),
+          qualifier:String(row[5]||''), confidence:String(row[6]||''),
+          tags:String(row[7]||''), source:String(row[8]||''),
+          interpretation:String(row[9]||''), notes:String(row[10]||''),
+        });
+      }
+    });
+  });
+  return results;
+}
+
+function kbQueryTrivia(genus) {
+  return kbQueryGenus(genus)
+    .filter(r => r.predicate==='trivia' && r.object)
+    .map(r => ({fact:r.object, detail:r.interpretation||r.qualifier||'', notes:r.notes||''}));
+}
+
+function kbQueryPests(genus) {
+  return kbQueryGenus(genus)
+    .filter(r => r.predicate==='common_pest' || r.tags.includes('pest') || r.tags.includes('disease'))
+    .map(r => ({subject:r.subject, predicate:r.predicate, object:r.object,
+                detail:r.qualifier||r.interpretation||'', confidence:r.confidence}));
+}
+
+function kbQuerySafety(genus) {
+  return kbQueryGenus(genus).filter(r =>
+    r.predicate==='toxic_to_pets'          ||
+    r.predicate==='toxicity_detail'        ||
+    r.predicate==='forbidden_medium'       ||
+    r.predicate==='medium_constraint'      ||
+    r.predicate==='water_quality_constraint'
+  );
+}
+
+function kbqSetupTables() {
+  const ss = _kbGetSpreadsheet_() || SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('No spreadsheet context. Set Script Property PLANTOS_SS_ID.');
+  const namesTab = '🧠 KB Names';
+  const aliasTab = '🧠 KB Aliases';
+  let sh1 = ss.getSheetByName(namesTab);
+  if (!sh1) sh1 = ss.insertSheet(namesTab);
+  sh1.clear();
+  sh1.setTabColor('#2E7D32');
+  sh1.getRange(1,1,1,6).setValues([['Canonical','Rank','Family','Genus','Species','Notes']]).setFontWeight('bold');
+  sh1.setFrozenRows(1);
+  sh1.setColumnWidths(1, 6, 160);
+  let sh2 = ss.getSheetByName(aliasTab);
+  if (!sh2) sh2 = ss.insertSheet(aliasTab);
+  sh2.clear();
+  sh2.setTabColor('#1565C0');
+  sh2.getRange(1,1,1,6).setValues([['Alias','Canonical','Type','Confidence','Source','Notes']]).setFontWeight('bold');
+  sh2.setFrozenRows(1);
+  sh2.setColumnWidths(1, 6, 170);
+  SpreadsheetApp.getUi().alert(
+    '✅ KB Name & Alias tables created.\n\n' +
+    '🧠 KB Names: store canonical names\n' +
+    '🧠 KB Aliases: map nicknames/typos → canonical'
+  );
+}
+
+function kbqExportToSheet() {
+  const ss = _kbGetSpreadsheet_() || SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('No spreadsheet context. Set Script Property PLANTOS_SS_ID.');
+  const plantSh = ss.getSheetByName(KB.PLANT_KB);
+  const pestSh  = ss.getSheetByName(KB.PEST_KB);
+  const plantRows = plantSh ? _kbReadSheet(plantSh) : [];
+  const pestRows  = pestSh  ? _kbReadSheet(pestSh)  : [];
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    plantCount: plantRows.length,
+    pestCount:  pestRows.length,
+    plant: plantRows,
+    pest: pestRows,
+  };
+  const jsonStr = JSON.stringify(payload);
+  const outTab = '🧠 KB Export';
+  let out = ss.getSheetByName(outTab);
+  if (!out) out = ss.insertSheet(outTab);
+  out.clear();
+  out.setTabColor('#6A1B9A');
+  out.getRange(1,1).setValue('PlantOS KB Export (JSON)');
+  out.getRange(2,1).setValue('Generated: ' + payload.exportedAt);
+  out.getRange(3,1).setValue('Plant rows: ' + payload.plantCount + ' | Pest rows: ' + payload.pestCount);
+  const CHUNK = 45000;
+  const chunks = [];
+  for (let i = 0; i < jsonStr.length; i += CHUNK) chunks.push([jsonStr.slice(i, i + CHUNK)]);
+  out.getRange(5,1,1,1).setValue('JSON Chunks (concatenate A6..):');
+  out.getRange(6,1,chunks.length,1).setValues(chunks);
+  out.setColumnWidth(1, 900);
+  SpreadsheetApp.getUi().alert('✅ Exported KB to sheet: ' + outTab);
+}
+
+let _KB_CACHE = null;
+let _KB_CACHE_LOADING = false;
+let _KB_CACHE_CALLBACKS = [];
+
+function kbCacheGet() { return _KB_CACHE; }
+
+function kbCacheLoad() {
+    if (_KB_CACHE) return Promise.resolve(_KB_CACHE);
+    if (DEMO_MODE)  return Promise.resolve(null);
+    if (_KB_CACHE_LOADING) {
+        return new Promise(res => _KB_CACHE_CALLBACKS.push(res));
+    }
+    _KB_CACHE_LOADING = true;
+    return gasCall('kbDump').then(data => {
+        _KB_CACHE = (data && data.ok) ? data : null;
+        _KB_CACHE_LOADING = false;
+        _KB_CACHE_CALLBACKS.forEach(cb => cb(_KB_CACHE));
+        _KB_CACHE_CALLBACKS = [];
+        return _KB_CACHE;
+    }).catch(() => {
+        _KB_CACHE_LOADING = false;
+        return null;
+    });
+}
+
+function kbPersonality(query, plant, chatHistory) {
+    const raw = query.trim();
+    const plantName = plant && plant.genus ? plant.genus : 'your plant';
+    const hasPrior = chatHistory && chatHistory.length > 0;
+    const q = raw.trim().toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    if (!q) return null;
+    function reply(t) { return { type: 'personality', text: t }; }
+
+    const GREET = ['hi','hey','hello','hiya','howdy','sup','yo','heya'];
+    if (GREET.indexOf(q) !== -1 || q.indexOf('good morning') === 0 || q.indexOf('good afternoon') === 0 || q.indexOf('good evening') === 0 || q.indexOf('whats up') === 0) {
+        const msgs = ["Hey! What's going on with " + plantName + "?", "Hi! What are you seeing on " + plantName + "?", "Hello! What's up with " + plantName + "?"];
+        return reply(msgs[raw.length % msgs.length]);
+    }
+
+    const RUDE = ['fuck','shit','cunt','bitch','asshole','dick','bastard','twat'];
+    const PLANT_WORDS = ['rot','bug','fly','wilt','droop','smell','mold','spot','brown','yellow','dead','dying','pest','fungus','gnat','scale','aphid','mite','mealybug','thrip','root','leaf','stem','soil','water','plant','white','black','sticky','soft','mushy','dry','wet'];
+    const hasRude = RUDE.some(function(w) { return q.indexOf(w) !== -1; });
+    const hasPlant = PLANT_WORDS.some(function(w) { return q.indexOf(w) !== -1; });
+    if (hasRude && !hasPlant && q.length < 30) {
+        return reply("I get it — plant problems are frustrating. Tell me what's going on with " + plantName + " and I'll help.");
+    }
+
+    const THANKS = ['thanks','thank you','thx','cheers','great','helpful','brilliant','love it','ty'];
+    if (hasPrior && THANKS.some(function(w) { return q === w || q.indexOf(w) === 0; })) {
+        const msgs = ["Glad that helped! Keep an eye on " + plantName + ".", "You're welcome. Let me know if anything else comes up.", "Happy to help. Any other symptoms?"];
+        return reply(msgs[raw.length % msgs.length]);
+    }
+
+    const THINKING = ['uhm','uh','um','hmm','hm','euh','erm','err','ah','oh'];
+    if (THINKING.indexOf(q) !== -1) {
+        const msgs = ["Take your time — what are you seeing on " + plantName + "?", "What's caught your eye? Describe it and I'll look it up.", "No rush — what does it look like?"];
+        return reply(msgs[raw.length % msgs.length]);
+    }
+
+    const AFFIRM = ['okay','ok','yep','yeah','cool','sure','got it','makes sense','alright','right','yes','nope','nah','no','mm','mmm','k'];
+    if (AFFIRM.indexOf(q) !== -1) {
+        if (!hasPrior) return null;
+        const msgs = ["Let me know if you have more questions about " + plantName + ".", "Good luck with it — come back if things change.", "Sounds good. Shout if you need anything else."];
+        return reply(msgs[raw.length % msgs.length]);
+    }
+
+    const META = ['what are you','who are you','whats your name','are you an ai','are you a bot','are you human','what can you do'];
+    if (META.some(function(w) { return q.indexOf(w) !== -1; })) {
+        return reply("I'm Carl — named after Carl Linnaeus. Ask me anything about " + plantName + ".");
+    }
+
+    if (q.indexOf('will i die') !== -1 && q.indexOf('plant') === -1) {
+        return reply("That's outside my expertise. I'm a plant doctor — let's focus on " + plantName + ".");
+    }
+
+    const VAGUE = ['dry','wet','moist','damp','bad','weird','wrong','off','odd','strange','different','unusual'];
+    if (VAGUE.indexOf(q) !== -1) {
+        return reply("Can you say more? Where on " + plantName + " is it " + q + ", and when did you notice?");
+    }
+
+    return null;
+}
+
+function kbDiagnoseLocal(genus, symptomText) {
+    const cache = kbCacheGet();
+    if (!cache || !cache.pests || !cache.pests.length) return null;
+
+    const lower = symptomText.toLowerCase().trim();
+
+    const NEGATION_WORDS = ['good','great','fine','nice','healthy','okay','ok',
+        'normal','better','well','perfect','happy','beautiful','lovely'];
+    const words = lower.split(/\s+/);
+    const DOUBLE_NEG = new Set(['not','never','no','nor','neither',"n't"]);
+    function isNegated(kwIdx) {
+        for (let d = -2; d <= 2; d++) {
+            const w = words[kwIdx + d];
+            if (!w || !NEGATION_WORDS.includes(w.replace(/[^a-z]/g,''))) continue;
+            const lo = Math.min(kwIdx, kwIdx + d);
+            const hi = Math.max(kwIdx, kwIdx + d);
+            const between = words.slice(lo, hi);
+            if (between.some(bw => DOUBLE_NEG.has(bw.replace(/[^a-z']/g,'')))) continue; // "not good" = bad
+            return true;
+        }
+        return false;
+    }
+
+    const SYMPTOM_MAP = [
+        ['shell',               'scale'],
+        ['shells',              'scale'],
+        ['barnacle',            'scale'],
+        ['crusty',              'scale'],
+        ['waxy bump',           'scale'],
+        ['hard bump',           'scale'],
+        ['brown bump',          'scale'],
+        ['scab',                'scale'],
+        ['armour',              'scale'],
+        ['armor',               'scale'],
+        ['silver streak',       'silver_streaking'],
+        ['silver',              'silver_streaking'],
+        ['streak',              'silver_streaking'],
+        ['scratch',             'silver_streaking'],
+        ['scar',                'silver_streaking'],
+        ['black speck',         'black_specks_on_leaves'],
+        ['black dot',           'black_specks_on_leaves'],
+        ['frass',               'black_specks_on_leaves'],
+        ['thrip',               'thrips'],
+        ['webbing',             'fine_webbing'],
+        ['silk thread',         'fine_webbing'],
+        ['stippling',           'stippling'],
+        ['pale dot',            'stippling'],
+        ['tiny dot',            'stippling'],
+        ['mite',                'spider_mites'],
+        ['distorted',           'distorted_new_growth'],
+        ['crinkled',            'distorted_new_growth'],
+        ['deformed',            'distorted_new_growth'],
+        ['curling',             'distorted_new_growth'],
+        ['twisted',             'distorted_new_growth'],
+        ['wrinkled',            'distorted_new_growth'],
+        ['abnormal growth',     'distorted_new_growth'],
+        ['cottony',             'cottony_white_masses'],
+        ['white fluff',         'cottony_white_masses'],
+        ['fluffy white',        'cottony_white_masses'],
+        ['woolly',              'cottony_white_masses'],
+        ['white blob',          'cottony_white_masses'],
+        ['white stuff on stem', 'cottony_white_masses'],
+        ['mealybug',            'mealybugs'],
+        ['mealy bug',           'mealybugs'],
+        ['aphid',               'aphids'],
+        ['greenfly',            'aphids'],
+        ['blackfly',            'aphids'],
+        ['whitefly',            'whitefly'],
+        ['white fly',           'whitefly'],
+        ['white cloud',         'white_cloud_when_disturbed'],
+        ['sticky leaf',         'sticky_honeydew'],
+        ['sticky residue',      'sticky_honeydew'],
+        ['honeydew',            'sticky_honeydew'],
+        ['sooty mould',         'sooty_mould'],
+        ['sooty mold',          'sooty_mould'],
+        ['black mould',         'sooty_mould'],
+        ['black mold',          'sooty_mould'],
+        ['tiny flies',          'tiny_flies_near_soil'],
+        ['small flies',         'tiny_flies_near_soil'],
+        ['little flies',        'tiny_flies_near_soil'],
+        ['flies in soil',       'tiny_flies_near_soil'],
+        ['flies on soil',       'tiny_flies_near_soil'],
+        ['flies near soil',     'tiny_flies_near_soil'],
+        ['flies in pot',        'tiny_flies_near_soil'],
+        ['flies on leaves',     'tiny_flies_near_soil'],
+        ['gnats',               'tiny_flies_near_soil'],
+        ['gnat',                'tiny_flies_near_soil'],
+        ['mushy root',          'mushy_roots_foul_smell'],
+        ['brown root',          'mushy_roots_foul_smell'],
+        ['black root',          'mushy_roots_foul_smell'],
+        ['slimy root',          'mushy_roots_foul_smell'],
+        ['foul smell',          'mushy_roots_foul_smell'],
+        ['bad smell',           'mushy_roots_foul_smell'],
+        ['awful smell',         'mushy_roots_foul_smell'],
+        ['rotten smell',        'mushy_roots_foul_smell'],
+        ['smells bad',          'mushy_roots_foul_smell'],
+        ['smells like poo',     'mushy_roots_foul_smell'],
+        ['smells like poop',    'mushy_roots_foul_smell'],
+        ['smells like shit',    'mushy_roots_foul_smell'],
+        ['smells poo',          'mushy_roots_foul_smell'],
+        ['poop',                'mushy_roots_foul_smell'],
+        ['poo',                 'mushy_roots_foul_smell'],
+        ['smells rotten egg',   'mushy_roots_foul_smell'],
+        ['smells sulphur',      'mushy_roots_foul_smell'],
+        ['smells sewage',       'mushy_roots_foul_smell'],
+        ['smells like rot',     'mushy_roots_foul_smell'],
+        ['smells awful',        'mushy_roots_foul_smell'],
+        ['smells rotten',       'mushy_roots_foul_smell'],
+        ['smells like shit',    'mushy_roots_foul_smell'],
+        ['stinks',              'mushy_roots_foul_smell'],
+        ['smells like',         'mushy_roots_foul_smell'],  // catches 'smells like ass/death/rot/anything'
+        ['smells',              'mushy_roots_foul_smell'],  // bare 'smells' in plant context → suspect rot
+        ['smell',               'mushy_roots_foul_smell'],
+        ['root rot',            'root_rot'],
+        ['rotting',             'root_rot'],
+        ['white powder',        'white_powder_on_leaves'],
+        ['powdery',             'white_powder_on_leaves'],
+        ['mildew',              'white_powder_on_leaves'],
+        ['dusty white',         'white_powder_on_leaves'],
+        ['white coat',          'white_powder_on_leaves'],
+        ['looks like flour',    'white_powder_on_leaves'],
+        ['dead',                'wilting_despite_moist_soil'],
+        ['dying',               'wilting_despite_moist_soil'],
+        ['looks dead',          'wilting_despite_moist_soil'],
+        ['nearly dead',         'wilting_despite_moist_soil'],
+        ['almost dead',         'wilting_despite_moist_soil'],
+        ['it died',             'wilting_despite_moist_soil'],
+        ['wilting',             'wilting_despite_moist_soil'],
+        ['wilting',             'underwatering'],
+        ['wilts',               'wilting_despite_moist_soil'],
+        ['wilts',               'underwatering'],
+        ['wilty',               'wilting_despite_moist_soil'],
+        ['wilty',               'underwatering'],
+        ['wilt',                'wilting_despite_moist_soil'],
+        ['wilt',                'underwatering'],
+        ['floppy',              'wilting_despite_moist_soil'],
+        ['floppy',              'underwatering'],
+        ['drooping',            'wilting_despite_moist_soil'],
+        ['drooping',            'underwatering'],
+        ['droopy',              'wilting_despite_moist_soil'],
+        ['droopy',              'underwatering'],
+        ['droop',               'wilting_despite_moist_soil'],
+        ['droop',               'underwatering'],
+        ['limp',                'wilting_despite_moist_soil'],
+        ['limp',                'underwatering'],
+        ['collapsed',           'wilting_despite_moist_soil'],
+        ['soft stem',           'wilting_despite_moist_soil'],
+        ['etiolat',             'low_light_stress'],
+        ['stretching',          'low_light_stress'],
+        ['stretched',           'low_light_stress'],
+        ['leggy',               'low_light_stress'],
+        ['leaning',             'low_light_stress'],
+        ['pale new growth',     'low_light_stress'],
+        ['no growth',           'low_light_stress'],
+        ['slow growth',         'low_light_stress'],
+        ['not growing',         'low_light_stress'],
+        ['stopped growing',     'low_light_stress'],
+        ['yellowing',           'overwatering'],
+        ['yellow leaves',       'overwatering'],
+        ['leaves turning yellow','overwatering'],
+        ['crispy tips',         'low_humidity'],
+        ['brown tips',          'low_humidity'],
+        ['brown edges',         'low_humidity'],
+        ['dry edges',           'low_humidity'],
+        ['sunburnt',            'sunburn'],
+        ['scorched',            'sunburn'],
+        ['bleached patch',      'sunburn'],
+        ['blistered',           'edema'],
+        ['corky bumps',         'edema'],
+        ['water blisters',      'edema'],
+        ['bugs in soil',        'tiny_flies_near_soil'],
+        ['little bugs',         'mealybugs'],
+        ['bugs on stem',        'mealybugs'],
+        ['bugs on leaves',      'thrips'],
+        ['insects on',          'thrips'],
+        ['jumping',             'springtails'],
+        ['jumps',               'springtails'],
+        ['bouncing',            'springtails'],
+        ['springtail',          'springtails'],
+        ['white jumping',       'springtails'],
+        ['tiny jumping',        'springtails'],
+        ['crispy',              'low_humidity'],
+        ['dehydrated',          'underwatering'],
+        ['thirsty',             'underwatering'],
+        ['needs water',         'underwatering'],
+        ['brown tips',          'low_humidity'],
+        ['browning tips',       'low_humidity'],
+        ['brown edges',         'low_humidity'],
+        ['browning edges',      'low_humidity'],
+        ['brown leaves',        'leaf_scorch'],
+        ['browning leaves',     'leaf_scorch'],
+        ['browning',            'low_humidity'],   // default brown → humidity first
+        ['brown',               'low_humidity'],
+        ['crunchy leaves',      'low_humidity'],
+        ['brittle leaves',      'low_humidity'],
+        ['shrivelled',          'underwatering'],
+        ['shriveled',           'underwatering'],
+        ['wrinkled leaves',     'underwatering'],
+        ['bone dry',            'underwatering'],
+        ['completely dry',      'underwatering'],
+        ['very dry',            'underwatering'],
+        ['overwatered',         'overwatering'],
+        ['waterlogged',         'overwatering'],
+        ['soggy soil',          'overwatering'],
+        ['soggy',               'overwatering'],
+        ['standing water',      'overwatering'],
+        ['flies',               'tiny_flies_near_soil'],
+        ['fly',                 'tiny_flies_near_soil'],
+        ['fungus',              'tiny_flies_near_soil'],  // "fungus" almost always means fungus gnats in plant context
+        ['gnats',               'tiny_flies_near_soil'],
+        ['worms',               'tiny_flies_near_soil'],  // worms in soil = gnat larvae
+        ['larvae',              'tiny_flies_near_soil'],
+        ['maggots',             'tiny_flies_near_soil'],
+        ['mold',                'sooty_mould'],
+        ['mould',               'sooty_mould'],
+        ['slime',               'mushy_roots_foul_smell'],
+        ['slug',                'mushy_roots_foul_smell'],
+        ['bugs',                'thrips'],    // generic "bugs" — thrips most common
+        ['insect',              'thrips'],
+        ['insects',             'thrips'],
+        ['critter',             'thrips'],
+        ['critters',            'thrips'],
+        ['rot',                 'root_rot'],
+        ['spots',               'leaf_spot'],
+        ['spot',                'leaf_spot'],
+        ['holes',               'thrips'],    // leaf holes common with thrips feeding
+        ['sticky',              'sticky_honeydew'],  // sticky alone is fine — unambiguous
+        ['webs',                'fine_webbing'],
+        ['web',                 'fine_webbing'],
+    ];
+
+    const keywords = [];
+    const BIG_FLY_RE = /\b(big|large|huge|giant|massive|enormous)\s+(flies|fly|flying insects?)\b/;
+    const BIG_BUG_RE = /\b(big|large|huge|giant|massive|enormous)\s+(bugs?|insects?)\b/;
+    const lowerNoSize = lower
+        .replace(BIG_FLY_RE, 'SIZE_QUALIFIED_FLY')
+        .replace(BIG_BUG_RE, 'SIZE_QUALIFIED_BUG');
+
+    for (const [phrase, mapped] of SYMPTOM_MAP) {
+        const isSizeSensitive = ['flies','fly','bugs','insects'].includes(phrase);
+        const searchIn = isSizeSensitive ? lowerNoSize : lower;
+        const idx = searchIn.indexOf(phrase);
+        if (idx === -1) continue;
+        const wordsBeforePhrase = lower.slice(0, idx).split(/\s+/).length - 1;
+        if (!isNegated(wordsBeforePhrase)) {
+            keywords.push(mapped);
+        }
+    }
+
+    const uniq = [...new Set(keywords)];
+
+    if (!uniq.length) return {
+        ok: true, results: [], keywords: [],
+        message: "I didn\'t recognise a specific symptom in that. Try describing what you can physically see — e.g. \"shells on the stems\", \"tiny flies near the soil\", \"white powder on leaves\", \"leaves are yellowing\".",
+    };
+
+    const pestRows = cache.pests;
+    const plantRows = cache.plant || [];
+    const scores = {}, matched = {};
+
+    pestRows.forEach(row => {
+        uniq.forEach(kw => {
+            const subj = row.subject;
+            if (subj === kw) {
+                scores[subj]  = (scores[subj]||0) + 4;
+                matched[subj] = matched[subj]||[];
+                if (!matched[subj].includes(kw)) matched[subj].push(kw);
+            }
+        });
+    });
+
+    const diagPreds = new Set(['telltale_sign','causes_symptom','symptom_of']);
+    pestRows.filter(r => diagPreds.has(r.predicate)).forEach(row => {
+        const objLower = row.object.toLowerCase();
+        uniq.forEach(kw => {
+            const kwClean = kw.replace(/_/g,' ');
+            if (objLower === kwClean || objLower.includes(kwClean) || kwClean.includes(objLower)) {
+                scores[row.subject]  = (scores[row.subject]||0) + 2;
+                matched[row.subject] = matched[row.subject]||[];
+                if (!matched[row.subject].includes(row.object)) matched[row.subject].push(row.object);
+            }
+        });
+    });
+
+    if (genus) {
+        const g = genus.toLowerCase();
+        plantRows.filter(r => r.subject===g && r.predicate==='common_pest')
+                 .forEach(r => {
+                     const pestKey = r.object.toLowerCase().replace(/ /g,'_');
+                     if (scores[pestKey]) scores[pestKey] += 2;
+                 });
+    }
+
+    if (!Object.keys(scores).length) return {
+        ok: true, results: [], keywords: uniq,
+        message: cache.pests.length < 5
+            ? 'Pest & Disease dataset appears empty. Paste KB_Pest_Disease_v2.txt into the Import Zone and run Import.'
+            : "No KB entries matched those symptoms. Try describing more specifically — e.g. \"shells on stems\", \"tiny flies near soil\".",
+    };
+
+    const maxScore = Math.max(...Object.values(scores));
+    const getAll = (rows, pred) => rows.filter(r => r.predicate === pred);
+
+    const results = Object.entries(scores)
+        .sort((a,b) => b[1]-a[1]).slice(0,5)
+        .map(([subject, score]) => {
+            const sRows = pestRows.filter(r => r.subject === subject);
+            const conf  = Math.round((score/maxScore)*100);
+            return {
+                subject,
+                confidence: conf,
+                confLabel:  conf>=70?'high':conf>=40?'medium':'low',
+                matchedOn:  matched[subject]||[],
+                signs:      getAll(sRows,'telltale_sign').slice(0,3).map(r=>r.object),
+                kryptonites:getAll(sRows,'weak_to').slice(0,3).map(r=>({treatment:r.object,qualifier:r.qualifier})),
+                interval:   (sRows.find(r=>r.predicate==='treatment_interval')||{}).object||null,
+                confused:   getAll(sRows,'confused_with').slice(0,2).map(r=>({with:r.object,note:r.qualifier})),
+                prevented:  getAll(sRows,'prevented_by').slice(0,2).map(r=>r.object),
+            };
+        });
+
+    return {
+        ok: true, results, keywords: uniq,
+        message: `Found ${results.length} possible match${results.length>1?'es':''}.`,
+    };
+}
+
+function kbFollowUp(query, lastResult, plant, chatHistory) {
+    const q = query.toLowerCase().trim();
+    const cache = kbCacheGet();
+    const pestRows = (cache && cache.pests) ? cache.pests : [];
+    const f = v => (v||'').replace(/_/g,' ').trim();
+
+    const plantGenus = plant && plant.genus ? plant.genus : null;
+    const sp = plant && (plant.species || plant.taxon) ? (plant.species || plant.taxon) : null;
+    const sub = plant && plant.substrate ? plant.substrate : null;
+    const pot = plant && plant.potMaterial ? plant.potMaterial : null;
+    const loc = plant && plant.location ? plant.location : null;
+
+    function plantRef() {
+        if (plantGenus && sp) return `your ${plantGenus} ${sp}`;
+        if (plantGenus) return `your ${plantGenus}`;
+        return 'your plant';
+    }
+
+    function rowsFor(subj) {
+        const s = subj.toLowerCase().replace(/ /g,'_');
+        return pestRows.filter(r => r.subject === s || r.subject === subj.toLowerCase());
+    }
+
+    const lastSubject = lastResult && lastResult.topDiagnosis ? lastResult.topDiagnosis : null;
+    const lastSubjectKey = lastSubject ? lastSubject.toLowerCase().replace(/ /g,'_').split(' / ')[0] : null;
+    const diagRows = lastSubjectKey ? rowsFor(lastSubjectKey) : [];
+
+    function varyQ(arr) {
+        let h = 0;
+        for (let i = 0; i < q.length; i++) h = (h * 31 + q.charCodeAt(i)) & 0xffff;
+        return arr[h % arr.length];
+    }
+    function varyS(arr) {
+        const seed = (lastSubjectKey||'') + q;
+        let h = 0;
+        for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) & 0xffff;
+        return arr[h % arr.length];
+    }
+
+    function classify(q) {
+        if (/how.*(treat|fix|deal|handle|get rid|cure|stop|remove|kill)/i.test(q)) return 'treatment';
+        if (/what.*(do|should|use|need|buy|get|apply)/i.test(q)) return 'treatment';
+        if (/\b(treat|treatment|fix|cure|kill|remove|get rid|help it)\b/i.test(q)) return 'treatment';
+        if (/prevent|avoid|stop.*happen|won.*happen|again/i.test(q)) return 'prevention';
+        if (/come back|recur|return|happen again|get it again/i.test(q)) return 'prevention';
+        if (/how long|how.*often|when|repeat|how many|frequency/i.test(q)) return 'timing';
+        if (/why|cause|reason|how.*happen|come from|where.*from/i.test(q)) return 'cause';
+        if (/spread|contagious|other plant|nearby|infect/i.test(q)) return 'spread';
+        if (/serious|dangerous|worry|concern|bad|urgent/i.test(q)) return 'severity';
+        if (/\b(kill|die|dead|dying|save|survive|recover|doomed|live|make it|pull through|lost)\b/i.test(q)) {
+            if (/\bwill (i|you|we)\b/i.test(q) && !/\b(my plant|the plant|it)\b/i.test(q)) return 'general';
+            return 'severity';
+        }
+        if (/soil|substrate|repot|medium|mix|pot/i.test(q)) return 'substrate';
+        if (/water|watering|wet|dry|moisture|irrigat/i.test(q)) return 'watering';
+        if (/light|sun|shade|bright|dark|window/i.test(q)) return 'light';
+        if (/confirm|sure|definitely|certain|tell if|how.*know/i.test(q)) return 'confirm';
+        if (/yes|no|yep|yeah|nope|correct|right|exactly|ok|okay/i.test(q)) return 'acknowledge';
+        if (/thanks|thank you|got it|makes sense|helpful|cheers/i.test(q)) return 'thanks';
+        return 'general';
+    }
+
+    function plantContextNote() {
+        if (!sub || !lastSubjectKey) return null;
+        if (lastSubjectKey.includes('root_rot') || lastSubjectKey.includes('root rot')) {
+            if (/soil|peat|coir|organic/i.test(sub))
+                return varyQ([
+                    `${plantRef()} being in ${sub} is relevant here — it holds moisture and that's a contributing factor`,
+                    `worth flagging that ${sub} retains water, which is exactly what encourages this`,
+                    `the ${sub} isn't helping — it holds moisture longer than a fast-draining mix would`,
+                ]);
+            if (/mineral|pumice|perlite|leca/i.test(sub))
+                return `${plantRef()} is in ${sub}, which drains well — so the rot came from watering habits, not the mix`;
+        }
+        if ((lastSubjectKey.includes('fungus_gnat') || lastSubjectKey.includes('fungus gnats')) && /peat|coir|organic|soil mix/i.test(sub))
+            return varyQ([
+                `${sub} is basically a gnat nursery — moist organic material is exactly what they need to breed in`,
+                `the ${sub} is making this worse — it's perfect gnat habitat`,
+            ]);
+        if ((lastSubjectKey.includes('root_rot') || lastSubjectKey.includes('root rot')) && pot && /plastic/i.test(pot))
+            return `the plastic pot holds moisture longer than terracotta would — worth switching if this keeps coming back`;
+        return null;
+    }
+
+    const intent = classify(q);
+    let explanation = '';
+    let actions = [];
+    let watchFor = '';
+    let topDiagnosis = lastSubject || 'follow-up';
+
+    if (intent === 'treatment') {
+        const treatments = diagRows.filter(r => r.predicate === 'weak_to').map(r => ({t:r.object, q:r.qualifier}));
+        const ctxNote = plantContextNote();
+
+        if (!lastSubject) {
+            explanation = varyQ([
+                `I don't have a previous diagnosis to work from — what are you seeing?`,
+                `Not sure what we're treating yet. What are the symptoms?`,
+                `Tell me what you're seeing first and I'll give you a treatment plan.`,
+            ]);
+        } else if (!treatments.length) {
+            explanation = varyQ([
+                `I don't have specific treatment data for ${lastSubject} in the KB yet. For now, I'd suggest searching "${lastSubject} treatment" for plant-specific advice.`,
+                `Treatment info for ${lastSubject} isn't in my dataset yet. Worth looking it up directly — the general principles will apply.`,
+            ]);
+        } else {
+            const opener = varyQ([
+                `Okay, for **${lastSubject}**${plantGenus ? ` on ${plantRef()}` : ''}:`,
+                `Right, so with **${lastSubject}** — here's what to do:`,
+                `For **${lastSubject}**, the main things are:`,
+                `To deal with **${lastSubject}**${plantGenus ? ` on ${plantRef()}` : ''}:`,
+            ]);
+            explanation = opener;
+            if (ctxNote) explanation += ` (${ctxNote}).`;
+            treatments.slice(0,3).forEach(({t, q: tq}) => actions.push(toKbAction(t, tq)));
+            const prevention = diagRows.filter(r => r.predicate === 'prevented_by').map(r => r.object);
+            if (prevention.length) actions.push(`To stop it coming back: ${prevention.slice(0,2).map(f).join(' and ')}`);
+            const interval = (diagRows.find(r => r.predicate === 'treatment_interval') || {}).object;
+            if (interval) watchFor = varyQ([
+                `Keep treating ${f(interval)} — the lifecycle lasts longer than what you can see.`,
+                `Don't stop after one treatment — repeat ${f(interval)} until you've had two clean checks.`,
+                `${f(interval)} repeat until it's fully clear.`,
+            ]);
+        }
+
+    } else if (intent === 'prevention') {
+        const prevention = diagRows.filter(r => r.predicate === 'prevented_by').map(r => r.object);
+        const risk = diagRows.filter(r => r.predicate === 'risk_factor').map(r => r.object);
+        const ctxNote = plantContextNote();
+
+        if (prevention.length) {
+            explanation = varyQ([
+                `To stop **${lastSubject}** coming back${plantGenus ? ` on ${plantRef()}` : ''}:`,
+                `Preventing **${lastSubject}** long-term is about:`,
+                `To keep **${lastSubject}** from returning:`,
+            ]);
+            actions = prevention.slice(0,3).map(p => f(p).charAt(0).toUpperCase() + f(p).slice(1));
+        } else if (risk.length) {
+            explanation = varyQ([
+                `**${lastSubject}** comes back when ${risk.slice(0,2).map(f).join(' or ')} — avoid those conditions and you should be good.`,
+                `The main thing that brings **${lastSubject}** back is ${risk.slice(0,2).map(f).join(' and ')}. Keep on top of those and you'll be fine.`,
+                `What causes **${lastSubject}** to recur: ${risk.slice(0,2).map(f).join(' and ')}. Address those root conditions.`,
+            ]);
+        } else {
+            explanation = varyQ([
+                `No specific prevention data in the KB for this one, but the general rules apply: good airflow, don't let ${plantRef()} sit in stress, and inspect regularly.`,
+                `I don't have specific prevention data for ${lastSubject}, but keeping ${plantRef()} healthy and stress-free is the best defence.`,
+            ]);
+        }
+        if (ctxNote) explanation += ` Also worth knowing: ${ctxNote}.`;
+
+    } else if (intent === 'cause') {
+        const risk = diagRows.filter(r => r.predicate === 'risk_factor').map(r => r.object);
+        const thrives = diagRows.filter(r => r.predicate === 'thrives_in').map(r => r.object);
+        const ctxNote = plantContextNote();
+
+        if (risk.length || thrives.length) {
+            const opener = varyQ([
+                `**${lastSubject}** usually develops when`,
+                `The conditions that cause **${lastSubject}** are typically`,
+                `**${lastSubject}** shows up when`,
+                `What causes **${lastSubject}**:`,
+            ]);
+            explanation = opener + ' ';
+            if (thrives.length) explanation += `the environment is ${f(thrives[0])}`;
+            if (risk.length) explanation += (thrives.length ? ', especially if there\'s ' : '') + risk.slice(0,2).map(f).join(' or ');
+            explanation += '.';
+            if (ctxNote) explanation += ` In ${plantRef()}'s case, ${ctxNote}.`;
+        } else {
+            explanation = varyQ([
+                `I don't have detailed cause data for ${lastSubject} in the KB. That said — most plant issues come down to stress, overwatering, or something compromising the plant's defences.`,
+                `The KB doesn't have a root cause recorded for ${lastSubject} yet. Generally: watering habits, airflow, and plant stress are the usual suspects.`,
+            ]);
+        }
+
+    } else if (intent === 'timing') {
+        const interval = (diagRows.find(r => r.predicate === 'treatment_interval') || {}).object;
+        if (interval) {
+            explanation = varyQ([
+                `For **${lastSubject}** — repeat treatment ${f(interval)}. Most pests and pathogens have a lifecycle that outlasts what you can see, so don't stop early.`,
+                `Treat ${f(interval)}. Even if it looks clear after the first round, keep going — you're dealing with a lifecycle, not just what's visible right now.`,
+                `**${lastSubject}** needs treatment ${f(interval)} to fully break the cycle. Stopping early is the most common mistake.`,
+            ]);
+        } else {
+            explanation = varyQ([
+                `No specific interval in the KB for this one. General rule: treat, wait a week, check again. If there's still activity, repeat. Two clean checks in a row = you're done.`,
+                `I don't have exact timing for ${lastSubject}. Standard approach: treat weekly, check each time, stop after two consecutive clear inspections.`,
+            ]);
+        }
+
+    } else if (intent === 'spread') {
+        const spreadRow = diagRows.find(r => r.predicate === 'contagious' || r.predicate === 'spreads_by');
+        const NON_CONTAGIOUS = /underwatering|overwatering|root.rot|low.humidity|drought|dehydrat|nutrient|sunburn|scorch|frost|cold/i;
+        if (NON_CONTAGIOUS.test(lastSubjectKey || '')) {
+            explanation = varyQ([
+                `**${lastSubject}** isn't contagious — it's a condition, not a pest or pathogen. Other plants won't catch it from ${plantRef()}.`,
+                `Good news here: **${lastSubject}** doesn't spread between plants. It's a care issue, not an infection.`,
+                `**${lastSubject}** can't spread to other plants — it's not a pest or disease. Each plant develops it independently based on its conditions.`,
+            ]);
+        } else {
+            const opener = varyQ([
+                `Yes — **${lastSubject}** can spread, and it can do it faster than you'd expect.`,
+                `**${lastSubject}** absolutely spreads to neighbouring plants.`,
+                `This is one to take seriously — **${lastSubject}** spreads readily.`,
+                `Short answer: yes. **${lastSubject}** can and does spread to other plants.`,
+            ]);
+            explanation = opener;
+            if (spreadRow) explanation += ` Usually via ${f(spreadRow.object)}.`;
+            explanation += varyQ([
+                ` Isolate ${plantRef()} now if you haven't already, and check everything nearby.`,
+                ` Get ${plantRef()} away from other plants immediately and inspect anything that was close to it.`,
+                ` Move ${plantRef()} away from other plants and check anything that was sitting near it.`,
+            ]);
+        }
+
+    } else if (intent === 'severity') {
+        const serious = diagRows.find(r => r.predicate === 'severity' || r.predicate === 'mortality_risk');
+        if (serious) {
+            explanation = `${f(serious.object).charAt(0).toUpperCase() + f(serious.object).slice(1)} situation for ${plantRef()} with ${lastSubject}.`;
+        } else if (lastSubjectKey && lastSubjectKey.includes('root_rot')) {
+            explanation = varyQ([
+                `Root rot can absolutely kill a plant — the question is how much root is left. If you catch it early and more than half the root system is still white and firm, recovery is very doable. If the roots are mostly brown and mushy, it's a harder fight. Act now and you've got a real chance.`,
+                `Honest answer: it depends on how far it's gone. Healthy white roots still outnumbering the brown ones = good odds. Mostly brown and mushy = difficult but not impossible. The sooner you unpot and treat, the better ${plantRef()}'s chances.`,
+                `Root rot is serious, but it's not always fatal if caught in time. Check the root system — if there's still a solid healthy core (white, firm roots), you can work with that. If it's mostly gone, you're looking at a hard recovery.`,
+            ]);
+        } else if (lastSubjectKey && lastSubjectKey.includes('underwatering')) {
+            explanation = varyQ([
+                `Underwatering is stressful for the plant but rarely fatal if you catch it — water thoroughly now and ${plantRef()} should bounce back within a day or two.`,
+                `Good news here — underwatering is very recoverable. Water it properly now and you should see improvement quickly.`,
+            ]);
+        } else {
+            explanation = varyQ([
+                `**${lastSubject}** is manageable if you act now. Most houseplant pest and disease issues respond well to treatment — the main risk is leaving it too long and letting the population or damage build up. ${plantRef()} should be fine.`,
+                `If you treat it now, ${plantRef()} should come through this okay. **${lastSubject}** is a common issue and very treatable — just don't wait.`,
+                `Caught early, **${lastSubject}** isn't a death sentence. Get on it quickly and ${plantRef()} will likely be fine.`,
+            ]);
+        }
+
+    } else if (intent === 'substrate') {
+        if (/\b(soil|substrate)\s+(is\s+)?(dry|wet|damp|soggy|bone\s*dry|completely\s*dry|very\s*dry|waterlogged)\b/i.test(q)) {
+            const soilState = /dry|bone dry/i.test(q) ? 'dry' : 'wet';
+            if (soilState === 'dry' && lastSubjectKey) {
+                if (lastSubjectKey.includes('root_rot') || lastSubjectKey.includes('overwatering')) {
+                    explanation = varyQ([
+                        `Interesting — if the soil is dry, root rot becomes less likely. That actually shifts this toward underwatering. Try watering thoroughly and see if it recovers.`,
+                        `Dry soil with these symptoms is more likely underwatering than root rot. Give it a proper water and check back.`,
+                    ]);
+                } else {
+                    explanation = varyQ([
+                        `Dry soil confirms the direction — this is underwatering. Water thoroughly now, let it drain, and establish a more regular schedule.`,
+                        `If the soil is dry, that's your answer. Water it properly and ${plantRef()} should come back quickly.`,
+                    ]);
+                }
+            } else if (soilState === 'wet') {
+                explanation = varyQ([
+                    `Soggy soil is a red flag — that's the environment root rot needs. If there's also wilting or a bad smell, unpot and inspect the roots.`,
+                    `Wet or waterlogged soil combined with these symptoms — that's pointing toward root rot. Worth unpotting to check.`,
+                ]);
+            } else {
+                explanation = `What does the soil actually look and feel like? Bone dry, slightly damp, or waterlogged?`;
+            }
+        } else if (/mix with|cross with|compatible|hybri/i.test(q)) {
+            explanation = varyQ([
+                `That's outside what I know — I cover pests and diseases, not plant compatibility or breeding. A Hoya-specific forum would know more.`,
+                `I can't help with hybridisation questions — that's beyond my knowledge base. Try a species-specific community.`,
+            ]);
+        } else if (sub) {
+            explanation = varyQ([
+                `${plantRef()} is in **${sub}**.`,
+                `So ${plantRef()} is currently in **${sub}** —`,
+                `You've got ${plantRef()} in **${sub}** —`,
+            ]);
+            if (lastSubjectKey && lastSubjectKey.includes('root_rot')) {
+                if (/peat|coir|organic|soil mix/i.test(sub))
+                    explanation += varyQ([
+                        ` That holds moisture, which is a contributing factor. After treating, a chunkier, faster-draining mix would help prevent a repeat.`,
+                        ` That's moisture-retentive, which isn't ideal here. Once you've dealt with the rot, switching to something with better drainage is worth it.`,
+                    ]);
+                else if (/mineral|pumice|leca/i.test(sub))
+                    explanation += ` That's well-draining, so the rot came from watering frequency rather than the mix itself.`;
+            } else if (lastSubjectKey && lastSubjectKey.includes('fungus_gnat')) {
+                if (/peat|coir|organic/i.test(sub))
+                    explanation += ` Organic substrates are prime gnat habitat. A mineral top-dressing would make it much harder for adults to lay eggs.`;
+            } else {
+                explanation += ` That substrate shouldn't be a major factor for **${lastSubject}** specifically.`;
+            }
+        } else {
+            explanation = varyQ([
+                `I don't have ${plantRef()}'s substrate on record — what's it potted in?`,
+                `What's ${plantRef()} growing in? That might be relevant here.`,
+            ]);
+        }
+
+    } else if (intent === 'watering') {
+        const base = varyQ([
+            `For ${plantRef()} dealing with **${lastSubject}**:`,
+            `Watering-wise, with **${lastSubject}** in the picture:`,
+            `With **${lastSubject}** going on,`,
+        ]);
+        explanation = base;
+        if (lastSubjectKey && lastSubjectKey.includes('root_rot'))
+            explanation += varyQ([
+                ` hold off watering completely until you've treated and repotted. After that, only water when the substrate is genuinely dry — not just the top layer.`,
+                ` don't water at all until the roots are treated and the plant is in fresh dry mix. Then switch to watering only when properly dry.`,
+            ]);
+        else if (lastSubjectKey && lastSubjectKey.includes('fungus_gnat'))
+            explanation += varyQ([
+                ` letting the top couple of inches dry out between waterings is the single most effective thing you can do. Larvae can't survive in dry soil.`,
+                ` dry out the top 2 inches before each watering. That alone breaks the larval cycle.`,
+            ]);
+        else if (lastSubjectKey && lastSubjectKey.includes('underwatering'))
+            explanation += varyQ([
+                ` water it properly now, let it drain, then build a regular rhythm. Don't overcompensate though — swing the other way and you'll create a new problem.`,
+                ` give it a good thorough water now, let it drain fully, then establish a consistent schedule.`,
+            ]);
+        else
+            explanation += varyQ([
+                ` keep your normal routine while treating — don't add the stress of a watering change on top of everything else.`,
+                ` maintain your current watering schedule. Adding a change there on top of treatment just stresses the plant further.`,
+            ]);
+
+    } else if (intent === 'light') {
+        explanation = varyQ([
+            `Light isn't a direct factor for **${lastSubject}** — that's more of a care question than a pest/disease one. That said, a stressed plant in poor light is generally more vulnerable. Make sure ${plantRef()} is getting what it needs.`,
+            `**${lastSubject}** isn't directly caused by light issues, but a plant in suboptimal light is less resilient. Worth checking ${plantRef()} is in the right spot.`,
+        ]);
+
+    } else if (intent === 'confirm') {
+        const signs = diagRows.filter(r => r.predicate === 'telltale_sign').map(r => r.object);
+        const confused = diagRows.filter(r => r.predicate === 'confused_with').map(r => ({with:r.object, note:r.qualifier}));
+        if (signs.length) {
+            explanation = varyQ([
+                `To confirm it's **${lastSubject}**, the clearest things to look for are: ${signs.slice(0,3).map(f).join(', ')}.`,
+                `Confirming **${lastSubject}** — look for ${signs.slice(0,3).map(f).join(', ')}.`,
+                `If it's **${lastSubject}**, you should see ${signs.slice(0,2).map(f).join(' and ')}.`,
+            ]);
+            if (confused.length) explanation += ` It does get confused with ${f(confused[0].with)} — ${confused[0].note ? f(confused[0].note) : 'inspect closely to tell them apart'}.`;
+        } else {
+            explanation = varyQ([
+                `No definitive visual test in the KB for ${lastSubject}, but the treatment is low-risk enough to just go ahead and treat — you won't cause harm by doing so.`,
+                `I don't have a clear confirmation test for ${lastSubject}. In practice, if the symptoms fit, treating is the right call — the treatments are safe.`,
+            ]);
+        }
+
+    } else if (intent === 'acknowledge' || intent === 'thanks') {
+        explanation = varyQ([
+            `Glad that's useful. Keep an eye on ${plantRef()} over the next week.`,
+            `No problem. Check back if things change or it doesn't improve.`,
+            `Good luck with it. Anything else you're noticing?`,
+            plantGenus ? `Hope ${plantRef()} pulls through. Come back if you need anything.` : `Hope that helps. Let me know if anything else comes up.`,
+        ]);
+
+    } else {
+        const OUT_OF_KB = /\b(flower|bloom|variegat|height|toxic|pet safe|cat|dog|edible|poisonous|buy|shop|price|lifespan|years|how old|age)\b/i.test(q);
+        if (OUT_OF_KB) {
+            explanation = varyQ([
+                `That's outside my area — I cover pests, diseases, and immediate care issues. For ${plantRef()}'s care habits or toxicity, a species guide or forum would be better.`,
+                `I can't help with that one — my knowledge is limited to plant problems and diagnoses. Try a species-specific resource for ${plantRef()}.`,
+            ]);
+        } else if (lastSubject) {
+            explanation = varyQ([
+                `Still on **${lastSubject}**${plantGenus ? ` for ${plantRef()}` : ''}. Want to know how to treat it, whether it spreads, what caused it, or something else?`,
+                `We're looking at **${lastSubject}**. What specifically — treatment, prevention, whether it's serious, how to confirm it?`,
+                `Still here on **${lastSubject}**. What do you need to know — how to treat it, timing, causes?`,
+            ]);
+        } else {
+            explanation = varyQ([
+                `What are you seeing? Describe it physically — colour changes, insects, texture, smell — and I'll try to identify it.`,
+                `Describe what you see on ${plantRef()} and I'll look it up. Colour, texture, bugs, smell — anything you notice.`,
+            ]);
+        }
+    }
+
+    return {
+        topDiagnosis,
+        confidence:       'high',
+        explanation:      explanation.trim(),
+        immediateActions: actions,
+        watchFor,
+        secondaryNote:    '',
+        kbResults:        lastResult ? lastResult.kbResults : [],
+        source:           'kb-followup',
+        isFollowUp:       true,
+    };
+}
+
+function toKbAction(treatment, qualifier) {
+    const t = ((treatment||'').replace(/_/g,' ')).trim();
+    const tLow = t.toLowerCase();  // for case-insensitive key matching
+    const q = qualifier ? (qualifier.replace(/_/g,' ')).trim() : '';
+    const PHRASED = {
+        'unpot inspect trim':       `Pull it out of the pot and check the roots — trim anything brown, black, or mushy, then repot into fresh dry mix`,
+        'adjust watering':          `Let it dry out more between waterings going forward`,
+        'hydrogen peroxide drench': `Drench the roots with a 1:4 hydrogen peroxide / water mix — kills the pathogen and re-oxygenates the root zone`,
+        'soil drydown':             `Let the top 2 inches of soil dry out completely before watering again — this breaks the larval cycle`,
+        'bti':                      `Apply Bti (Bacillus thuringiensis israelensis) to the soil — biological larvicide, completely safe for the plant`,
+        'yellow sticky traps':      `Put yellow sticky traps near the soil to catch the adult flies`,
+        'isopropyl alcohol':        `Dab 70% isopropyl alcohol directly onto visible insects with a cotton swab — direct contact kill`,
+        'neem oil':                 `Apply diluted neem oil to all affected areas — disrupts the lifecycle and smothers crawlers`,
+        'insecticidal soap':        `Spray with insecticidal soap, coating the undersides of leaves where pests hide`,
+        'remove infected tissue':   `Cut off and bag any visibly infected leaves or stems — don't compost them`,
+        'baking soda spray':        `Mix 1 tsp baking soda per litre of water and spray the affected areas`,
+        'potassium bicarbonate':    `Potassium bicarbonate spray — more effective than baking soda if you can source it`,
+        'bti':                      `Apply Bti (Bacillus thuringiensis israelensis) to the soil — a biological larvicide that kills larvae without harming the plant`,
+        'spinosad':                 `Spinosad spray is highly effective — apply to both leaf surfaces`,
+        'quarantine':               `Isolate this plant immediately to stop it spreading to others`,
+        'humidifier':               `Run a humidifier nearby — most tropical houseplants want 50–70% relative humidity`,
+        'grouping plants':          `Group plants together — they raise local humidity through transpiration`,
+        'pebble tray':              `Place the pot on a tray of wet pebbles — evaporation lifts humidity around the leaves`,
+        'misting':                  `Mist the leaves in the morning so they dry before evening — avoids fungal issues`,
+        'manual removal':           `Physically remove what you can see — use a soft cloth or cotton swab dipped in water`,
+        'improved drainage':        `Improve drainage — add perlite or switch to a chunkier substrate mix`,
+        'diatomaceous earth':       `Dust diatomaceous earth on the soil surface — it's a physical barrier that damages soft-bodied insects`,
+        'horticultural oil':        `Apply horticultural oil to all affected surfaces — it smothers eggs and soft stages`,
+    };
+    for (const [key, phrase] of Object.entries(PHRASED)) {
+        if (tLow.includes(key)) {
+            if (q) {
+                const digits = q.match(/\d+/g) || [];
+                const phraseHasDigits = digits.every(d => phrase.includes(d));
+                if (!phraseHasDigits) return phrase + ` (${q})`;
+            }
+            return phrase;
+        }
+    }
+    const cleaned = t.replace(/_/g, ' ');
+    const numericQ = q && /\d/.test(q) && q.length < 30 ? ` — ${q}` : '';
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1) + numericQ;
+}
+
+function kbCompose(results, genus, query, plant) {
+    const cache = kbCacheGet();
+    const pestRows = (cache && cache.pests) ? cache.pests : [];
+    const q = (query || '').toLowerCase();
+    const f = v => (v||'').replace(/_/g,' ').trim();
+
+    function vary(subject, arr) {
+        let h = 0;
+        for (let i = 0; i < subject.length; i++) h = (h * 31 + subject.charCodeAt(i)) & 0xffff;
+        return arr[h % arr.length];
+    }
+    function varyQ(arr) {
+        let h = 0;
+        for (let i = 0; i < q.length; i++) h = (h * 31 + q.charCodeAt(i)) & 0xffff;
+        return arr[h % arr.length];
+    }
+
+    function rowsFor(subj) {
+        const s = subj.toLowerCase().replace(/ /g,'_');
+        return pestRows.filter(r => r.subject === s || r.subject === subj.toLowerCase());
+    }
+    function resolveCauses(subject) {
+        const sRows = rowsFor(subject);
+        const causedBy = sRows.filter(r => r.predicate === 'symptom_of').map(r => r.object);
+        return causedBy.length ? causedBy : [subject];
+    }
+    function buildPicture(subject) {
+        const sRows = rowsFor(subject);
+        return {
+            subject,
+            signs:      sRows.filter(r=>r.predicate==='telltale_sign').map(r=>r.object),
+            treatments: sRows.filter(r=>r.predicate==='weak_to').map(r=>({t:r.object,q:r.qualifier})),
+            prevention: sRows.filter(r=>r.predicate==='prevented_by').map(r=>r.object),
+            interval:   (sRows.find(r=>r.predicate==='treatment_interval')||{}).object||null,
+            confused:   sRows.filter(r=>r.predicate==='confused_with').map(r=>({with:r.object,note:r.qualifier})),
+            risk:       sRows.filter(r=>r.predicate==='risk_factor').map(r=>r.object),
+            thrives:    sRows.filter(r=>r.predicate==='thrives_in').map(r=>r.object),
+        };
+    }
+
+    const top = results[0];
+    let causes = resolveCauses(top.subject);
+    let primary = causes[0];
+
+    const resolvedTop = causes[0];
+    const hasUnderwatering = results.some(r => {
+        const rc = resolveCauses(r.subject);
+        return rc[0] === 'underwatering' || r.subject === 'underwatering';
+    });
+    const hasRootRot = resolvedTop === 'root_rot' || resolvedTop.includes('root rot');
+    if (hasRootRot && hasUnderwatering && results.length > 1) {
+        causes = ['root_rot', 'underwatering'];
+        primary = 'root_rot';
+    }
+    const isAmbiguous = causes.length > 1;
+
+    let pic = buildPicture(primary);
+    if (!pic.signs.length && !pic.treatments.length) {
+        pic.signs      = top.signs || [];
+        pic.treatments = (top.kryptonites||[]).map(k=>({t:k.treatment,q:k.qualifier}));
+        pic.prevention = top.prevented || [];
+        pic.interval   = top.interval || null;
+        pic.confused   = top.confused || [];
+    }
+
+    const sub = plant && plant.substrate ? plant.substrate : null;
+    const potM = plant && plant.potMaterial ? plant.potMaterial : null;
+    const subjectName = f(primary);
+    const sn = subjectName;  // short alias used in vary() calls throughout
+    const genusStr = genus ? ` on ${genus}` : '';
+    const plantStr = genus ? `your ${genus}` : 'your plant';
+
+    function plantCtxHint() {
+        if (!sub) return null;
+        const sk = primary.toLowerCase();
+        if ((sk.includes('root_rot') || sk.includes('root rot'))) {
+            if (/peat|coir|organic|soil mix/i.test(sub))
+                return vary(primary, [
+                    `One thing worth flagging: ${plantStr} is in ${sub}, which holds onto moisture — that's a common setup for this.`,
+                    `Worth knowing: ${sub} retains moisture, which is exactly the kind of environment root rot loves.`,
+                    `${sub} is moisture-retentive, so it's likely a contributing factor here.`,
+                ]);
+            if (/mineral|pumice|perlite|leca/i.test(sub))
+                return `${plantStr} is in ${sub}, which drains well — that's actually unusual for root rot. Worth looking harder at overwatering frequency rather than the mix itself.`;
+        }
+        if ((sk.includes('fungus_gnat') || sk.includes('fungus gnats')) && /peat|coir|organic|soil mix/i.test(sub))
+            return vary(primary, [
+                `${sub} is basically perfect for them — warm, moist, organic. It's their dream substrate.`,
+                `${sub} is exactly what fungus gnats want to breed in. That's not a coincidence.`,
+                `Heads up: ${sub} is prime gnat territory. This will keep happening unless the substrate or watering habits change.`,
+            ]);
+        if ((sk.includes('root_rot') || sk.includes('root rot')) && potM && /plastic/i.test(potM))
+            return `Plastic pots hold moisture longer than terracotta — if this keeps coming back, that's worth changing.`;
+        return null;
+    }
+
+    let explanation = '';
+
+    if (isAmbiguous) {
+        const causeNames = causes.slice(0,2).map(f);
+        const isSymptomChain = top.subject !== primary && top.subject.replace(/_/g,' ') !== subjectName;
+        if (isSymptomChain) {
+            const symptomName = f(top.subject);
+            const chainOpeners = [
+                `That **${symptomName}** isn't the actual problem — it's a symptom of something else going on underneath.`,
+                `**${symptomName}** is usually a side effect, not the cause${genusStr}.`,
+                `The **${symptomName}** you're seeing is secondary — something else is driving it.`,
+            ];
+            explanation = vary(primary, chainOpeners);
+            explanation += ` Most likely **${causeNames[0]}**${causeNames[1] ? ` or **${causeNames[1]}**` : ''}. Deal with the source and the ${symptomName} will clear up on its own.`;
+        } else {
+            const ambigOpeners = [
+                `That could point to a couple of different things${genusStr} — hard to say for sure without more info.`,
+                `This one's genuinely ambiguous${genusStr}. Two things fit this symptom equally well.`,
+                `Not going to pretend I'm certain here — that symptom has two common explanations${genusStr}.`,
+                `Could be one of two things${genusStr}, and they need different responses, so it's worth figuring out which.`,
+            ];
+            explanation = vary(primary, ambigOpeners) + ` The most likely culprits are **${causeNames[0]}** and **${causeNames[1]}**.`;
+            if (causeNames.includes('root rot') && causeNames.includes('underwatering')) {
+                explanation += vary(primary + 'diff', [
+                    ` The test is simple: pull the pot and look at the soil. Wet and heavy = root rot. Bone dry = underwatering. The roots tell the full story — white and firm means healthy, brown and mushy means rot.`,
+                    ` To tell them apart — feel the soil at the roots. Soggy and compacted points to rot. Completely dry points to underwatering. Check the roots themselves too: white = fine, brown/soft = rot.`,
+                    ` Quick way to tell: unpot it and check. Wet, compacted soil with brown mushy roots = rot. Dry soil with limp but otherwise okay roots = underwatering.`,
+                ]);
+            } else {
+                explanation += ` Check the root zone and overall soil moisture — that'll usually clarify which one you're dealing with.`;
+            }
+        }
+    } else {
+        let hook = '';
+
+        if (q.includes('smell') || q.includes('poo') || q.includes('poop') || q.includes('stink') || q.includes('odour') || q.includes('odor')) {
+            hook = vary(sn, [
+                `That smell is a real red flag —`,
+                `Yeah, a smell like that almost always means`,
+                `The fact that it smells is the giveaway —`,
+                `A bad smell from a plant is never nothing — this is almost certainly`,
+                `That odour is diagnostic. Points straight to`,
+            ]);
+        } else if (q.includes('flies') || q.includes('gnat') || q.includes('fly') || q.includes('buzzing')) {
+            hook = vary(sn, [
+                `Those flies hovering around the soil are almost certainly`,
+                `If they're small and hanging around the soil,`,
+                `Little flies near the pot are a classic sign of`,
+                `Those tiny fliers are basically a calling card for`,
+                `Flies near or in the soil —`,
+            ]);
+        } else if (q.includes('jump') || q.includes('bouncing') || q.includes('springtail')) {
+            hook = vary(sn, [
+                `If they're jumping when you disturb the soil, that's`,
+                `Jumping insects in soil are almost always`,
+                `The jumping is the key detail — that's`,
+            ]);
+        } else if (q.includes('wilt') || q.includes('limp') || q.includes('droop') || q.includes('floppy') || q.includes('collapse')) {
+            hook = vary(sn, [
+                `Drooping like that usually comes down to`,
+                `That kind of sudden limpness is typically`,
+                `A plant wilting like that — even in what looks like okay soil — usually points to`,
+                `When a plant collapses like that, nine times out of ten it's`,
+                `That limpness is the body language of`,
+            ]);
+        } else if (q.includes('dead') || q.includes('dying') || q.includes('died')) {
+            hook = vary(sn, [
+                `If it's looking really rough — collapse, discoloration, the works — this could well be`,
+                `When a plant looks like it's given up, the most common culprit is`,
+                `That level of decline is often`,
+            ]);
+        } else if (q.includes('white') && (q.includes('powder') || q.includes('coat') || q.includes('dust') || q.includes('fuzz') || q.includes('fluff') || q.includes('fluffy'))) {
+            hook = vary(sn, [
+                `That white powdery coating is a textbook sign of`,
+                `White fluffy or powdery growth on the leaves — that's`,
+                `That white stuff is almost always`,
+            ]);
+        } else if (q.includes('shell') || q.includes('bump') || q.includes('lump') || q.includes('crust') || q.includes('armour') || q.includes('armor')) {
+            hook = vary(sn, [
+                `Little shell-like bumps on the stems? That's`,
+                `Those crusty or waxy bumps are classic`,
+                `What you're describing — hard little lumps on the plant — that's almost certainly`,
+            ]);
+        } else if (q.includes('web') || q.includes('silk') || q.includes('thread')) {
+            hook = vary(sn, [
+                `Webbing on a plant is almost always`,
+                `Fine webbing between leaves or under them — that's`,
+                `If you're seeing silk-like threads on the plant, that's`,
+            ]);
+        } else if (q.includes('sticky') || q.includes('honeydew') || q.includes('shiny')) {
+            hook = vary(sn, [
+                `Sticky residue on leaves is usually honeydew — a waste product from sap-sucking insects. Points to`,
+                `That sticky coating is a sign of insect activity —`,
+                `Sticky leaves usually mean something's feeding on the plant. Most likely`,
+            ]);
+        } else if (q.includes('yellow') || q.includes('yellowing') || q.includes('pale')) {
+            hook = vary(sn, [
+                `Yellowing like that is often a sign of`,
+                `Pale or yellow leaves usually point to`,
+                `That discolouration — going pale or yellow — is a classic symptom of`,
+            ]);
+        } else if (q.includes('brown') || q.includes('crispy') || q.includes('crunchy') || q.includes('tip')) {
+            hook = vary(sn, [
+                `Brown, crispy edges are a classic sign of`,
+                `That browning is usually caused by`,
+                `Crispy tips or brown edges — that points to`,
+            ]);
+        } else {
+            hook = vary(sn, [
+                `That sounds like`,
+                `Most likely`,
+                `What you're describing points to`,
+                `Based on that,`,
+                `Sounds like`,
+                `I'd put money on`,
+                `That's a classic presentation of`,
+                `Going by what you described —`,
+            ]);
+        }
+
+        explanation = `${hook} **${subjectName}**${genusStr}.`;
+
+        if (pic.signs.length) {
+            const uniqueSigns = [...new Set(pic.signs.map(s => s.toLowerCase()))].slice(0,2).map(f);
+            if (uniqueSigns.length) {
+                const signPhrases = [
+                    ` To confirm, the telltale signs are ${uniqueSigns.join(' and ')}.`,
+                    ` Classic signs are ${uniqueSigns.join(' and ')}.`,
+                    ` You'd expect to see ${uniqueSigns[0]}${uniqueSigns[1] ? ` and ${uniqueSigns[1]}` : ''} alongside that.`,
+                    ` Look for ${uniqueSigns.join(' and ')} to be sure.`,
+                    ` The giveaway signs are ${uniqueSigns.join(' and ')}.`,
+                ];
+                explanation += vary(sn + 'signs', signPhrases);
+            }
+        }
+
+        if (pic.thrives.length) {
+            const cond = f(pic.thrives[0]);
+            explanation += vary(sn + 'cond', [
+                ` Tends to develop in ${cond} conditions.`,
+                ` This usually shows up when conditions are ${cond}.`,
+                ` ${cond.charAt(0).toUpperCase() + cond.slice(1)} is the environment it loves.`,
+                ` Thrives when things are ${cond}.`,
+            ]);
+        } else if (pic.risk.length) {
+            const risks = pic.risk.slice(0,2).map(f);
+            explanation += vary(sn + 'risk', [
+                ` Common triggers: ${risks.join(' and ')}.`,
+                ` Usually comes down to ${risks.join(' or ')}.`,
+                ` The usual culprits are ${risks.join(' and ')}.`,
+            ]);
+        }
+
+        if (pic.confused.length) {
+            const cx = pic.confused[0];
+            const CONFUSION_MAP = {
+                'wilt_with_dry_medium': 'underwatering (wilting but dry soil)',
+                'wilt with dry medium': 'underwatering (wilting but dry soil)',
+                'dry_substrate_wilt':   'underwatering',
+                'overwatering':         'overwatering',
+                'nutrient_deficiency':  'nutrient deficiency',
+            };
+            const confWith = CONFUSION_MAP[cx.with] || f(cx.with);
+            const confNote = cx.note ? (CONFUSION_MAP[cx.note] || f(cx.note)) : null;
+            explanation += vary(sn + 'conf', [
+                ` Worth knowing it's sometimes mistaken for ${confWith}${confNote ? ` — ${confNote}` : ''}.`,
+                ` Can look a bit like ${confWith}, so double-check${confNote ? ` — ${confNote}` : ''}.`,
+                ` It does get confused with ${confWith} occasionally${confNote ? ` (${confNote})` : ''}.`,
+            ]);
+        }
+
+        const ctxHint = plantCtxHint();
+        if (ctxHint) explanation += ` ${ctxHint}`;
+    }
+
+    const actions = [];
+    if (isAmbiguous) {
+        causes.slice(0,2).forEach(cause => {
+            const cp = buildPicture(cause);
+            if (cp.treatments.length) {
+                actions.push(`If it's ${f(cause)}: ${toKbAction(cp.treatments[0].t, cp.treatments[0].q)}`);
+            }
+        });
+    } else {
+        const seenActions = new Set();
+        pic.treatments.slice(0,4).forEach(({t, q: tq}) => {
+            const action = toKbAction(t, tq);
+            const key = action.slice(0, 35).toLowerCase();
+            if (!seenActions.has(key)) {
+                seenActions.add(key);
+                actions.push(action);
+                if (actions.length >= 3) return;
+            }
+        });
+        if (pic.prevention.length) {
+            const prev = [...new Set(pic.prevention.slice(0,2).map(f))].join(' and ');
+            actions.push(`To prevent recurrence: ${prev}`);
+        }
+    }
+
+    let watchFor = '';
+    if (isAmbiguous) {
+        watchFor = `Check the soil moisture and root zone first — that'll tell you which direction to go.`;
+    } else if (pic.interval) {
+        const intervalStr = f(pic.interval);
+        watchFor = vary(sn + 'watch', [
+            `Keep treating ${intervalStr} until you see two consecutive clears.`,
+            `Repeat ${intervalStr} — don't stop early, the lifecycle outlasts what you can see.`,
+            `Treat ${intervalStr} until there's no new activity for at least two checks.`,
+        ]);
+    } else if (results.length > 1) {
+        const alt = f(resolveCauses(results[1].subject)[0]);
+        if (alt !== subjectName) watchFor = `If things don't improve in a week, also look into ${alt}.`;
+    }
+
+    const secondaryCauses = results.slice(1,4)
+        .map(r => f(resolveCauses(r.subject)[0]))
+        .filter(c => c !== subjectName && c !== f(top.subject))
+        .filter((c, i, arr) => arr.indexOf(c) === i)
+        .slice(0,2);
+    const secondaryNote = secondaryCauses.length
+        ? `Other possibilities worth ruling out: ${secondaryCauses.join(', ')}.`
+        : '';
+
+    const displayConf = isAmbiguous
+        ? (top.confLabel === 'high' ? 'medium' : top.confLabel)
+        : top.confLabel;
+
+    return {
+        topDiagnosis:     isAmbiguous ? causes.slice(0,2).map(f).join(' / ') : subjectName,
+        confidence:       displayConf,
+        explanation:      explanation.trim(),
+        immediateActions: actions,
+        watchFor,
+        secondaryNote,
+        kbResults:        results,
+        source:           'kb',
+    };
+}
+
+const PHYSICS_WEIGHTS = {
+    light: 0.25,
+    airflow: 0.25,
+    temp: 0.10,
+    subAer: 0.25,
+    potBreath: 0.15,
+    humidity: 0.30,
+    noAirflow: 0.25,
+    potRet: 0.20,
+    subWater: 0.15,
+    enclosureBonus: 2.0,
+    scheduleShiftPer: 0.15, // was 0.08 — stronger signal so delta survives rounding
+};
+const ENV_LIGHT_LABELS = ['—', 'None / dark', 'Dim', 'Indirect', 'Bright indirect', 'Direct sun'];
+const ENV_HUMIDITY_LABELS = ['—', 'Very dry', 'Dry', 'Average', 'Humid', 'Very humid'];
+const ENV_TEMP_LABELS = ['—', 'Cool (< 16°C)', 'Moderate (16–21°C)', 'Warm (21–26°C)', 'Hot (> 26°C)'];
+const ENV_AIRFLOW_LABELS = ['—', 'Stagnant', 'Low', 'Moderate', 'Good', 'High / fan'];
+const SUBSTRATE_PROPS = {
+    'Water / hydro': { wh: 10, aer: 1, wick: 10, decomp: 0 },
+    'Sphagnum moss': { wh: 9, aer: 3, wick: 7, decomp: 3 },
+    'Coco coir': { wh: 7, aer: 4, wick: 6, decomp: 2 },
+    'Moist potting mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
+    'Aroid mix': { wh: 4, aer: 7, wick: 4, decomp: 3 },
+    'Perlite': { wh: 2, aer: 9, wick: 2, decomp: 0 },
+    'LECA': { wh: 3, aer: 8, wick: 5, decomp: 0 },
+    'Semi-hydro (LECA)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
+    'Semi-hydro (PON)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
+    'Mineral mix': { wh: 2, aer: 9, wick: 2, decomp: 0 },
+    'Bark': { wh: 3, aer: 8, wick: 3, decomp: 4 },
+    'Dry potting mix': { wh: 4, aer: 5, wick: 4, decomp: 4 },
+    'Sand': { wh: 1, aer: 8, wick: 3, decomp: 0 },
+    'Pumice': { wh: 2, aer: 9, wick: 2, decomp: 0 },
+    'Soil mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
+    'Custom mix': { wh: 5, aer: 5, wick: 5, decomp: 2 },
+};
+const SUBSTRATE_DEFAULT = { wh: 5, aer: 5, wick: 5, decomp: 2 };
+const POT_MATERIALS = {
+    'Net pot': { breath: 10, ret: 1 },
+    'Terracotta': { breath: 9, ret: 2 },
+    'Fabric / grow': { breath: 8, ret: 3 },
+    'Glazed ceramic': { breath: 2, ret: 8 },
+    'Plastic': { breath: 1, ret: 9 },
+    'Glass': { breath: 0, ret: 10 },
+};
+const POT_MATERIAL_NAMES = Object.keys(POT_MATERIALS);
+const POT_SHAPES = {
+    'Standard':       { evapMod: 1.0  }, // cylinder baseline
+    'Round':          { evapMod: 1.05 }, // globe — slightly more surface area
+    'Square':         { evapMod: 1.02 }, // corners add minimal extra surface
+    'Wide & shallow': { evapMod: 1.3  }, // max surface-to-volume, dries fastest
+    'Tall & narrow':  { evapMod: 0.75 }, // minimum surface, retains longest
+    'Squat / bulb':   { evapMod: 1.15 }, // extra girth, dries a bit faster
+    'Hanging basket': { evapMod: 1.4  }, // full air exposure, dries fastest
+};
+const POT_SHAPE_NAMES = Object.keys(POT_SHAPES);
+const POT_DEFAULT = { breath: 4, ret: 6 }; // unknown/unset → moderate plastic-ish
+const ENV_DEFAULT = { light: 3, humidity: 3, temperature: 3, airflow: 3, enclosure: false };
+function plantPhysics(plant, env) {
+    const e = env || ENV_DEFAULT;
+    const sub = SUBSTRATE_PROPS[plant.substrate || plant.medium] || SUBSTRATE_DEFAULT;
+    const pot = POT_MATERIALS[plant.potMaterial] || POT_DEFAULT;
+    const shape = POT_SHAPES[plant.potShape] || null; // null = unset, don't penalize
+    const W = PHYSICS_WEIGHTS;
+    const light = (e.light || 3) * 2;
+    const airflow = (e.airflow || 3) * 2;
+    const temp = (e.temperature || 3) * 2.5; // 1–4 → 2.5–10
+    const humid = (e.humidity || 3) * 2;
+    const encl = e.enclosure ? 1 : 0;
+    const rawDry = (light * W.light +
+        airflow * W.airflow +
+        temp * W.temp +
+        sub.aer * W.subAer +
+        pot.breath * W.potBreath);
+    const rawDryWithShape = shape ? rawDry * shape.evapMod : rawDry;
+    const drySpeed = Math.min(10, Math.max(1, rawDryWithShape));
+    const rawRot = (humid * W.humidity +
+        (10 - airflow) * W.noAirflow +
+        pot.ret * W.potRet +
+        sub.wh * W.subWater +
+        encl * W.enclosureBonus);
+    const rotRisk = Math.min(10, Math.max(1, rawRot));
+    const drySpeedLabel = drySpeed >= 7.5 ? '🔥 Dries very fast'
+        : drySpeed >= 5 ? '⚡ Dries fast'
+            : drySpeed >= 2.5 ? '🌿 Dries medium'
+                : '🐢 Dries slow';
+    const drySpeedShort = drySpeed >= 7.5 ? 'Very fast'
+        : drySpeed >= 5 ? 'Fast'
+            : drySpeed >= 2.5 ? 'Medium'
+                : 'Slow';
+    const rotRiskLabel = rotRisk >= 7.5 ? '🔴 Danger'
+        : rotRisk >= 5 ? '🟠 High'
+            : rotRisk >= 3 ? '🟡 Moderate'
+                : '✅ Low';
+    const rotRiskShort = rotRisk >= 7.5 ? 'Danger'
+        : rotRisk >= 5 ? 'High'
+            : rotRisk >= 3 ? 'Moderate'
+                : 'Low';
+    const baseEvery = Number(plant.everyDays) || 0;
+    const shift = 1 - (drySpeed - 5) * W.scheduleShiftPer;
+    const physicsBaseline = drySpeed >= 8 ? 4 : drySpeed >= 6 ? 6 : drySpeed >= 4 ? 10 : drySpeed >= 2.5 ? 14 : 18;
+    const suggestedEveryDays = Math.max(1, Math.round(physicsBaseline * shift));
+    const isSuggestedFromBaseline = baseEvery === 0; // flag: no user-set schedule, this is pure physics
+    const dryFactors = [];
+    if (light >= 7)
+        dryFactors.push({ label: ENV_LIGHT_LABELS[e.light || 3].toLowerCase(), score: light * W.light });
+    if (airflow >= 7)
+        dryFactors.push({ label: (ENV_AIRFLOW_LABELS[e.airflow || 3]).toLowerCase(), score: airflow * W.airflow });
+    if (temp >= 7)
+        dryFactors.push({ label: (ENV_TEMP_LABELS[e.temperature || 3]).toLowerCase(), score: temp * W.temp });
+    if (sub.aer >= 7)
+        dryFactors.push({ label: 'chunky / airy substrate', score: sub.aer * W.subAer });
+    if (pot.breath >= 7)
+        dryFactors.push({ label: (plant.potMaterial || 'breathable pot').toLowerCase(), score: pot.breath * W.potBreath });
+    const slowFactors = [];
+    if (light <= 4)
+        slowFactors.push({ label: (ENV_LIGHT_LABELS[e.light || 3]).toLowerCase(), score: (10 - light) * W.light });
+    if (airflow <= 4)
+        slowFactors.push({ label: (ENV_AIRFLOW_LABELS[e.airflow || 3]).toLowerCase(), score: (10 - airflow) * W.airflow });
+    if (sub.aer <= 3)
+        slowFactors.push({ label: 'water-retaining substrate', score: (10 - sub.aer) * W.subAer });
+    if (pot.breath <= 3)
+        slowFactors.push({ label: (plant.potMaterial || 'sealed pot').toLowerCase(), score: (10 - pot.breath) * W.potBreath });
+    dryFactors.sort((a, b) => b.score - a.score);
+    slowFactors.sort((a, b) => b.score - a.score);
+    let whyDry = '';
+    if (drySpeed >= 5 && dryFactors.length > 0) {
+        whyDry = 'Dries faster: ' + dryFactors.slice(0, 3).map(f => f.label).join(' + ');
+    }
+    else if (drySpeed < 5 && slowFactors.length > 0) {
+        whyDry = 'Dries slower: ' + slowFactors.slice(0, 3).map(f => f.label).join(' + ');
+    }
+    else {
+        whyDry = 'Average dry-down conditions';
+    }
+    const rotFactors = [];
+    if (humid >= 7)
+        rotFactors.push({ label: (ENV_HUMIDITY_LABELS[e.humidity || 3]).toLowerCase(), score: humid * W.humidity });
+    if (airflow <= 4)
+        rotFactors.push({ label: (ENV_AIRFLOW_LABELS[e.airflow || 3]).toLowerCase() + ' airflow', score: (10 - airflow) * W.noAirflow });
+    if (pot.ret >= 7)
+        rotFactors.push({ label: (plant.potMaterial || 'sealed pot').toLowerCase(), score: pot.ret * W.potRet });
+    if (sub.wh >= 7)
+        rotFactors.push({ label: 'water-retaining substrate', score: sub.wh * W.subWater });
+    if (e.enclosure)
+        rotFactors.push({ label: 'enclosed environment', score: W.enclosureBonus * 5 });
+    rotFactors.sort((a, b) => b.score - a.score);
+    let whyRot = '';
+    if (rotRisk >= 5 && rotFactors.length > 0) {
+        whyRot = 'Higher rot risk: ' + rotFactors.slice(0, 3).map(f => f.label).join(' + ');
+    }
+    else if (rotRisk < 3) {
+        whyRot = 'Low rot risk — good drainage conditions';
+    }
+    else {
+        whyRot = 'Moderate rot risk — standard conditions';
+    }
+    return {
+        drySpeed: Math.round(drySpeed * 10) / 10,
+        rotRisk: Math.round(rotRisk * 10) / 10,
+        drySpeedLabel,
+        drySpeedShort,
+        rotRiskLabel,
+        rotRiskShort,
+        whyDry,
+        whyRot,
+        suggestedEveryDays,
+        baseEveryDays: baseEvery,
+        isSuggestedFromBaseline,
+        physicsBaseline,
+        scheduleDiff: baseEvery > 0 ? suggestedEveryDays - baseEvery : 0,
+        suggestedFertEveryDays: (function() {
+            var growthScore = (light * 0.6 + temp * 0.4) / 10; // 0–1
+            if (growthScore >= 0.72) return 14;  // very high light + warm
+            if (growthScore >= 0.55) return 21;  // good light / warm
+            if (growthScore >= 0.38) return 30;  // average
+            return 45;                            // low light / cool
+        }()),
+    };
+}
+
+function genusPhysicsBias(genus, env) {
+    if (!genus || !TAXON_DB[genus]) return { dryBias: 0, rotBias: 0, waterBias: 0 };
+    const entry = TAXON_DB[genus];
+    const prefHumid = taxonHumidityPref(genus); // 1-5: what genus *wants*
+    const envHumid = env ? (env.humidity || 3) : 3; // 1-5: what it's getting
+    const family = getPlantFamily(genus) || '';
+
+    let dryBias = 0, rotBias = 0, waterBias = 0;
+
+    const isXeric = prefHumid <= 2 || ['Cactaceae','Crassulaceae','Asphodelaceae','Aizoaceae'].includes(family);
+    if (isXeric) {
+        dryBias += 0.8;
+        if (envHumid > prefHumid + 1) rotBias += (envHumid - prefHumid) * 0.6;
+        waterBias += 4; // days
+    }
+
+    const isTropical = prefHumid >= 4 || ['Araceae','Marantaceae','Gesneriaceae','Zingiberaceae','Bromeliaceae'].includes(family);
+    if (isTropical) {
+        if (envHumid < prefHumid - 1) {
+            dryBias += 0.5; // dries faster than expected → flag it
+            waterBias -= 2; // water more frequently
+        }
+        if (envHumid >= prefHumid) rotBias -= 0.4;
+    }
+
+    if (family === 'Orchidaceae') {
+        dryBias += 1.0;
+        waterBias += 3;
+        rotBias += 0.5;
+    }
+
+    const isAquatic = ['Cyperus','Colocasia','Sagittaria','Nelumbo','Nymphaea'].includes(genus);
+    if (isAquatic) {
+        dryBias -= 2; // they want to stay wet
+        rotBias -= 1.5; // rot-resistant in wet conditions
+        waterBias -= 5;
+    }
+
+    if (entry.water) {
+        const baselineDiff = (entry.water - 10) / 10; // normalised deviation from 10d neutral
+        waterBias += baselineDiff * -3; // longer baseline → positive waterBias offset
+    }
+
+    return {
+        dryBias: Math.max(-2, Math.min(2, dryBias)),
+        rotBias: Math.max(-2, Math.min(2, rotBias)),
+        waterBias: Math.round(waterBias),
+    };
+}
