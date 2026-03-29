@@ -104,8 +104,7 @@ function doPost(e) {
       plantosCarlTrain: plantosCarlTrain,
       plantosCarlGetMisses: plantosCarlGetMisses,
       carlMigrateToKB: carlMigrateToKB,
-      carlGetConversationPatterns: carlGetConversationPatterns,
-      plantosValidateToken: plantosValidateToken
+      carlGetConversationPatterns: carlGetConversationPatterns
     };
 
     if (!dispatch[fn]) {
