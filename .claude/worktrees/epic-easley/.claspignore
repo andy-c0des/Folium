@@ -1,0 +1,13 @@
+# Ignore everything except src/
+**
+!src/**
+!src/
+# Keep .claspignore itself out
+.claspignore
+# Ignore node_modules
+node_modules/
+# Ignore git files
+.git/
+.github/
+# Ignore README
+README.md

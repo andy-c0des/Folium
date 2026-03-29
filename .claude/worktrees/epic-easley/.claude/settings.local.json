@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/andrea/Desktop/PLANTOS-v2/.claude/worktrees/epic-easley -maxdepth 3 -type f \\\\\\(-name App.tsx -o -name App.jsx -o -name index.tsx -o -name index.jsx -o -name package.json -o -name vite.config.* -o -name tsconfig.json \\\\\\))",
+      "Bash(grep -r version /Users/andrea/Desktop/PLANTOS-v2/.claude/worktrees/epic-easley --include=*.html --include=*.gs --include=*.json --include=*.md)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(GIT_SSH_COMMAND=\"ssh -o BatchMode=yes\" git push origin claude/epic-easley)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(curl -s http://127.0.0.1:8765/app.html)",
+      "Bash(split -l 1 - /tmp/plantos_b64_chunk_)",
+      "Bash(ls -la /tmp/plantos_b64_chunk_*)"
+    ]
+  }
+}
