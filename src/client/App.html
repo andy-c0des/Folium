@@ -1,4 +1,3 @@
-﻿﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -447,7 +446,7 @@
       }
     }
 
-    /* ΓöÇΓöÇ UX Overhaul: Dashboard & Screen Transitions ΓöÇΓöÇ */
+    /* ── UX Overhaul: Dashboard & Screen Transitions ── */
     @keyframes screen-enter {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -1130,7 +1129,7 @@ const TAXON_DB = {
     species: ["persicum","hederifolium","coum","purpurascens","graecum"],
     water: 9, light: "bright indirect (cool location)", humidity: "medium",
     substrate: "Standard Potting Mix", potMaterial: "Terracotta",
-    notes: "Corm-based. Prefers cool conditions (12-18┬░C). Water from base. Goes dormant in summer."
+    notes: "Corm-based. Prefers cool conditions (12-18°C). Water from base. Goes dormant in summer."
   },
   "Schefflera": {
     common: ["Umbrella Plant", "Octopus Tree"],
@@ -1789,7 +1788,7 @@ const TAXON_DB = {
     species: ["lupulus","japonicus"],
     water: 8, light: "full sun to bright indirect", humidity: "low-medium",
     substrate: "Well-Draining Mix", potMaterial: "Terracotta",
-    notes: "Vigorous climbing vine. Grows 20ΓÇô30ft in a season. Dies back in winter. Cones used in brewing."
+    notes: "Vigorous climbing vine. Grows 20–30ft in a season. Dies back in winter. Cones used in brewing."
   },
 
   "Rosa": {
@@ -1996,7 +1995,7 @@ const TAXON_DB = {
   "Justicia": { common: ["Shrimp Plant","Brazilian Plume","Jacobinia"], species: ["brandegeeana","carnea","suberecta","rizzinii","floribunda","spicigera"], water: 7, light: "bright indirect", humidity: "medium" },
   "Strobilanthes": { common: ["Persian Shield","Cone Head"], species: ["dyerianus","anisophyllus","hamiltonianus"], water: 5, light: "bright indirect", humidity: "medium-high" },
   "Bulbophyllum": { common: ["Bulbophyllum Orchid"], species: ["lobbii","rothschildianum","longissimum","vaginatum","falcatum","medusae","putidum"], water: 5, light: "medium to bright indirect", humidity: "high", substrate: "mounted or sphagnum, orchid bark" },
-  "Masdevallia": { common: ["Kite Orchid","Masdevallia"], species: ["veitchiana","coccinea","triangularis","tovarensis","wagneriana","strobelii"], water: 5, light: "medium indirect", humidity: "high", substrate: "sphagnum, fine bark", notes: "Cannot tolerate heat above 25┬░C. Cool grower — needs temperature drop at night." },
+  "Masdevallia": { common: ["Kite Orchid","Masdevallia"], species: ["veitchiana","coccinea","triangularis","tovarensis","wagneriana","strobelii"], water: 5, light: "medium indirect", humidity: "high", substrate: "sphagnum, fine bark", notes: "Cannot tolerate heat above 25°C. Cool grower — needs temperature drop at night." },
   "Coelogyne": { common: ["Coelogyne Orchid","Necklace Orchid"], species: ["cristata","flaccida","nitida","massangeana","pandurata","mooreana","lawrenceana"], water: 7, light: "medium to bright indirect", humidity: "medium-high", substrate: "orchid bark, perlite" },
   "Lycaste": { common: ["Lycaste Orchid"], species: ["aromatica","skinneri","deppei","cruenta","macrophylla","campbellii"], water: 7, light: "medium to bright indirect", humidity: "medium-high", substrate: "orchid bark, perlite", notes: "Deciduous types need a dry rest period after leaf drop." },
   "Maxillaria": { common: ["Spider Orchid","Maxillaria"], species: ["tenuifolia","variabilis","picta","sophronitis","sanderiana","coccinea"], water: 5, light: "medium to bright indirect", humidity: "high", substrate: "orchid bark, mounted" },
@@ -2459,10 +2458,10 @@ const DEMO_SEED = {
       "uid": "69000011",
       "nickname": "Gloriochrysum F1",
       "genus": "Philodendron",
-      "taxon": "├ùgloriochrysum",
-      "species": "├ùgloriochrysum",
+      "taxon": "×gloriochrysum",
+      "species": "×gloriochrysum",
       "classification": "Araceae",
-      "taxonDisplay": "Philodendron ├ùgloriochrysum",
+      "taxonDisplay": "Philodendron ×gloriochrysum",
       "location": "Grow Tent",
       "substrate": "Sphagnum moss",
       "medium": "Sphagnum moss",
@@ -2476,7 +2475,7 @@ const DEMO_SEED = {
       "motherUID": "69000001",
       "fatherUID": "69000002",
       "generation": "F1",
-      "hybridNote": "Hand pollinated F1 cross — Philodendron gloriosum (ΓÖÇ) ├ù Alocasia baginda (ΓÖé)",
+      "hybridNote": "Hand pollinated F1 cross — Philodendron gloriosum (♀) × Alocasia baginda (♂)",
       "notes": "F1 seedling, 3 weeks old"
     },
     {
@@ -2678,7 +2677,7 @@ const COMMON_NAME_DB = [
   { common: "deadly nightshade", genus: "Atropa", species: "belladonna", family: "Solanaceae", variants: [] },
   { common: "daturas trumpet", genus: "Datura", species: "metel", family: "Solanaceae", variants: [] },
   { common: "angels trumpet", genus: "Brugmansia", species: "suaveolens", family: "Solanaceae", variants: ["Pink","White","Yellow","Double"] },
-  { common: "chilli", genus: "Capsicum", species: "annuum", family: "Solanaceae", variants: ["Cayenne","Jalape├▒o","Habanero","Ghost","Carolina Reaper"] },
+  { common: "chilli", genus: "Capsicum", species: "annuum", family: "Solanaceae", variants: ["Cayenne","Jalapeño","Habanero","Ghost","Carolina Reaper"] },
   { common: "pepper", genus: "Capsicum", species: "annuum", family: "Solanaceae", variants: ["Bell","Sweet","Banana"] },
   { common: "tobacco plant", genus: "Nicotiana", species: "alata", family: "Solanaceae", variants: [] },
   { common: "tomato", genus: "Lycopersicon", species: "esculentum", family: "Solanaceae", variants: ["Cherry","Beefsteak","Roma","Gardeners Delight","Black Cherry"] },
@@ -3281,12 +3280,12 @@ function validateHybridCross(mGenus, fGenus) {
     const mO = PLANT_ORDERS[mF], fO = PLANT_ORDERS[fF];
     const mC = PLANT_CLADES[mF], fC = PLANT_CLADES[fF];
     if (mC && fC && mC !== fC) {
-        return { ok: true, level: 'different_clade', warn: `ΓÜá∩╕Å ${mg} is a ${mC} and ${fg} is a ${fC}. Crosses between these groups are not possible in nature — log anyway if this is a known artificial hybrid or an experiment.` };
+        return { ok: true, level: 'different_clade', warn: `⚠️ ${mg} is a ${mC} and ${fg} is a ${fC}. Crosses between these groups are not possible in nature — log anyway if this is a known artificial hybrid or an experiment.` };
     }
     if (mO && fO && mO !== fO) {
-        return { ok: true, level: 'different_order', warn: `ΓÜá∩╕Å ${mg} (${mF}) and ${fg} (${fF}) are from different plant orders. Documented crosses at this level are extremely rare — double-check your parents are correct.` };
+        return { ok: true, level: 'different_order', warn: `⚠️ ${mg} (${mF}) and ${fg} (${fF}) are from different plant orders. Documented crosses at this level are extremely rare — double-check your parents are correct.` };
     }
-    return { ok: true, level: 'different_family', warn: `ΓÜá∩╕Å ${mg} (${mF}) and ${fg} (${fF}) are in different families. Intergeneric crosses like this are uncommon but occasionally possible — verify parentage is correct.` };
+    return { ok: true, level: 'different_family', warn: `⚠️ ${mg} (${mF}) and ${fg} (${fF}) are in different families. Intergeneric crosses like this are uncommon but occasionally possible — verify parentage is correct.` };
 }
 
 const PESTS_DB = {
@@ -3298,11 +3297,11 @@ const PESTS_DB = {
         affectedFamilies: ['Araceae','Marantaceae','Gesneriaceae','Begoniaceae','Orchidaceae','Asparagaceae'],
         severity: 'moderate',
         treatment: [
-            'Let top 2ΓÇô3 cm of soil dry completely between waterings — larvae need moisture',
+            'Let top 2–3 cm of soil dry completely between waterings — larvae need moisture',
             'Apply neem oil drench to soil (1 tsp neem : 1L water with a drop of dish soap)',
             'Yellow sticky traps to catch adults',
             'Beneficial nematodes (Steinernema feltiae) for serious infestations',
-            'Hydrogen peroxide drench (1 part 3% HΓééOΓéé : 4 parts water) kills larvae on contact',
+            'Hydrogen peroxide drench (1 part 3% H₂O₂ : 4 parts water) kills larvae on contact',
         ],
         prevention: ['Bottom watering', 'Allow soil surface to dry between waterings', 'Sticky traps near new acquisitions'],
     },
@@ -3316,7 +3315,7 @@ const PESTS_DB = {
         treatment: [
             'Isolate immediately — spreads fast',
             'Blast leaves with water (both sides) to knock off mites',
-            'Neem oil spray every 3ΓÇô4 days for 2ΓÇô3 weeks',
+            'Neem oil spray every 3–4 days for 2–3 weeks',
             'Insecticidal soap spray (covers all life stages)',
             'For severe: Spinosad or abamectin-based miticide',
             'Introduce predatory mites (Phytoseiulus persimilis) for biological control',
@@ -3335,9 +3334,9 @@ const PESTS_DB = {
             'Spray entire plant with neem oil solution',
             'Systemic insecticide (imidacloprid) as soil drench for persistent cases',
             'For soil mealybugs: unpot, rinse roots, repot in fresh sterile mix',
-            'Repeat treatment every 7ΓÇô10 days for at least 4 cycles',
+            'Repeat treatment every 7–10 days for at least 4 cycles',
         ],
-        prevention: ['Inspect new plants carefully before bringing home', 'Quarantine new acquisitions 2ΓÇô4 weeks', 'Check root crowns during repotting'],
+        prevention: ['Inspect new plants carefully before bringing home', 'Quarantine new acquisitions 2–4 weeks', 'Check root crowns during repotting'],
     },
     scale: {
         name: 'Scale', emoji: '🟤',
@@ -3372,17 +3371,17 @@ const PESTS_DB = {
         prevention: ['Check new growth regularly', 'Yellow sticky traps as early warning', 'Encourage predatory insects outdoors'],
     },
     thrips: {
-        name: 'Thrips', emoji: 'ΓÜí',
+        name: 'Thrips', emoji: '⚡',
         aka: ['Thunder flies', 'Storm flies'],
         symptoms: ['silver_streaks', 'stippling', 'distorted_growth', 'black_dots', 'bronze_leaves', 'petal_damage'],
-        description: 'Tiny elongated insects, 1ΓÇô2mm. Leave silver/bronze scarring on leaves and black fecal spots. Adults jump or fly when disturbed.',
+        description: 'Tiny elongated insects, 1–2mm. Leave silver/bronze scarring on leaves and black fecal spots. Adults jump or fly when disturbed.',
         affectedFamilies: ['Araceae','Marantaceae','Orchidaceae','Gesneriaceae','Solanaceae','Asteraceae'],
         severity: 'high',
         treatment: [
             'Isolate immediately — thrips spread through air',
             'Blue sticky traps (thrips prefer blue)',
             'Spinosad spray — very effective, organic',
-            'Neem oil every 5ΓÇô7 days for 3ΓÇô4 cycles',
+            'Neem oil every 5–7 days for 3–4 cycles',
             'Beneficial insects: Amblyseius cucumeris predatory mite',
             'Systemic insecticide for severe cases',
         ],
@@ -3414,7 +3413,7 @@ const PESTS_DB = {
             'Unpot and inspect roots immediately',
             'Cut away all brown/mushy roots with sterile scissors',
             'Dust cut ends with cinnamon or sulfur powder (natural antifungal)',
-            'Let roots air-dry for 30ΓÇô60 mins before repotting',
+            'Let roots air-dry for 30–60 mins before repotting',
             'Repot in fresh, well-draining mix — do NOT reuse old soil',
             'Water sparingly and only when soil is dry',
             'Hydrogen peroxide drench helps sterilize remaining roots',
@@ -3422,7 +3421,7 @@ const PESTS_DB = {
         prevention: ['Well-draining mix', 'Pots with drainage holes', 'Water only when needed', 'Avoid saucers with standing water'],
     },
     powdery_mildew: {
-        name: 'Powdery Mildew', emoji: 'Γ¼£',
+        name: 'Powdery Mildew', emoji: '⬜',
         aka: ['White mold'],
         symptoms: ['white_powder', 'white_coating', 'distorted_growth', 'yellow_leaves'],
         description: 'Fungal disease leaving white powdery coating on leaves and stems. Thrives in warm days + cool nights with poor airflow.',
@@ -3438,7 +3437,7 @@ const PESTS_DB = {
         prevention: ['Good airflow', 'Avoid wetting leaves when watering', 'Avoid overcrowding'],
     },
     botrytis: {
-        name: 'Botrytis / Grey Mold', emoji: '≡ƒ⌐╢',
+        name: 'Botrytis / Grey Mold', emoji: '🩶',
         aka: ['Grey mold', 'Botrytis blight'],
         symptoms: ['grey_fuzz', 'brown_soft_patches', 'rotting_flowers', 'crown_rot'],
         description: 'Gray fuzzy mold on leaves, stems, or flowers. Thrives in cool, damp, still air. Common in overwintered or humid-growing plants.',
@@ -3487,7 +3486,7 @@ const PESTS_DB = {
         prevention: ['Water at base only', 'Remove fallen leaves', 'Avoid crowding'],
     },
     vine_weevil: {
-        name: 'Vine Weevil', emoji: '≡ƒÉ¢',
+        name: 'Vine Weevil', emoji: '🐛',
         aka: ['Black vine weevil'],
         symptoms: ['notched_leaf_edges', 'sudden_wilting', 'plant_collapse', 'grubs_in_soil'],
         description: 'Adults notch leaf edges; larvae eat roots underground, often causing sudden plant collapse. C-shaped creamy grubs in soil.',
@@ -3502,7 +3501,7 @@ const PESTS_DB = {
         prevention: ['Inspect soil of new plants', 'Check undersides for notching damage early', 'Sticky barriers on pot edges outdoors'],
     },
     caterpillars: {
-        name: 'Caterpillars / Leafminers', emoji: '≡ƒÉ¢',
+        name: 'Caterpillars / Leafminers', emoji: '🐛',
         aka: ['Moth larvae', 'Leafminer larvae'],
         symptoms: ['irregular_holes', 'leaf_mining_trails', 'skeletonized_leaves'],
         description: 'Various moth/butterfly larvae eating leaves. Leafminers create winding pale trails inside leaves.',
@@ -3555,12 +3554,12 @@ const SYMPTOMS = {
     webbing:          { label: 'Fine webbing on leaves', category: 'pests', emoji: '🕸️' },
     sticky_residue:   { label: 'Sticky residue on leaves', category: 'pests', emoji: '💧' },
     sooty_mold:       { label: 'Black sooty coating', category: 'pests', emoji: '🖤' },
-    visible_insects:  { label: 'Visible insects on plant', category: 'pests', emoji: '≡ƒÉ¢' },
-    silver_streaks:   { label: 'Silver/bronze streaks on leaves', category: 'pests', emoji: 'ΓÜí' },
+    visible_insects:  { label: 'Visible insects on plant', category: 'pests', emoji: '🐛' },
+    silver_streaks:   { label: 'Silver/bronze streaks on leaves', category: 'pests', emoji: '⚡' },
     stippling:        { label: 'Tiny pale dots/stippling', category: 'pests', emoji: '·' },
-    black_dots:       { label: 'Tiny black dots on leaves', category: 'pests', emoji: 'ΓÜ½' },
-    white_powder:     { label: 'White powdery coating', category: 'pests', emoji: 'Γ¼£' },
-    grey_fuzz:        { label: 'Grey fuzzy mold', category: 'pests', emoji: '≡ƒ⌐╢' },
+    black_dots:       { label: 'Tiny black dots on leaves', category: 'pests', emoji: '⚫' },
+    white_powder:     { label: 'White powdery coating', category: 'pests', emoji: '⬜' },
+    grey_fuzz:        { label: 'Grey fuzzy mold', category: 'pests', emoji: '🩶' },
     notched_leaf_edges: { label: 'Notched/scalloped leaf edges', category: 'pests', emoji: '🌿' },
     yellow_lower:     { label: 'Yellowing lower leaves', category: 'leaves', emoji: '🟡' },
     yellow_leaves:    { label: 'General yellowing', category: 'leaves', emoji: '🟡' },
@@ -3583,7 +3582,7 @@ const SYMPTOMS = {
     mushy_tissue:     { label: 'Mushy/water-soaked tissue', category: 'stem', emoji: '💦' },
     foul_smell:       { label: 'Foul/rotting smell', category: 'stem', emoji: '🦨' },
     brown_black_roots:{ label: 'Brown or black roots', category: 'stem', emoji: '🌑' },
-    grubs_in_soil:    { label: 'White grubs in soil', category: 'stem', emoji: '≡ƒÉ¢' },
+    grubs_in_soil:    { label: 'White grubs in soil', category: 'stem', emoji: '🐛' },
     crown_rot:        { label: 'Crown/base rotting', category: 'stem', emoji: '💀' },
     wilting:          { label: 'Wilting despite moist soil', category: 'growth', emoji: '😵' },
     sudden_collapse:  { label: 'Sudden collapse/death', category: 'growth', emoji: '💀' },
@@ -3591,7 +3590,7 @@ const SYMPTOMS = {
     stunted_growth:   { label: 'Stunted growth', category: 'growth', emoji: '🐌' },
     no_new_growth:    { label: 'No new growth at all', category: 'growth', emoji: '😶' },
     leggy_growth:     { label: 'Leggy/etiolated growth', category: 'growth', emoji: '🦒' },
-    leaf_scorch:      { label: 'Bleached/scorched patches', category: 'environment', emoji: 'ΓÿÇ∩╕Å' },
+    leaf_scorch:      { label: 'Bleached/scorched patches', category: 'environment', emoji: '☀️' },
     dry_medium:       { label: 'Dry medium / underwatering', category: 'environment', emoji: '🏜️' },
 };
 
@@ -3641,11 +3640,11 @@ const CARE_CAUSES = {
         treatment: ['Allow soil to dry appropriately before next watering','Check drainage holes are unblocked','Consider lifting pot to check weight before watering','Repot if soil stays wet too long — may need better-draining mix'] },
     underwatering:    { name: 'Underwatering', emoji: '🏜️', category: 'water',
         description: 'Plant running low on water. Soil very dry, pot light.',
-        treatment: ['Water thoroughly until it drains from bottom','Bottom-water for 20ΓÇô30 mins if very dry (capillary action)','Check roots haven\'t compacted — may need a bigger pot','Increase watering frequency'] },
+        treatment: ['Water thoroughly until it drains from bottom','Bottom-water for 20–30 mins if very dry (capillary action)','Check roots haven\'t compacted — may need a bigger pot','Increase watering frequency'] },
     root_bound:       { name: 'Root-bound', emoji: '🪴', category: 'roots',
         description: 'Roots have filled the pot, limiting water and nutrient uptake.',
-        treatment: ['Repot into a pot 1ΓÇô2 sizes larger','Refresh substrate','Check for circling roots and gently untangle'] },
-    too_much_light:   { name: 'Too much light / sunburn', emoji: 'ΓÿÇ∩╕Å', category: 'light',
+        treatment: ['Repot into a pot 1–2 sizes larger','Refresh substrate','Check for circling roots and gently untangle'] },
+    too_much_light:   { name: 'Too much light / sunburn', emoji: '☀️', category: 'light',
         description: 'Direct sun burning leaves, or too-bright conditions bleaching foliage.',
         treatment: ['Move further from window or filter with a sheer curtain','Acclimatise to bright light gradually'] },
     too_little_light: { name: 'Insufficient light', emoji: '🌑', category: 'light',
@@ -3657,7 +3656,7 @@ const CARE_CAUSES = {
     cold_draft:       { name: 'Cold draft / temperature stress', emoji: '🌬️', category: 'temperature',
         description: 'Cold air from windows or AC causing leaf damage.',
         treatment: ['Move away from drafty windows','Keep above minimum temperature for genus','Avoid placing near AC vents or exterior doors'] },
-    salt_buildup:     { name: 'Fertiliser/salt buildup', emoji: 'ΓÜù∩╕Å', category: 'nutrients',
+    salt_buildup:     { name: 'Fertiliser/salt buildup', emoji: '⚗️', category: 'nutrients',
         description: 'Mineral salts accumulating in soil from tap water or over-fertilising.',
         treatment: ['Flush soil thoroughly with clean water','Repot with fresh mix','Switch to filtered or rainwater','Reduce fertiliser frequency'] },
     overfertilizing:  { name: 'Over-fertilising', emoji: '🧪', category: 'nutrients',
@@ -3674,17 +3673,17 @@ const CARE_CAUSES = {
         treatment: ['Move to cooler spot','Increase watering frequency temporarily','Increase air circulation'] },
     transplant_shock: { name: 'Transplant shock', emoji: '😨', category: 'care',
         description: 'Plant stressed after repotting or moving.',
-        treatment: ['Keep in stable conditions — no extra fertiliser','Maintain consistent moisture','Be patient — usually resolves in 1ΓÇô4 weeks'] },
+        treatment: ['Keep in stable conditions — no extra fertiliser','Maintain consistent moisture','Be patient — usually resolves in 1–4 weeks'] },
     fluoride_toxicity:{ name: 'Fluoride/chlorine sensitivity', emoji: '🚰', category: 'water',
         description: 'Some plants (Marantaceae, Chlorophytum, Dracaena) are sensitive to fluoride in tap water.',
         treatment: ['Switch to filtered, distilled, or rainwater','Allow tap water to sit overnight to off-gas chlorine','Flush soil periodically'] },
     natural_senescence:{ name: 'Natural leaf ageing', emoji: '🍂', category: 'normal',
         description: 'Lower/older leaves naturally yellow and drop as plant grows. Normal process.',
-        treatment: ['No treatment needed if only 1ΓÇô2 lower leaves at a time','Ensure overall care is appropriate','Remove yellowed leaves cleanly'] },
+        treatment: ['No treatment needed if only 1–2 lower leaves at a time','Ensure overall care is appropriate','Remove yellowed leaves cleanly'] },
     dormancy:         { name: 'Dormancy / seasonal slowdown', emoji: '😴', category: 'normal',
         description: 'Many plants slow or stop growing in winter. Normal.',
         treatment: ['Reduce watering frequency','Stop or reduce feeding','Keep in appropriate temperature range','Be patient until spring'] },
-    sunburn:          { name: 'Sunburn', emoji: 'ΓÿÇ∩╕Å', category: 'light',
+    sunburn:          { name: 'Sunburn', emoji: '☀️', category: 'light',
         description: 'Pale or bleached patches from direct sun exposure, often papery.',
         treatment: ['Move plant out of direct sun','Acclimate gradually to brighter conditions','Damaged leaves won\'t recover but plant will push new growth'] },
 };
@@ -3788,7 +3787,7 @@ const DEMO_PROPS_SEED = [
     { propId: 'PROP003', genus: 'Monstera', species: 'deliciosa', propType: 'Wet stick', substrate: 'Water', startDate: '2025-12-01', status: 'Potted Up', parentUID: '69000003', siblingPropIds: [], graduatedUID: null, failCause: null, failCauseDetail: null, notes: 'Node only, no leaf. Rooted in water in 3 weeks.' },
     { propId: 'PROP004', genus: 'Hoya', species: 'carnosa', propType: 'Tip cutting', substrate: 'Perlite', startDate: '2025-11-15', status: 'Graduated', parentUID: '69000005', siblingPropIds: [], graduatedUID: '69000010', failCause: null, failCauseDetail: null, notes: 'Two-node tip. Rooted fast.' },
     { propId: 'PROP005', genus: 'Alocasia', species: 'baginda', propType: 'Corm', substrate: 'Sphagnum moss', startDate: '2025-10-20', status: 'Failed', parentUID: '69000002', siblingPropIds: [], graduatedUID: null, failCause: 'Rotted', failCauseDetail: 'Kept too wet. Corm turned to mush after 3 weeks.', notes: 'Corm from repot.' },
-    { propId: 'PROP006', genus: 'Philodendron', species: '├ùgloriochrysum', propType: 'Seed', substrate: 'Moist potting mix',
+    { propId: 'PROP006', genus: 'Philodendron', species: '×gloriochrysum', propType: 'Seed', substrate: 'Moist potting mix',
         startDate: '2026-01-20', status: 'Trying', parentUID: null, siblingPropIds: [], graduatedUID: null,
         failCause: null, failCauseDetail: null,
         notes: 'F1 cross — hand pollinated. 4 seeds germinated.',
@@ -3798,8 +3797,8 @@ const DEMO_PROPS_SEED = [
         pollinationMethod: 'Hand pollinated',
         crossDate: '2026-01-10',
         isIntrageneric: false,
-        nothogenus: '├ùPhilodelstera',
-        nothospeciesEpithet: '├ùgloriochrysum',
+        nothogenus: '×Philodelstera',
+        nothospeciesEpithet: '×gloriochrysum',
         generation: { type: 'F', number: 1, str: 'F1' },
         generationConfirmed: true,
     },
@@ -3807,7 +3806,7 @@ const DEMO_PROPS_SEED = [
 const DEMO_PROP_TIMELINES_SEED = {
     PROP001: [
         { propId: 'PROP001', ts: '2026-01-10 09:00', action: 'CREATED', details: 'Prop started — Stem cutting in Sphagnum moss' },
-        { propId: 'PROP001', ts: '2026-01-24 11:30', action: 'STATUS', details: 'Status ΓåÆ Rooted. First white root tips visible through moss!' },
+        { propId: 'PROP001', ts: '2026-01-24 11:30', action: 'STATUS', details: 'Status → Rooted. First white root tips visible through moss!' },
         { propId: 'PROP001', ts: '2026-01-30 10:00', action: 'NOTE', details: 'Roots about 2cm now. Keeping moist.' },
     ],
     PROP002: [
@@ -3816,23 +3815,23 @@ const DEMO_PROP_TIMELINES_SEED = {
     ],
     PROP003: [
         { propId: 'PROP003', ts: '2025-12-01 14:00', action: 'CREATED', details: 'Prop started — Wet stick in Water' },
-        { propId: 'PROP003', ts: '2025-12-22 10:00', action: 'STATUS', details: 'Status ΓåÆ Rooted. Roots 3cm in water.' },
-        { propId: 'PROP003', ts: '2026-01-08 09:00', action: 'STATUS', details: 'Status ΓåÆ Potted Up. Moved to aroid mix.' },
+        { propId: 'PROP003', ts: '2025-12-22 10:00', action: 'STATUS', details: 'Status → Rooted. Roots 3cm in water.' },
+        { propId: 'PROP003', ts: '2026-01-08 09:00', action: 'STATUS', details: 'Status → Potted Up. Moved to aroid mix.' },
         { propId: 'PROP003', ts: '2026-01-20 11:00', action: 'NOTE', details: 'First tiny leaf unfurling. 🥹' },
     ],
     PROP004: [
         { propId: 'PROP004', ts: '2025-11-15 10:00', action: 'CREATED', details: 'Prop started — Tip cutting in Perlite' },
-        { propId: 'PROP004', ts: '2025-11-30 09:30', action: 'STATUS', details: 'Status ΓåÆ Rooted.' },
-        { propId: 'PROP004', ts: '2025-12-10 10:00', action: 'STATUS', details: 'Status ΓåÆ Potted Up.' },
-        { propId: 'PROP004', ts: '2026-01-05 11:00', action: 'STATUS', details: 'Status ΓåÆ Graduated. New specimen UID 69000010 created.' },
+        { propId: 'PROP004', ts: '2025-11-30 09:30', action: 'STATUS', details: 'Status → Rooted.' },
+        { propId: 'PROP004', ts: '2025-12-10 10:00', action: 'STATUS', details: 'Status → Potted Up.' },
+        { propId: 'PROP004', ts: '2026-01-05 11:00', action: 'STATUS', details: 'Status → Graduated. New specimen UID 69000010 created.' },
     ],
     PROP005: [
         { propId: 'PROP005', ts: '2025-10-20 09:00', action: 'CREATED', details: 'Prop started — Corm in Sphagnum moss' },
-        { propId: 'PROP005', ts: '2025-11-10 10:00', action: 'STATUS', details: 'Status ΓåÆ Failed. Corm rotted.' },
+        { propId: 'PROP005', ts: '2025-11-10 10:00', action: 'STATUS', details: 'Status → Failed. Corm rotted.' },
         { propId: 'PROP005', ts: '2025-11-10 10:01', action: 'NOTE', details: 'Kept too wet. Corm turned to mush after 3 weeks.' },
     ],
     PROP006: [
-        { propId: 'PROP006', ts: '2026-01-10 14:00', action: 'CROSS', details: 'Hand pollination performed — Philodendron gloriosum (ΓÖÇ) ├ù Monstera deliciosa (ΓÖé)' },
+        { propId: 'PROP006', ts: '2026-01-10 14:00', action: 'CROSS', details: 'Hand pollination performed — Philodendron gloriosum (♀) × Monstera deliciosa (♂)' },
         { propId: 'PROP006', ts: '2026-01-20 09:00', action: 'CREATED', details: 'F1 hybrid seeds sown in moist potting mix. 4 seeds total.' },
         { propId: 'PROP006', ts: '2026-02-01 10:00', action: 'NOTE', details: '2 of 4 seeds germinating — small white radicles visible.' },
     ],
@@ -3852,7 +3851,7 @@ const PHYSICS_WEIGHTS = {
 };
 const ENV_LIGHT_LABELS = ['—', 'None / dark', 'Dim', 'Indirect', 'Bright indirect', 'Direct sun'];
 const ENV_HUMIDITY_LABELS = ['—', 'Very dry', 'Dry', 'Average', 'Humid', 'Very humid'];
-const ENV_TEMP_LABELS = ['—', 'Cool (< 16┬░C)', 'Moderate (16ΓÇô21┬░C)', 'Warm (21ΓÇô26┬░C)', 'Hot (> 26┬░C)'];
+const ENV_TEMP_LABELS = ['—', 'Cool (< 16°C)', 'Moderate (16–21°C)', 'Warm (21–26°C)', 'Hot (> 26°C)'];
 const ENV_AIRFLOW_LABELS = ['—', 'Stagnant', 'Low', 'Moderate', 'Good', 'High / fan'];
 const SUBSTRATE_PROPS = {
     'Water / hydro': { wh: 10, aer: 1, wick: 10, decomp: 0 },
@@ -3874,7 +3873,7 @@ const SUBSTRATE_PROPS = {
 };
 const SUBSTRATE_DEFAULT = { wh: 5, aer: 5, wick: 5, decomp: 2 };
 
-// ΓöÇΓöÇ Custom mix ingredient physics ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Custom mix ingredient physics ──────────────────────────────────────────
 // wh=water-holding, aer=aeration, wick=wicking, decomp=decomposition speed
 const MIX_INGREDIENT_PROPS = {
     // Soil ingredients
@@ -3911,7 +3910,7 @@ const PON_MIX_INGREDIENTS = [
     'Zeolite', 'Growstone', 'Coarse sand', 'Pea gravel', 'Hydroton',
 ];
 
-// Encode rows ΓåÆ storage string: "custom-soil:Bark (chunky)(2)|Perlite(1)"
+// Encode rows → storage string: "custom-soil:Bark (chunky)(2)|Perlite(1)"
 function encodeCustomMix(rows, isSemiHydro) {
     var prefix = isSemiHydro ? 'custom-pon' : 'custom-soil';
     var parts = rows.filter(function(r) { return r.ingredient && r.parts > 0; })
@@ -3919,7 +3918,7 @@ function encodeCustomMix(rows, isSemiHydro) {
     return prefix + ':' + parts.join('|');
 }
 
-// Decode storage string ΓåÆ rows array
+// Decode storage string → rows array
 function decodeCustomMix(encoded) {
     if (!encoded || encoded.indexOf(':') < 0) return null;
     var body = encoded.slice(encoded.indexOf(':') + 1);
@@ -3989,7 +3988,7 @@ const POT_SHAPES = {
     'Hanging basket': { evapMod: 1.4  }, // full air exposure, dries fastest
 };
 const POT_SHAPE_NAMES = Object.keys(POT_SHAPES);
-const POT_DEFAULT = { breath: 4, ret: 6 }; // unknown/unset ΓåÆ moderate plastic-ish
+const POT_DEFAULT = { breath: 4, ret: 6 }; // unknown/unset → moderate plastic-ish
 const ENV_DEFAULT = { light: 3, humidity: 3, temperature: 3, airflow: 3, enclosure: false };
 function plantPhysics(plant, env) {
     const e = env || ENV_DEFAULT;
@@ -4006,7 +4005,7 @@ function plantPhysics(plant, env) {
     const W = PHYSICS_WEIGHTS;
     const light = (e.light || 3) * 2;
     const airflow = (e.airflow || 3) * 2;
-    const temp = (e.temperature || 3) * 2.5; // 1ΓÇô4 ΓåÆ 2.5ΓÇô10
+    const temp = (e.temperature || 3) * 2.5; // 1–4 → 2.5–10
     const humid = (e.humidity || 3) * 2;
     const encl = e.enclosure ? 1 : 0;
     const rawDry = (light * W.light +
@@ -4023,7 +4022,7 @@ function plantPhysics(plant, env) {
         encl * W.enclosureBonus);
     const rotRisk = Math.min(10, Math.max(1, rawRot));
     const drySpeedLabel = drySpeed >= 7.5 ? '🔥 Dries very fast'
-        : drySpeed >= 5 ? 'ΓÜí Dries fast'
+        : drySpeed >= 5 ? '⚡ Dries fast'
             : drySpeed >= 2.5 ? '🌿 Dries medium'
                 : '🐢 Dries slow';
     const drySpeedShort = drySpeed >= 7.5 ? 'Very fast'
@@ -4033,7 +4032,7 @@ function plantPhysics(plant, env) {
     const rotRiskLabel = rotRisk >= 7.5 ? '🔴 Danger'
         : rotRisk >= 5 ? '🟠 High'
             : rotRisk >= 3 ? '🟡 Moderate'
-                : 'Γ£à Low';
+                : '✅ Low';
     const rotRiskShort = rotRisk >= 7.5 ? 'Danger'
         : rotRisk >= 5 ? 'High'
             : rotRisk >= 3 ? 'Moderate'
@@ -4187,7 +4186,7 @@ function deriveHybridTaxonomy(motherGenus, fatherGenus) {
     if (!fG || mG.toLowerCase() === fG.toLowerCase()) {
         return { genus: mG, isIntrageneric: true, nothogenus: null };
     }
-    const blend = '├ù' + mG.slice(0, Math.ceil(mG.length / 2)) + fG.slice(Math.floor(fG.length / 2)).toLowerCase();
+    const blend = '×' + mG.slice(0, Math.ceil(mG.length / 2)) + fG.slice(Math.floor(fG.length / 2)).toLowerCase();
     return { genus: blend, isIntrageneric: false, nothogenus: blend };
 }
 function calcGeneration(motherPlant, fatherPlant, isSelf) {
@@ -4217,7 +4216,7 @@ function formatNothospecies(epithet) {
     if (!epithet)
         return '';
     const e = epithet.trim();
-    return e.startsWith('├ù') ? e : `├ù${e}`;
+    return e.startsWith('×') ? e : `×${e}`;
 }
 function parseGenerationStr(s) {
     if (!s) return null;
@@ -4253,7 +4252,7 @@ function genBadgeColor(gen) {
 }
 const DEATH_CAUSES = {
     pest: {
-        label: '≡ƒÉ¢ Pests', color: '#8B4513',
+        label: '🐛 Pests', color: '#8B4513',
         options: ['Spider mites', 'Fungus gnats', 'Mealybugs', 'Scale', 'Thrips', 'Aphids', 'Root mealybugs', 'Whitefly', 'Unknown pest'],
         tips: {
             'Spider mites': 'Check leaf undersides regularly and boost humidity to deter mites.',
@@ -4287,7 +4286,7 @@ const DEATH_CAUSES = {
         label: '💧 Watering', color: '#1A6A9A',
         options: ['Overwatered', 'Underwatered'],
         tips: {
-            'Overwatered': 'Use the finger test — only water when top 2ΓÇô5cm of substrate is dry.',
+            'Overwatered': 'Use the finger test — only water when top 2–5cm of substrate is dry.',
             'Underwatered': 'Check soil moisture every few days in warm or bright conditions.',
         }
     },
@@ -4314,7 +4313,7 @@ const DEATH_CAUSES = {
         }
     },
     unknown: {
-        label: 'Γ¥ô Unknown', color: '#666',
+        label: '❓ Unknown', color: '#666',
         options: ['Unknown cause'],
         tips: {
             'Unknown cause': 'Document symptoms carefully to help diagnose if it happens again.',
@@ -4327,7 +4326,7 @@ function getDeathCauseMeta(cause) {
             return { category: catKey, categoryLabel: cat.label, tip: cat.tips[cause] || '', color: cat.color };
         }
     }
-    return { category: 'unknown', categoryLabel: 'Γ¥ô Unknown', tip: '', color: '#666' };
+    return { category: 'unknown', categoryLabel: '❓ Unknown', tip: '', color: '#666' };
 }
 const DEMO_ARCHIVE_SEED = [
     {
@@ -4376,7 +4375,7 @@ function getWarningsForPlant(plant, archive, failedProps) {
             date: a.deathDate || '',
             tip: meta ? meta.tip : '',
             color: meta ? meta.color : '#666',
-            categoryLabel: meta ? meta.categoryLabel : 'Γ¥ô Unknown',
+            categoryLabel: meta ? meta.categoryLabel : '❓ Unknown',
             matchedGenus: a.genus,
         });
     });
@@ -4397,7 +4396,7 @@ function getWarningsForPlant(plant, archive, failedProps) {
             date: p.startDate || '',
             tip: meta ? meta.tip : '',
             color: meta ? meta.color : '#666',
-            categoryLabel: meta ? meta.categoryLabel : 'Γ¥ô Unknown',
+            categoryLabel: meta ? meta.categoryLabel : '❓ Unknown',
             matchedGenus: p.genus,
         });
     });
@@ -4876,7 +4875,7 @@ function PlantDataProvider({ children }) {
                     return p;
                 return Object.assign(Object.assign({}, p), { status, failCause: failCause || null, failCauseDetail: failCauseDetail || null });
             }));
-            let detail = `Status ΓåÆ ${status}`;
+            let detail = `Status → ${status}`;
             if (failCause)
                 detail += `. Cause: ${failCause}`;
             demoPushPropLog_(propId, 'STATUS', detail);
@@ -4920,7 +4919,7 @@ function PlantDataProvider({ children }) {
             };
             setDemoPlants(prev => [...(prev || []), newPlant]);
             setDemoProps(prev => (prev || []).map(p => p.propId !== propId ? p : Object.assign(Object.assign({}, p), { status: 'Graduated', graduatedUID: newUid })));
-            demoPushPropLog_(propId, 'STATUS', `Status ΓåÆ Graduated. New specimen UID ${newUid} created.`);
+            demoPushPropLog_(propId, 'STATUS', `Status → Graduated. New specimen UID ${newUid} created.`);
             demoPushLog_(newUid, 'CREATE', `Graduated from prop ${propId}`);
             return Promise.resolve({ ok: true, newUid });
         }
@@ -5404,7 +5403,7 @@ function StatusMessage({ type, message }) {
         info: 'bg-[#3498DB] border-[#2980B9] text-white',
         loading: 'bg-[#F39C12] border-[#E67E22] text-white'
     };
-    const icons = { success: '✓', error: 'Γ£ù', warning: 'ΓÜá', info: 'Γä╣', loading: React.createElement("span", { className: "loading-spinner" }, "\uD83C\uDF3F") };
+    const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ', loading: React.createElement("span", { className: "loading-spinner" }, "\uD83C\uDF3F") };
     return (React.createElement("div", { className: `${colors[type]} border-4  px-4 py-3 mb-4 flex items-center gap-3 shadow-lg status-glow fade-in` },
         React.createElement("span", { className: "text-2xl" }, icons[type]),
         React.createElement("span", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '14px', fontWeight: '600' } }, message)));
@@ -5434,7 +5433,7 @@ function HomeScreen() {
     const allHappy = !loading && dueNow.length === 0 && upcoming.length === 0 && fertDueNow.length === 0;
     const overdueTotal = dueNow.length + fertDueNow.length;
 
-    // ΓöÇΓöÇ Quick Stats Bar ΓöÇΓöÇ
+    // ── Quick Stats Bar ──
     const StatsBar = () => !loading && totalCount != null ? (React.createElement("div", {
         className: "stats-bar mb-3",
         style: { borderColor: theme.cardBorder, background: theme.cardBg }
@@ -5453,7 +5452,7 @@ function HomeScreen() {
             React.createElement("div", { className: "stat-label", style: { color: theme.txtS } }, "FERT"))
     )) : null;
 
-    // ΓöÇΓöÇ Needs Attention Section (compact urgent cards) ΓöÇΓöÇ
+    // ── Needs Attention Section (compact urgent cards) ──
     const NeedsAttention = () => {
         const allUrgent = [
             ...dueNow.map(p => Object.assign({}, p, { _urgentType: 'water' })),
@@ -5491,21 +5490,21 @@ function HomeScreen() {
                 ))));
     };
 
-    // ΓöÇΓöÇ All Happy Banner ΓöÇΓöÇ
+    // ── All Happy Banner ──
     const HappyBanner = () => allHappy ? (React.createElement("div", { className: "border-4 border-[#4A7C1E] px-4 py-4 mb-3 flex items-center gap-3", style: { background: 'linear-gradient(135deg, #C4E898 0%, #A8D870 100%)' } },
         React.createElement("span", { style: { fontSize: 32 } }, "\uD83C\uDF89"),
         React.createElement("div", null,
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: '#1A2A08' }) }, "All plants are happy!"),
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#2A5808', marginTop: 2 }) }, "No watering or fertilizer needed right now.")))) : null;
 
-    // ΓöÇΓöÇ Birthday Banner ΓöÇΓöÇ
+    // ── Birthday Banner ──
     const BirthdayBanner = () => birthdays.length > 0 ? (React.createElement("div", { className: "border-4 border-[#ffc107] px-3 py-2 mb-3 flex items-center gap-2", style: { background: '#fff8e1' } },
         React.createElement("span", { style: { fontSize: 22 } }, "\uD83C\uDF82"),
         React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: 'var(--c-soon)', fontWeight: 800 }) },
             "Birthday today: ",
             birthdays.join(', ')))) : null;
 
-    // ΓöÇΓöÇ Upcoming Section (compact) ΓöÇΓöÇ
+    // ── Upcoming Section (compact) ──
     const UpcomingSection = () => {
         if (upcoming.length === 0 && fertUpcoming.length === 0) return null;
         const _upState = React.useState(false);
@@ -5672,7 +5671,7 @@ function HomeScreen() {
             React.createElement('span', null, 'Locations'))
     );
 
-    // ΓöÇΓöÇ Navigation Grid (cleaner) ΓöÇΓöÇ
+    // ── Navigation Grid (cleaner) ──
     const NavGrid = () => React.createElement("div", { className: "grid grid-cols-2 gap-2" },
         React.createElement("button", { type: "button", onClick: () => navigate('my-plants'),
             className: "nav-grid-btn hover-lift",
@@ -5810,7 +5809,7 @@ function CustomMixBuilder({ value, onChange, growingMethod, pxS, theme }) {
 
     var [rows, setRows] = React.useState(initRows);
 
-    // Re-init if growingMethod switches (soil Γåö semihydro)
+    // Re-init if growingMethod switches (soil ↔ semihydro)
     React.useEffect(function() {
         setRows([{ ingredient: ingredientList[0], parts: 1 }]);
     }, [growingMethod]);
@@ -5860,9 +5859,9 @@ function CustomMixBuilder({ value, onChange, growingMethod, pxS, theme }) {
     // Live physics
     var physics = customMixPhysics(rows);
     var drySpeed = (physics.aer * 0.5 + (10 - physics.wh) * 0.3 + (10 - physics.wick) * 0.2);
-    var dryLabel = drySpeed >= 7 ? '🔥 Very fast' : drySpeed >= 5 ? 'ΓÜí Fast' : drySpeed >= 3 ? '🌿 Medium' : '🐢 Slow';
+    var dryLabel = drySpeed >= 7 ? '🔥 Very fast' : drySpeed >= 5 ? '⚡ Fast' : drySpeed >= 3 ? '🌿 Medium' : '🐢 Slow';
     var rotRisk  = physics.wh * 0.5 + (10 - physics.aer) * 0.3 + physics.wick * 0.2;
-    var rotLabel = rotRisk >= 7 ? '🔴 High' : rotRisk >= 5 ? '🟠 Moderate' : rotRisk >= 3 ? '🟡 Low-mod' : 'Γ£à Low';
+    var rotLabel = rotRisk >= 7 ? '🔴 High' : rotRisk >= 5 ? '🟠 Moderate' : rotRisk >= 3 ? '🟡 Low-mod' : '✅ Low';
 
     var dupIngredients = rows.map(function(r) { return r.ingredient; }).filter(function(v, i, a) { return a.indexOf(v) !== i; });
 
@@ -5914,7 +5913,7 @@ function CustomMixBuilder({ value, onChange, growingMethod, pxS, theme }) {
                             background: theme.rowBg, color: accentColor, cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }),
-                    }, 'ΓêÆ'),
+                    }, '−'),
                     React.createElement('div', { style: Object.assign({}, pxS, {
                         width: 28, height: 26, fontSize: '13px', fontWeight: 900,
                         border: '1.5px solid ' + accentColor,
@@ -5942,14 +5941,14 @@ function CustomMixBuilder({ value, onChange, growingMethod, pxS, theme }) {
                         color: '#A06060', cursor: 'pointer', fontSize: '14px', flexShrink: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                     },
-                }, '├ù')
+                }, '×')
             );
         }),
 
         // Dup warning
         dupIngredients.length > 0 && React.createElement('div', { style: Object.assign({}, pxS, {
             fontSize: '10px', color: '#C87820', marginBottom: 6,
-        }) }, 'ΓÜá Duplicate ingredient — combine into one row'),
+        }) }, '⚠ Duplicate ingredient — combine into one row'),
 
         // Add row button
         rows.length < 6 && React.createElement('button', {
@@ -5978,7 +5977,7 @@ function CustomMixBuilder({ value, onChange, growingMethod, pxS, theme }) {
 }
 
 
-// ΓöÇΓöÇΓöÇ Care Sound ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Care Sound ────────────────────────────────────────────────
 var _audioCtx = null;
 function getAudioCtx() {
     if (!_audioCtx) {
@@ -6029,7 +6028,7 @@ function playCareSound(type) {
     } catch(e) {}
 }
 
-// ΓöÇΓöÇΓöÇ Care Streak ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Care Streak ───────────────────────────────────────────────
 function computeWaterStreak(timeline, everyDays) {
     if (!timeline || !everyDays || everyDays <= 0) return 0;
     // Get watering dates newest-first
@@ -6055,7 +6054,7 @@ function computeWaterStreak(timeline, everyDays) {
     return streak;
 }
 
-// ΓöÇΓöÇΓöÇ Plant Age ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Plant Age ─────────────────────────────────────────────────
 function plantAgeLabel(birthday) {
     if (!birthday) return null;
     var now = new Date();
@@ -6071,7 +6070,7 @@ function plantAgeLabel(birthday) {
     return years + 'y' + (rem > 0 ? ' ' + rem + 'mo' : '') + ' old';
 }
 
-// ΓöÇΓöÇΓöÇ Seasonal Nudge ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Seasonal Nudge ────────────────────────────────────────────
 function getSeasonalNudge(plant) {
     var month = new Date().getMonth() + 1; // 1-12
     var genus = plant && (plant.genus || '').toLowerCase();
@@ -6086,13 +6085,13 @@ function getSeasonalNudge(plant) {
     var isBulb = bulb.some(function(g) { return genus.includes(g); });
     // Northern hemisphere seasons
     if (isDormant) {
-        if (month >= 11 || month <= 2) return { icon: 'Γ¥ä∩╕Å', msg: 'Winter rest — cut back water significantly. No ferts until spring.', type: 'info' };
+        if (month >= 11 || month <= 2) return { icon: '❄️', msg: 'Winter rest — cut back water significantly. No ferts until spring.', type: 'info' };
         if (month === 3) return { icon: '🌱', msg: 'Growing season starting — resume watering and begin fertilizing.', type: 'good' };
     }
     if (isTropical) {
         if (month >= 11 || month <= 2) return { icon: '🌙', msg: 'Low light season — reduce watering frequency, skip ferts.', type: 'info' };
-        if (month === 3 || month === 4) return { icon: 'ΓÿÇ∩╕Å', msg: 'Wake-up time — resume feeding as new growth appears.', type: 'good' };
-        if (month >= 6 && month <= 8) return { icon: '🔥', msg: 'Peak growing season — water more often and fertilize every 2ΓÇô3 waterings.', type: 'good' };
+        if (month === 3 || month === 4) return { icon: '☀️', msg: 'Wake-up time — resume feeding as new growth appears.', type: 'good' };
+        if (month >= 6 && month <= 8) return { icon: '🔥', msg: 'Peak growing season — water more often and fertilize every 2–3 waterings.', type: 'good' };
     }
     if (isBulb) {
         if (month >= 9 && month <= 11) return { icon: '😴', msg: 'Heading into dormancy — reduce water, let foliage die back naturally.', type: 'info' };
@@ -6353,7 +6352,7 @@ function WateringScreen() {
         try {
             if (kind === 'water') await quickLog(uid, { water: true, fertilize: false, repot: false, notes: '' });
             if (kind === 'fert') await quickLog(uid, { water: false, fertilize: true, repot: false, notes: '' });
-            setManualStatus({ type: 'success', message: 'Saved Γ£à' });
+            setManualStatus({ type: 'success', message: 'Saved ✅' });
         } catch(e) { setManualStatus({ type: 'error', message: 'Failed' }); }
         setTimeout(() => setManualStatus(null), 1000);
     }
@@ -6374,7 +6373,7 @@ function WateringScreen() {
             }
             await refreshHome().catch(() => { });
             setSelected({});
-            setStatus({ type: 'success', message: 'Saved Γ£à' });
+            setStatus({ type: 'success', message: 'Saved ✅' });
             setTimeout(() => setStatus(null), 1100);
         }
         catch (e) {
@@ -6479,8 +6478,8 @@ function WateringScreen() {
                 React.createElement('input', { value: manualQ, onChange: e => setManualQ(e.target.value),
                     className: 'w-full border-4 border-[#3C1800] p-2 input-depth mb-2',
                     style: Object.assign({}, pxS, { fontSize: '14px', color: '#2C1000' }),
-                    placeholder: 'Search by name, genus, UIDΓÇª' }),
-                !manualQ && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A', opacity: 0.7 }) }, 'Type to searchΓÇª'),
+                    placeholder: 'Search by name, genus, UID…' }),
+                !manualQ && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A', opacity: 0.7 }) }, 'Type to search…'),
                 manualQ && manualResults.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A' }) }, 'No matches.'),
                 React.createElement('div', { className: 'space-y-2' },
                     (manualResults || []).map(p => {
@@ -6544,7 +6543,7 @@ function QuickLogScreen() {
                 await quickLog(uid, { water: true, fertilize: false, repot: false, notes: '' });
             if (kind === 'fert')
                 await quickLog(uid, { water: true, fertilize: true, repot: false, notes: '' });
-            setStatus({ type: 'success', message: 'Saved Γ£à' });
+            setStatus({ type: 'success', message: 'Saved ✅' });
         }
         catch (e) {
             setStatus({ type: 'error', message: 'Failed' });
@@ -6560,7 +6559,7 @@ function QuickLogScreen() {
         setStatus({ type: 'loading', message: 'Logging water...' });
         try {
             await batchWater(list, 'Watered');
-            setStatus({ type: 'success', message: 'Saved Γ£à' });
+            setStatus({ type: 'success', message: 'Saved ✅' });
             clearSelected();
             setGroupSelected({});
         }
@@ -6576,7 +6575,7 @@ function QuickLogScreen() {
         setStatus({ type: 'loading', message: 'Logging fertilize...' });
         try {
             await batchFertilize(list, 'Fertilized');
-            setStatus({ type: 'success', message: 'Saved Γ£à' });
+            setStatus({ type: 'success', message: 'Saved ✅' });
             clearSelected();
             setGroupSelected({});
         }
@@ -6762,7 +6761,7 @@ function QuickLogScreen() {
                                 React.createElement("input", { value: taxaFree, onChange: e => setTaxaFree(e.target.value), placeholder: "Optional", className: "mt-1 w-full border-4 border-[#3C1800]  p-2", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#2C1000' }) })))),
                     React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-2" },
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: '#2C1000' }) },
-                            groupLoading ? 'LoadingΓÇª' : `Matches: ${groupMatches.length}`,
+                            groupLoading ? 'Loading…' : `Matches: ${groupMatches.length}`,
                             "  \u2022  Selected: ",
                             groupSelectedUids.length),
                         React.createElement("div", { className: "flex gap-2" },
@@ -7015,7 +7014,7 @@ function CareDefaultsBanner({ genus, onApply, theme, pxS, plant }) {
           background: '#7EC850', color: '#0D1F00', border: '2px solid #A0D880',
           whiteSpace: 'nowrap',
         }, pxS)
-      }, 'ΓÜí Use these')
+      }, '⚡ Use these')
     )
   );
 }
@@ -7051,7 +7050,7 @@ function genusPhysicsBias(genus, env) {
     const isTropical = prefHumid >= 4 || ['Araceae','Marantaceae','Gesneriaceae','Zingiberaceae','Bromeliaceae'].includes(family);
     if (isTropical) {
         if (envHumid < prefHumid - 1) {
-            dryBias += 0.5; // dries faster than expected ΓåÆ flag it
+            dryBias += 0.5; // dries faster than expected → flag it
             waterBias -= 2; // water more frequently
         }
         if (envHumid >= prefHumid) rotBias -= 0.4;
@@ -7072,7 +7071,7 @@ function genusPhysicsBias(genus, env) {
 
     if (entry.water) {
         const baselineDiff = (entry.water - 10) / 10; // normalised deviation from 10d neutral
-        waterBias += baselineDiff * -3; // longer baseline ΓåÆ positive waterBias offset
+        waterBias += baselineDiff * -3; // longer baseline → positive waterBias offset
     }
 
     return {
@@ -7285,7 +7284,7 @@ function CareBriefPanel({ plant, physics, env, recentTimeline, onBriefGenerated,
         thriving: { bg: '#27ae60', label: '🌿 Thriving' },
         stable:   { bg: '#2980b9', label: '✓ Stable' },
         watch:    { bg: '#e67e22', label: '👀 Watch' },
-        act:      { bg: '#c0392b', label: 'ΓÜá∩╕Å Act Now' },
+        act:      { bg: '#c0392b', label: '⚠️ Act Now' },
     };
     const vs = brief ? (verdictStyle[brief.verdict] || verdictStyle.stable) : null;
 
@@ -7316,13 +7315,13 @@ function CareBriefPanel({ plant, physics, env, recentTimeline, onBriefGenerated,
                     border: `2px solid ${theme.btnP.bg}`, background: 'transparent',
                     color: theme.btnP.bg, cursor: physics ? 'pointer' : 'not-allowed',
                     opacity: physics ? 1 : 0.4 }) },
-                status === 'loading' ? 'ΓÅ│ Reading KB...' : brief ? 'Γå╗ Refresh' : 'Γ£¿ Analyse')),
+                status === 'loading' ? '⏳ Reading KB...' : brief ? '↻ Refresh' : '✨ Analyse')),
 
         status === 'loading' && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, fontStyle: 'italic' }) },
             'Reading physics, environment, care history...'),
 
         status === 'error' && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', color: 'var(--c-urgent)' }) },
-            'Γ£ù Analysis failed — check your connection and try again.'),
+            '✗ Analysis failed — check your connection and try again.'),
 
         physics && bias && (bias.dryBias !== 0 || bias.rotBias !== 0) && React.createElement('div', {
             style: { marginBottom: 8, padding: '5px 8px', background: 'rgba(0,0,0,0.04)',
@@ -7564,7 +7563,7 @@ function AddScreen() {
             };
             let res; try { res = await createPlant(payload); } catch(e) { setStatus({ type: 'error', msg: 'GAS error: ' + (e&&e.message||String(e)) }); return; }
             const uid = res && res.uid ? String(res.uid) : '';
-            setStatus({ type: 'success', message: 'Added Γ£à' });
+            setStatus({ type: 'success', message: 'Added ✅' });
             setTimeout(() => { setStatus(null); if (uid)
                 navigate('plant', { uid });
             else
@@ -7611,7 +7610,7 @@ function AddScreen() {
             if (!uids.length) {
                 throw new Error('No plants were created. ' + (res && res.errors && res.errors[0] ? res.errors[0] : 'Check that Genus and Location are filled in.'));
             }
-            setStatus({ type: 'success', message: `${uids.length} plant${uids.length !== 1 ? 's' : ''} added! Γ£à` });
+            setStatus({ type: 'success', message: `${uids.length} plant${uids.length !== 1 ? 's' : ''} added! ✅` });
             setTimeout(() => {
                 setStatus(null);
                 if (uids.length === 1)
@@ -7660,7 +7659,7 @@ function AddScreen() {
     }
     const SOURCE_TYPES = [
         { id: 'division', label: '🪴 Division / Split', desc: 'Same plant divided into multiple — e.g. clumping Alocasia, Monstera split' },
-        { id: 'acquisition', label: '≡ƒ¢Æ Batch Acquisition', desc: 'Multiple plants bought together — independent specimens, same species' },
+        { id: 'acquisition', label: '🛒 Batch Acquisition', desc: 'Multiple plants bought together — independent specimens, same species' },
         { id: 'collection', label: '📦 Importing Collection', desc: 'Migrating existing plants into PlantOS — all independent' },
     ];
     const isBatch = mode === 'batch';
@@ -7668,7 +7667,7 @@ function AddScreen() {
     return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '800px' : '680px', margin: '0 auto' } },
         React.createElement(PlantCard, { title: "ADD PLANT" },
             React.createElement("div", { style: { display: 'flex', gap: 0, marginBottom: 14, border: `3px solid ${theme.cardBorder}` } },
-                [['single', '🌿 Single'], ['batch', '🪴 Batch'], ['prop', 'Γ£é∩╕Å Prop']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setMode(id), style: Object.assign(Object.assign({}, pxS), { flex: 1, padding: '10px 6px', fontSize: '12px', fontWeight: 900, cursor: 'pointer', border: 'none', borderRight: id !== 'prop' ? `3px solid ${theme.cardBorder}` : 'none', background: mode === id ? theme.btnP.bg : theme.cardBg, color: mode === id ? theme.btnP.text : theme.txtS }) }, label)))),
+                [['single', '🌿 Single'], ['batch', '🪴 Batch'], ['prop', '✂️ Prop']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setMode(id), style: Object.assign(Object.assign({}, pxS), { flex: 1, padding: '10px 6px', fontSize: '12px', fontWeight: 900, cursor: 'pointer', border: 'none', borderRight: id !== 'prop' ? `3px solid ${theme.cardBorder}` : 'none', background: mode === id ? theme.btnP.bg : theme.cardBg, color: mode === id ? theme.btnP.text : theme.txtS }) }, label)))),
             status && React.createElement("div", { className: "mb-3" },
                 React.createElement(StatusMessage, { type: status.type, message: status.message })),
 
@@ -7900,11 +7899,11 @@ function AddScreen() {
                             background: '#43A047', color: '#fff', border: 'none', cursor: 'pointer',
                             opacity: (waterEveryDays && fertilizeEveryDays) ? 0.4 : 1,
                         })
-                    }, (waterEveryDays && fertilizeEveryDays) ? '✓ Schedule set' : 'Use these estimates Γåæ')
+                    }, (waterEveryDays && fertilizeEveryDays) ? '✓ Schedule set' : 'Use these estimates ↑')
                 ) : React.createElement("div", { style: Object.assign({}, pxS, {
                     fontSize: '12px', color: theme.txtS, lineHeight: 1.5, marginBottom: 8,
                     padding: '5px 8px', background: 'rgba(90,48,24,0.10)', borderLeft: '3px solid #C87820',
-                }) }, "ΓÜá Fill in location, substrate & pot above for a schedule estimate."),
+                }) }, "⚠ Fill in location, substrate & pot above for a schedule estimate."),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2" },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Water every"),
@@ -8017,11 +8016,11 @@ function MyPlantsScreen({ openTab, prefill }) {
     const LOC_TYPES_LIST = [
       {id:'balcony',icon:'🏠',label:'Balcony',hasDir:true,hasSoil:false},
       {id:'garden',icon:'🌿',label:'Garden bed',hasDir:true,hasSoil:true},
-      {id:'patio',icon:'ΓÿÇ∩╕Å',label:'Patio',hasDir:true,hasSoil:false},
+      {id:'patio',icon:'☀️',label:'Patio',hasDir:true,hasSoil:false},
       {id:'container',icon:'🪴',label:'Container outdoor',hasDir:true,hasSoil:false},
       {id:'window',icon:'🪟',label:'Windowsill',hasDir:true,hasSoil:false},
       {id:'greenhouse',icon:'🏡',label:'Greenhouse',hasDir:false,hasSoil:false},
-      {id:'indoor',icon:'≡ƒ¢ï∩╕Å',label:'Indoor room',hasDir:false,hasSoil:false},
+      {id:'indoor',icon:'🛋️',label:'Indoor room',hasDir:false,hasSoil:false},
     ];
     const OBS_LABELS = {
       open:'Open sky / railing',shallow:'Shallow overhang (<1m)',
@@ -8140,7 +8139,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         ),
         React.createElement('div',{style:{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',textAlign:'center',pointerEvents:'none'}},
           React.createElement('div',{style:{fontFamily:"'Press Start 2P',monospace",fontSize:sz*0.09,color:'#FFD060',textShadow:'0 0 10px #FFD06080',lineHeight:1}},snapped||'—'),
-          React.createElement('div',{style:{fontFamily:"'Pixelify Sans',sans-serif",fontSize:sz*0.047,color:'#5A7A48',marginTop:3}},Math.round(heading)+'┬░')
+          React.createElement('div',{style:{fontFamily:"'Pixelify Sans',sans-serif",fontSize:sz*0.047,color:'#5A7A48',marginTop:3}},Math.round(heading)+'°')
         )
       );
     }
@@ -8389,7 +8388,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                 fertilizeEveryDays: patchLocal.fertEveryDays,
             });
             await updatePlant(editUid, patchLocal);
-            setEditStatus({ type: 'success', message: 'Saved Γ£à' });
+            setEditStatus({ type: 'success', message: 'Saved ✅' });
             patchSharedPlant(editUid, patchUI);
             if (hasSelection) {
                 if (DEMO_MODE) {
@@ -8431,7 +8430,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         }
         catch (e) {
             var errMsg = (e && (e.message || e.toString())) || 'Unknown error';
-            setEditStatus({ type: 'error', message: 'Γ¥î ' + errMsg });
+            setEditStatus({ type: 'error', message: '❌ ' + errMsg });
             console.error('[PlantOS] saveEdit failed:', errMsg, e);
             // Keep error visible for 15s so user can actually read it
             setTimeout(() => setEditStatus(null), 15000);
@@ -8471,7 +8470,7 @@ function MyPlantsScreen({ openTab, prefill }) {
             React.createElement('div', { style: { fontFamily:"'Press Start 2P',monospace", fontSize: 11, color: '#8AC868', letterSpacing: '0.1em' } }, '🧭 POINT YOUR PHONE'),
             React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: '#5A7A48', textAlign: 'center', maxWidth: 260, lineHeight: 1.5 } }, 'Hold flat — point top edge toward your wall or fence'),
             React.createElement(CompassRoseSVG, { heading: locLiveHeading, snapped: locSnapped, isSouthern: locIsSouthern, size: 220 }),
-            locSnapped && React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 14, color: sunColorLoc(estSun(locSnapped, locObstruction, locIsSouthern)), textAlign: 'center' } }, 'ΓÿÇ∩╕Å ' + sunLabelLoc(estSun(locSnapped, locObstruction, locIsSouthern))),
+            locSnapped && React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 14, color: sunColorLoc(estSun(locSnapped, locObstruction, locIsSouthern)), textAlign: 'center' } }, '☀️ ' + sunLabelLoc(estSun(locSnapped, locObstruction, locIsSouthern))),
             React.createElement('div', { style: { display: 'flex', gap: 12, marginTop: 4 } },
                 React.createElement('button', { type: 'button', onClick: () => closeLocCompass(true, false), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: '#2A6018', color: '#C8E8A8', border: '2px solid #4A9838', padding: '12px 22px', cursor: 'pointer' } }, '✓ LOCK ' + (locSnapped || '')),
                 React.createElement('button', { type: 'button', onClick: () => closeLocCompass(false, false), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, background: 'transparent', color: '#5A7A48', border: '1px solid #1A3018', padding: '12px 16px', cursor: 'pointer' } }, 'Cancel')
@@ -8490,7 +8489,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         React.createElement('div', { style: { background: '#060D04', border: '2px solid #2A4018', width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 0 } },
             React.createElement('div', { style: { background: 'linear-gradient(90deg,#0A1A06,#060D04)', padding: '12px 14px', borderBottom: '1px solid #1A3018', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
                 React.createElement('div', { style: { fontFamily:"'Press Start 2P',monospace", fontSize: 11, color: '#8AC868', letterSpacing: '0.08em' } }, '🌿 ADD LOCATION'),
-                React.createElement('button', { type: 'button', onClick: () => setLocModal(false), style: { background: 'transparent', border: 'none', color: '#5A7A48', cursor: 'pointer', fontFamily:"'Pixelify Sans',sans-serif", fontSize: 20, lineHeight: 1 } }, 'Γ£ò')
+                React.createElement('button', { type: 'button', onClick: () => setLocModal(false), style: { background: 'transparent', border: 'none', color: '#5A7A48', cursor: 'pointer', fontFamily:"'Pixelify Sans',sans-serif", fontSize: 20, lineHeight: 1 } }, '✕')
             ),
             React.createElement('div', { style: { padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 } },
                 React.createElement('div', null,
@@ -8514,7 +8513,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                             const isPrimary = locIsSouthern ? ['N','NE','NW'].includes(d) : ['S','SE','SW'].includes(d);
                             const sh = estSun(d, locObstruction, locIsSouthern);
                             return React.createElement('button', { key: d, type: 'button', onClick: () => setLocDirection(d), style: { fontFamily:"'Press Start 2P',monospace", fontSize: 9, background: locDirection === d ? '#1A3A10' : '#080F08', border: `2px solid ${locDirection === d ? '#FFD060' : isPrimary ? '#5A3A08' : '#1A3018'}`, color: locDirection === d ? '#FFD060' : isPrimary ? '#C87820' : '#3A6A30', padding: '9px 4px', cursor: 'pointer', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 } },
-                                d, React.createElement('span', { style: { fontSize: 8, color: sunColorLoc(sh), fontFamily:"'Pixelify Sans',sans-serif" } }, sh != null ? sh + 'hΓÿÇ∩╕Å' : ''));
+                                d, React.createElement('span', { style: { fontSize: 8, color: sunColorLoc(sh), fontFamily:"'Pixelify Sans',sans-serif" } }, sh != null ? sh + 'h☀️' : ''));
                         })
                     )
                 ),
@@ -8523,7 +8522,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 3 } },
                         Object.entries(OBS_LABELS).map(([k, v]) => React.createElement('button', { key: k, type: 'button', onClick: () => setLocObstruction(k), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 12, background: locObstruction === k ? '#1A3A10' : 'transparent', border: `1px solid ${locObstruction === k ? '#4A9838' : '#1A3018'}`, color: locObstruction === k ? '#C8E8A8' : '#5A7A48', padding: '7px 10px', cursor: 'pointer', textAlign: 'left' } }, (locObstruction === k ? '✓ ' : '  ') + v))
                     ),
-                    (function() { const s = estSun(locDirection, locObstruction, locIsSouthern); return s != null && React.createElement('div', { style: { marginTop: 8, padding: '9px 12px', background: '#0A140A', border: `2px solid ${sunColorLoc(s)}`, fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: sunColorLoc(s) } }, 'ΓÿÇ∩╕Å ' + locDirection + '-facing · ' + sunLabelLoc(s), locIsSouthern && React.createElement('div', { style: { fontSize: 11, color: '#5A7A48', marginTop: 3 } }, '📍 Southern hemisphere adjusted')); })()
+                    (function() { const s = estSun(locDirection, locObstruction, locIsSouthern); return s != null && React.createElement('div', { style: { marginTop: 8, padding: '9px 12px', background: '#0A140A', border: `2px solid ${sunColorLoc(s)}`, fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: sunColorLoc(s) } }, '☀️ ' + locDirection + '-facing · ' + sunLabelLoc(s), locIsSouthern && React.createElement('div', { style: { fontSize: 11, color: '#5A7A48', marginTop: 3 } }, '📍 Southern hemisphere adjusted')); })()
                 ),
                 locType === 'garden' && React.createElement('div', null,
                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 12, color: '#5A7A48', marginBottom: 5 } }, 'Soil type'),
@@ -8555,7 +8554,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: '#C8E8A8' } }, se.name || '(unnamed)'),
                                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 11, color: isOutdoor ? sunColorLoc(s) : '#7A9A68' } }, badge)
                                 ),
-                                React.createElement('button', { type: 'button', onClick: () => setSubEnvs(prev => prev.filter((_, i) => i !== idx)), style: { background: 'transparent', border: 'none', color: '#5A3A28', cursor: 'pointer', fontSize: 16 } }, 'Γ£ò')
+                                React.createElement('button', { type: 'button', onClick: () => setSubEnvs(prev => prev.filter((_, i) => i !== idx)), style: { background: 'transparent', border: 'none', color: '#5A3A28', cursor: 'pointer', fontSize: 16 } }, '✕')
                             );
                         })
                     ),
@@ -8575,7 +8574,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 Object.entries(OBS_LABELS).map(([k, v]) => React.createElement('button', { key: k, type: 'button', onClick: () => setSubEnvDraft(d => Object.assign({}, d, { obstruction: k })), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 11, background: subEnvDraft.obstruction === k ? '#1A3A10' : 'transparent', border: `1px solid ${subEnvDraft.obstruction === k ? '#4A9838' : '#1A3018'}`, color: subEnvDraft.obstruction === k ? '#C8E8A8' : '#4A6A38', padding: '4px 7px', cursor: 'pointer' } }, v))
                             )
                         ) : React.createElement(React.Fragment, null,
-                            React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 11, color: '#5A7A48', marginBottom: 2 } }, 'ΓÿÇ∩╕Å Light level'),
+                            React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 11, color: '#5A7A48', marginBottom: 2 } }, '☀️ Light level'),
                             React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 3 } },
                                 [['deep-shade','🌑 Deep shade'],['low','🌒 Low'],['medium','🌓 Medium'],['bright-indirect','🌔 Bright indirect'],['direct','🌕 Direct sun']].map(([k,v]) =>
                                     React.createElement('button', { key: k, type: 'button', onClick: () => setSubEnvDraft(d => Object.assign({}, d, { lightLevel: k })), style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 11, background: subEnvDraft.lightLevel === k ? '#1A3A10' : 'transparent', border: `1px solid ${subEnvDraft.lightLevel === k ? '#4A9838' : '#1A3018'}`, color: subEnvDraft.lightLevel === k ? '#C8E8A8' : '#5A7A48', padding: '4px 7px', cursor: 'pointer' } }, v)
@@ -9059,7 +9058,7 @@ function PlantKnowledgePanel({ plant, inline }) {
             border: '2px solid ' + theme.rowBorder,
         }},
             [
-                dbEntry.light       && ['\u2600\uFE0F',  dbEntry.light,       'ΓÿÇ∩╕Å Light'],
+                dbEntry.light       && ['\u2600\uFE0F',  dbEntry.light,       '☀️ Light'],
                 dbEntry.humidity    && ['\uD83D\uDCA7',  dbEntry.humidity,    '💧 Humidity'],
                 dbEntry.substrate   && ['\uD83E\uDEB8',  dbEntry.substrate,   '🪨 Substrate'],
                 dbEntry.potMaterial && ['\uD83E\uDEB4',  dbEntry.potMaterial, '🪴 Pot'],
@@ -9119,7 +9118,7 @@ function PlantKnowledgePanel({ plant, inline }) {
                         background: rc, color: '#fff',
                         marginRight: 6,
                     }) }, riskLabel(score)),
-                    React.createElement('span', { style: { fontSize: '13px', color: theme.txtS, flexShrink: 0 } }, isOpen ? 'Γû▓' : 'Γû╝')
+                    React.createElement('span', { style: { fontSize: '13px', color: theme.txtS, flexShrink: 0 } }, isOpen ? '▲' : '▼')
                 ),
 
                 isOpen && React.createElement('div', { style: {
@@ -9232,11 +9231,11 @@ function ProblemsSection({ plant, autoOpenAI, onAutoOpenDone }) {
         .map(([id]) => id);
 
     const symptomCategories = [
-        { id: 'pests', label: '≡ƒÉ¢ Pests', color: 'var(--c-urgent)' },
+        { id: 'pests', label: '🐛 Pests', color: 'var(--c-urgent)' },
         { id: 'leaves', label: '🍃 Leaves', color: '#27ae60' },
         { id: 'stem', label: '🌿 Stem & Roots', color: 'var(--c-fert)' },
         { id: 'growth', label: '📏 Growth', color: '#2980b9' },
-        { id: 'environment', label: 'ΓÿÇ∩╕Å Environment', color: '#e67e22' },
+        { id: 'environment', label: '☀️ Environment', color: '#e67e22' },
     ];
     const [activeCategory, setActiveCategory] = React.useState('pests');
 
@@ -9407,7 +9406,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
     return React.createElement('div', { style: { marginTop: 12, border: `3px solid #c0392b`, background: theme.cardBg } },
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `2px solid ${theme.rowBorder}`, background: 'rgba(192,57,43,0.08)' } },
             React.createElement('span', { style: Object.assign({}, px8S, { color: 'var(--c-urgent)' }) }, '🔬 DIAGNOSE'),
-            React.createElement('button', { type: 'button', onClick: () => { setOpen(false); setStep('symptoms'); setSelected([]); setAiResult(null); setChatHistory([]); setAiLoading(false); }, style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: theme.txtS } }, 'Γ£ò')),
+            React.createElement('button', { type: 'button', onClick: () => { setOpen(false); setStep('symptoms'); setSelected([]); setAiResult(null); setChatHistory([]); setAiLoading(false); }, style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: theme.txtS } }, '✕')),
 
         React.createElement('div', { style: { padding: 14 } },
 
@@ -9458,7 +9457,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
 
         step === 'results' && React.createElement(React.Fragment, null,
             React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 } },
-                React.createElement('button', { type: 'button', onClick: () => setStep('symptoms'), style: Object.assign({}, pxS, { background: 'none', border: 'none', cursor: 'pointer', color: theme.txtS, fontSize: '12px' }) }, 'ΓåÉ Back'),
+                React.createElement('button', { type: 'button', onClick: () => setStep('symptoms'), style: Object.assign({}, pxS, { background: 'none', border: 'none', cursor: 'pointer', color: theme.txtS, fontSize: '12px' }) }, '← Back'),
                 React.createElement('span', { style: Object.assign({}, px8S, { color: theme.txtP }) }, 'RESULTS')),
             results.length === 0
                 ? React.createElement('div', { style: { textAlign: 'center', padding: '20px 10px' } },
@@ -9473,14 +9472,14 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                     React.createElement('div', { key: id, style: { border: `2px solid ${theme.rowBorder}`, marginBottom: 8, background: theme.rowBg } },
                         React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: isPest ? 'pointer' : 'default' },
                             onClick: isPest ? () => { setActivePest(id); setStep('pest_detail'); } : undefined },
-                            React.createElement('span', { style: { fontSize: 18 } }, entry.emoji || 'Γ¥ô'),
+                            React.createElement('span', { style: { fontSize: 18 } }, entry.emoji || '❓'),
                             React.createElement('div', { style: { flex: 1 } },
                                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP }) }, entry.name),
-                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS }) }, entry.description ? entry.description.slice(0, 80) + 'ΓÇª' : '')),
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS }) }, entry.description ? entry.description.slice(0, 80) + '…' : '')),
                             React.createElement('div', { style: { textAlign: 'right', flexShrink: 0 } },
                                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: confidenceColor(confidence) }) }, `${confidence}%`),
                                 isPest && entry.severity && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: severityColor(entry.severity) }) }, entry.severity.toUpperCase())),
-                            isPest && React.createElement('span', { style: { color: theme.txtS, fontSize: 12 } }, 'ΓÇ║')),
+                            isPest && React.createElement('span', { style: { color: theme.txtS, fontSize: 12 } }, '›')),
                         !isPest && entry.treatment && React.createElement('div', { style: { padding: '0 12px 10px' } },
                             entry.treatment.slice(0, 2).map((t, i) =>
                                 React.createElement('div', { key: i, style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtP, padding: '2px 0', paddingLeft: 8, borderLeft: `3px solid ${theme.btnP.bg}` }) }, `• ${t}`))))),
@@ -9493,7 +9492,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                 const p = PESTS_DB[activePest];
                 return React.createElement(React.Fragment, null,
                     React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 } },
-                        React.createElement('button', { type: 'button', onClick: () => setStep(results.length > 0 ? 'results' : 'symptoms'), style: Object.assign({}, pxS, { background: 'none', border: 'none', cursor: 'pointer', color: theme.txtS, fontSize: '12px' }) }, 'ΓåÉ Back'),
+                        React.createElement('button', { type: 'button', onClick: () => setStep(results.length > 0 ? 'results' : 'symptoms'), style: Object.assign({}, pxS, { background: 'none', border: 'none', cursor: 'pointer', color: theme.txtS, fontSize: '12px' }) }, '← Back'),
                         React.createElement('span', { style: { fontSize: 20 } }, p.emoji),
                         React.createElement('span', { style: Object.assign({}, px8S, { color: theme.txtP }) }, p.name.toUpperCase()),
                         React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, padding: '2px 8px', background: severityColor(p.severity), color: '#fff', marginLeft: 'auto' }) }, p.severity.toUpperCase())),
@@ -9523,7 +9522,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
 
                 React.createElement('button', { type: 'button', onClick: () => setStep('symptoms'),
                     style: Object.assign({}, pxS, { background: 'none', border: 'none', cursor: 'pointer',
-                        color: theme.txtS, fontSize: '12px', marginBottom: 8, display: 'block' }) }, 'ΓåÉ Back'),
+                        color: theme.txtS, fontSize: '12px', marginBottom: 8, display: 'block' }) }, '← Back'),
 
                 React.createElement('div', { style: {
                     display: 'flex', alignItems: 'stretch', gap: 0,
@@ -9541,9 +9540,9 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                         padding: '10px 4px 0',
                         position: 'relative',
                     }},
-                        React.createElement('div', { style: { position: 'absolute', top: 5, left: 6, fontSize: 11, opacity: 0.6, color: '#C8A84B' } }, 'Γ£ª'),
-                        React.createElement('div', { style: { position: 'absolute', top: 12, right: 5, fontSize: 8, opacity: 0.5, color: '#C8A84B' } }, 'Γ£º'),
-                        React.createElement('div', { style: { position: 'absolute', top: 4, left: '50%', fontSize: 9, opacity: 0.4, color: '#C8A84B' } }, 'Γïå'),
+                        React.createElement('div', { style: { position: 'absolute', top: 5, left: 6, fontSize: 11, opacity: 0.6, color: '#C8A84B' } }, '✦'),
+                        React.createElement('div', { style: { position: 'absolute', top: 12, right: 5, fontSize: 8, opacity: 0.5, color: '#C8A84B' } }, '✧'),
+                        React.createElement('div', { style: { position: 'absolute', top: 4, left: '50%', fontSize: 9, opacity: 0.4, color: '#C8A84B' } }, '⋆'),
                         React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
                         React.createElement('div', { style: {
                             width: '100%',
@@ -9599,7 +9598,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                                 fontFamily: "'Press Start 2P', cursive",
                                 fontSize: '14px', color: '#C8A84B',
                                 animation: 'blink-prompt 1.4s step-end infinite',
-                            }}, 'Γû╝')
+                            }}, '▼')
                         )
                     )
                 )
@@ -9628,7 +9627,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                     React.createElement('div', { style: Object.assign({}, pxS, {
                         fontSize: '12px', color: theme.txtP, lineHeight: 1.8,
                     })},
-                        "Hi! I'm Carl. Ask me anything about this plant — diagnosis, care, propagation, pests, soil, toxicityΓÇª I know more than the database." 
+                        "Hi! I'm Carl. Ask me anything about this plant — diagnosis, care, propagation, pests, soil, toxicity… I know more than the database." 
                     )
                 ),
 
@@ -9689,7 +9688,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                         fontSize: '12px', padding: '8px 12px',
                         background: theme.rowBg, border: `2px solid ${theme.rowBorder}`,
                         color: theme.txtS, fontStyle: 'italic'
-                    }) }, 'ΓÅ│ Thinking...')),
+                    }) }, '⏳ Thinking...')),
 
                 React.createElement('div', { ref: chatEndRef })
             ),
@@ -9750,7 +9749,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                         color: (aiLoading || !aiQuery.trim()) ? theme.txtS : theme.btnP.text,
                         border: `2px solid ${theme.rowBorder}`, cursor: 'pointer', alignSelf: 'stretch',
                     })
-                }, 'Γåæ')
+                }, '↑')
             ),
 
             chatHistory.length > 0 && React.createElement('button', {
@@ -9989,7 +9988,7 @@ function PropsSection({ locations, prefill }) {
                 if (m)
                     generation = { type: m[1], number: parseInt(m[2]), str: ov };
             }
-            payload = Object.assign(Object.assign({}, payload), { genus: tax.isIntrageneric ? tax.genus : (tax.nothogenus || tax.genus), species: nothoEpithet || (tax.isIntrageneric ? `├ùhybrid` : ''), propType: 'Seed', isIntrageneric: tax.isIntrageneric, nothogenus: tax.nothogenus, nothospeciesEpithet: nothoEpithet, motherGenus: mGenus, fatherGenus: fGenus, generation, generationConfirmed: !!(form.generationOverride.trim()) });
+            payload = Object.assign(Object.assign({}, payload), { genus: tax.isIntrageneric ? tax.genus : (tax.nothogenus || tax.genus), species: nothoEpithet || (tax.isIntrageneric ? `×hybrid` : ''), propType: 'Seed', isIntrageneric: tax.isIntrageneric, nothogenus: tax.nothogenus, nothospeciesEpithet: nothoEpithet, motherGenus: mGenus, fatherGenus: fGenus, generation, generationConfirmed: !!(form.generationOverride.trim()) });
         }
         let res;
         try { res = await createProp(payload); }
@@ -10119,7 +10118,7 @@ function PropsSection({ locations, prefill }) {
                     " prop",
                     (props || []).length !== 1 ? 's' : '',
                     " in progress"))),
-            React.createElement(PlantButton, { onClick: () => { setShowForm(v => !v); setOpenPropId(null); }, className: "px-3 py-1" }, showForm ? 'Γ£ò Cancel' : '∩╝ï New Prop')),
+            React.createElement(PlantButton, { onClick: () => { setShowForm(v => !v); setOpenPropId(null); }, className: "px-3 py-1" }, showForm ? '✕ Cancel' : '＋ New Prop')),
         showForm && (React.createElement("div", { style: { border: `3px solid ${theme.cardBorder}`, padding: 12, marginBottom: 12, background: theme.rowBg } },
             React.createElement("div", { style: { display: 'flex', gap: 0, marginBottom: 10 } }, [[false, '🌱 Cutting / Division'], [true, '🧬 Hybrid Cross']].map(([isHybrid, label]) => (React.createElement("button", { key: String(isHybrid), type: "button", onClick: () => setForm(p => {
                         const update = { hybridType: isHybrid };
@@ -10271,7 +10270,7 @@ function PropsSection({ locations, prefill }) {
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: theme.txtP, fontStyle: 'italic' }) },
                             tax.nothogenus ? tax.nothogenus : tax.genus,
                             " ",
-                            epithet || (tax.isIntrageneric ? '├ùhybrid' : '')),
+                            epithet || (tax.isIntrageneric ? '×hybrid' : '')),
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) }, tax.isIntrageneric ? 'Intrageneric (same genus)' : `Intergeneric — nothogenus: ${tax.nothogenus || '?'}`),
                         gen && (React.createElement("div", { style: { marginTop: 4 } },
                             React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, padding: '2px 8px', background: genBadgeColor(gen), color: '#fff', border: `2px solid ${genBadgeColor(gen)}` }) }, gen.str),
@@ -10288,7 +10287,7 @@ function PropsSection({ locations, prefill }) {
         React.createElement('div', { style: { display: 'flex', gap: 4, marginBottom: 10, flexWrap: 'wrap' } },
             [
                 { id: 'all', label: '🌱 All' },
-                { id: 'cutting', label: 'Γ£é∩╕Å Cuttings' },
+                { id: 'cutting', label: '✂️ Cuttings' },
                 { id: 'seed', label: '🫘 Seeds' },
                 { id: 'hybrid', label: '🔬 Hybrids' }
             ].map(function(t) {
@@ -10349,19 +10348,19 @@ function PropsSection({ locations, prefill }) {
                             !prop.hybridType && prop.parentUID && React.createElement("span", null,
                                 " \u00B7 Child of ",
                                 prop.parentUID))),
-                    React.createElement("span", { style: { color: theme.txtS, fontSize: 14 } }, isOpen ? 'Γû▓' : 'Γû╝')),
+                    React.createElement("span", { style: { color: theme.txtS, fontSize: 14 } }, isOpen ? '▲' : '▼')),
                 isOpen && (React.createElement("div", { style: { borderTop: `2px solid ${theme.rowBorder}`, padding: '12px' } },
-                    /* ΓöÇΓöÇ PROGRESS STEPPER ΓöÇΓöÇ */
+                    /* ── PROGRESS STEPPER ── */
                     !isDone && (React.createElement("div", { style: { marginBottom: 12 } },
                         React.createElement("div", { style: { display: 'flex', gap: 0 } }, STEPS.map((step, i) => {
                             const done = i < curStep;
                             const active = i === curStep;
                             return (React.createElement("div", { key: step, style: { flex: 1, textAlign: 'center', padding: '6px 4px', border: `2px solid ${theme.cardBorder}`, borderRight: i < STEPS.length - 1 ? 'none' : `2px solid ${theme.cardBorder}`, background: done ? theme.btnP.bg : active ? theme.rowBg : 'transparent' } },
                                 React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: done ? theme.btnP.text : active ? theme.txtP : theme.txtS }) },
-                                    done ? '✓ ' : active ? 'Γû╢ ' : '',
+                                    done ? '✓ ' : active ? '▶ ' : '',
                                     step)));
                         })))),
-                    /* ΓöÇΓöÇ PROP INFO CARD ΓöÇΓöÇ */
+                    /* ── PROP INFO CARD ── */
                     (() => {
                         const isEditing = editPropId === prop.propId;
                         const ef = editPropForm;
@@ -10370,14 +10369,14 @@ function PropsSection({ locations, prefill }) {
                         return React.createElement("div", { style: { marginBottom: 12, border: `2px solid ${theme.rowBorder}`, background: theme.cardBg } },
                             /* card header */
                             React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderBottom: `2px solid ${theme.rowBorder}` } },
-                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: theme.txtS }) }, "Γ£é∩╕Å PROP DETAILS"),
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: theme.txtS }) }, "✂️ PROP DETAILS"),
                                 !isDone && React.createElement("button", { type: "button",
                                     onClick: function() {
                                         if (isEditing) { setEditPropId(null); setEditPropForm({}); }
                                         else { setEditPropId(prop.propId); setEditPropForm({ genus: prop.genus || '', species: prop.species || '', type: prop.type || prop.propType || '', substrate: prop.substrate || '', notes: prop.notes || '' }); }
                                     },
                                     style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, padding: '3px 10px', border: `2px solid ${isEditing ? '#aaa' : theme.btnP.border}`, background: isEditing ? 'transparent' : theme.btnP.bg, color: isEditing ? theme.txtS : theme.btnP.text, cursor: 'pointer' })
-                                }, isEditing ? 'Γ£ò Cancel' : '\u270F\uFE0F Edit')),
+                                }, isEditing ? '✕ Cancel' : '\u270F\uFE0F Edit')),
                             /* display mode */
                             !isEditing && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', padding: '0' } },
                                 [
@@ -10423,7 +10422,7 @@ function PropsSection({ locations, prefill }) {
                                 editPropStatus && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: editPropStatus.ok ? '#2ecc71' : '#e74c3c', marginBottom: 6 }) }, editPropStatus.ok ? '✓ Saved' : editPropStatus.msg),
                                 React.createElement(PlantButton, { onClick: function(){ handleSavePropEdit(prop.propId); }, disabled: editPropSaving, className: "py-1 px-4" }, editPropSaving ? 'Saving...' : '💾 Save Changes')));
                     })(),
-                    /* ΓöÇΓöÇ PARENT/HYBRID ΓöÇΓöÇ */
+                    /* ── PARENT/HYBRID ── */
                     !prop.hybridType && prop.parentUID && (React.createElement("div", { style: { marginBottom: 8 } },
                         React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "\uD83C\uDF3F Child of: "),
                         React.createElement("button", { type: "button", onClick: () => navigate('plant', { uid: prop.parentUID }), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.btnP.bg, fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, parentPlantName || prop.parentUID))),
@@ -10474,7 +10473,7 @@ function PropsSection({ locations, prefill }) {
                             "\uD83D\uDC80 Failed: ",
                             prop.failCause),
                         prop.failCauseDetail && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#FFA0A0', marginTop: 2 }) }, prop.failCauseDetail))),
-                    /* ΓöÇΓöÇ ACTIONS ΓöÇΓöÇ */
+                    /* ── ACTIONS ── */
                     !isDone && (React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 } },
                         React.createElement(PlantButton, { onClick: () => setShowStatusPicker(v => !v), className: "py-1 px-3" }, "\uD83D\uDCC8 Update Status"),
                         prop.status === 'Potted Up' && (React.createElement(PlantButton, { variant: "secondary", onClick: () => { setShowGraduate(v => !v); setShowStatusPicker(false); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); }, className: "py-1 px-3" }, "\uD83C\uDF93 Graduate")),
@@ -10685,7 +10684,7 @@ function BatchWaterScreen() {
         setStatus({ type: 'loading', message: 'Saving...' });
         try {
             await batchWater(uids, action);
-            setStatus({ type: 'success', message: 'Saved Γ£à' });
+            setStatus({ type: 'success', message: 'Saved ✅' });
             setTimeout(() => { setStatus(null); goBack(); }, 900);
         }
         catch (e) {
@@ -10783,7 +10782,7 @@ function BatchFertilizeScreen() {
         setStatus({ type: 'loading', message: 'Saving...' });
         try {
             await batchFertilize(uids, action);
-            setStatus({ type: 'success', message: 'Saved Γ£à' });
+            setStatus({ type: 'success', message: 'Saved ✅' });
             setTimeout(() => { setStatus(null); goBack(); }, 900);
         }
         catch (e) {
@@ -11152,7 +11151,7 @@ function PlantScreen({ uid }) {
             await quickLog(plant.uid, { water: false, fertilize: false, repot: false, note: true, notes: note });
             const tl = await getTimeline(safe, 30);
             setTimeline(tl || []);
-            setMsg({ type: 'success', text: 'Note saved Γ£à' });
+            setMsg({ type: 'success', text: 'Note saved ✅' });
         }
         catch (e) {
             setMsg({ type: 'error', text: e && e.message ? e.message : 'Failed saving note' });
@@ -11172,7 +11171,7 @@ function PlantScreen({ uid }) {
             const dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
             const res = await uploadPlantPhoto(plant.uid, dataUrl, file.name || 'photo.jpg');
             if (res && res.ok) {
-                setPhotoMsg({ type: 'success', text: 'Photo added Γ£à' });
+                setPhotoMsg({ type: 'success', text: 'Photo added ✅' });
                 await refreshLatestPhoto();
             }
             else
@@ -11228,7 +11227,7 @@ function PlantScreen({ uid }) {
             patchSharedPlant(plant.uid, { nickname: nextNick });
             await loadCurrent();
             setPlant(prev => prev ? Object.assign(Object.assign({}, prev), { nickname: nextNick }) : prev);
-            setMsg({ type: 'success', text: 'Saved Γ£à' });
+            setMsg({ type: 'success', text: 'Saved ✅' });
         }
         catch (e) {
             setMsg({ type: 'error', text: e && e.message ? e.message : 'Failed saving nickname' });
@@ -11248,7 +11247,7 @@ function PlantScreen({ uid }) {
             await updatePlant(plant.uid, { potSize: repotPot, substrate: repotSub, lastRepotted: todayStr() });
             patchSharedPlant(plant.uid, { potSize: repotPot, substrate: repotSub, lastRepotted: todayStr() });
             await loadCurrent();
-            setMsg({ type: 'success', text: 'Saved Γ£à' });
+            setMsg({ type: 'success', text: 'Saved ✅' });
             playCareSound('repot');
         }
         catch (e) {
@@ -11367,7 +11366,7 @@ function PlantScreen({ uid }) {
                 if (editCls)   protected_.classification = editCls;
                 return Object.assign({}, prev, protected_);
             });
-            setMsg({ type: 'success', text: 'Saved Γ£à' });
+            setMsg({ type: 'success', text: 'Saved ✅' });
         }
         catch (e) {
             setMsg({ type: 'error', text: e && e.message ? e.message : 'Save failed — check console' });
@@ -11435,7 +11434,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                     var _heroDueSoon = _heroDaysDiff !== null && _heroDaysDiff > 0 && _heroDaysDiff <= 3;
                     var _heroFertDue = plant.nextFertDue ? new Date(plant.nextFertDue) <= _heroToday : false;
                     return (React.createElement(React.Fragment, null,
-                        // ΓöÇΓöÇ Hero Health Badge + Water Now CTA ΓöÇΓöÇ
+                        // ── Hero Health Badge + Water Now CTA ──
                         (_heroOverdue || _heroFertDue) && React.createElement("div", {
                             style: {
                                 display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10,
@@ -11491,7 +11490,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '11px' : '13px', color: theme.txtS, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) },
                                     plant.location ? '\uD83D\uDCCD ' + plant.location + '  \u2022  ' : '',
                                     "UID ", plant.uid),
-                                // ΓöÇΓöÇ Streak + Age + Seasonal badges ΓöÇΓöÇ
+                                // ── Streak + Age + Seasonal badges ──
                                 (function() {
                                     var streak = computeWaterStreak(timeline, Number(plant.everyDays || plant.waterEveryDays || 0));
                                     var ageStr = plantAgeLabel(plant.birthday);
@@ -11501,7 +11500,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     if (ageStr) badges.push(React.createElement('span', { key: 'age', style: Object.assign({}, pxS, { fontSize: '11px', padding: '2px 7px', borderRadius: 4, background: 'rgba(90,122,56,0.15)', color: '#3A5E30', border: '1px solid #6A9A50', fontWeight: 700, cursor: 'default' }) }, '\uD83C\uDF31 ' + ageStr));
                                     return badges.length > 0 ? React.createElement('div', { style: { display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 } }, badges) : null;
                                 })(),
-                                // ΓöÇΓöÇ Seasonal nudge ΓöÇΓöÇ
+                                // ── Seasonal nudge ──
                                 (function() {
                                     var nudge = getSeasonalNudge(plant);
                                     if (!nudge) return null;
@@ -11877,7 +11876,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 color: '#D0F0A8', letterSpacing: '0.05em',
                                 boxShadow: '0 2px 0 #0E2004', opacity: autofillStatus === 'loading' ? 0.6 : 1,
                             }
-                        }, autofillStatus === 'loading' ? 'ΓÅ│ ASKING CARL...' : '\uD83C\uDF3F CARL AUTOFILL')
+                        }, autofillStatus === 'loading' ? '⏳ ASKING CARL...' : '\uD83C\uDF3F CARL AUTOFILL')
                     ),
                     autofillStatus === 'done' && autofillPreview && React.createElement("div", { style: {
                         marginBottom: 10, border: '2px solid #2E5A1A',
@@ -11967,7 +11966,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             marginBottom: 6,
                         }},
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, letterSpacing: '0.07em', color: (editWaterEvery && editFertEvery) ? '#2A7A18' : '#C87820', marginBottom: 8 }) },
-                                (editWaterEvery && editFertEvery) ? '✓ SCHEDULE SET' : 'ΓÜá SCHEDULE INCOMPLETE'
+                                (editWaterEvery && editFertEvery) ? '✓ SCHEDULE SET' : '⚠ SCHEDULE INCOMPLETE'
                             ),
                             React.createElement("div", { style: { marginBottom: 8 } },
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "💧 Water Every (days)"),
@@ -12014,7 +12013,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "Hybrid?"),
                                 React.createElement("select", { value: editHybridNote, onChange: e => setEditHybridNote(e.target.value), className: "w-full border-4 px-2 py-2 mt-1", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
                                     React.createElement("option", { value: "" }, "— no —"),
-                                    React.createElement("option", { value: "hybrid" }, "├ù Hybrid"),
+                                    React.createElement("option", { value: "hybrid" }, "× Hybrid"),
                                     React.createElement("option", { value: "intergeneric" }, "Intergeneric"))),
                             React.createElement("div", null,
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "Infra Rank"),
@@ -12144,17 +12143,17 @@ function plantSanityChecks(plant) {
         checks.push({
             severity: 'danger', code: 'fert-daily', icon: '🔥',
             title: 'Daily fertilizing will KILL your plant',
-            detail: 'Salt builds up in the root zone faster than it can be flushed. Nutrient burn, then root death. Even the most aggressive growers fertilize at most every 3ΓÇô5 days in hydro. Set this to at least 14d for soil, 7d for LECA/semi-hydro.',
+            detail: 'Salt builds up in the root zone faster than it can be flushed. Nutrient burn, then root death. Even the most aggressive growers fertilize at most every 3–5 days in hydro. Set this to at least 14d for soil, 7d for LECA/semi-hydro.',
         });
     } else if (fertDays > 1 && fertDays <= 3 && !isHydro) {
         checks.push({
-            severity: 'danger', code: 'fert-toofrequent', icon: 'ΓÜá∩╕Å',
+            severity: 'danger', code: 'fert-toofrequent', icon: '⚠️',
             title: 'Fertilizing every ' + fertDays + 'd is far too often for soil/substrate',
-            detail: 'This will cause nutrient salt accumulation and root burn. For soil-based substrates, 14ΓÇô30 days is typical. Only semi-hydro/LECA can handle very frequent feeding.',
+            detail: 'This will cause nutrient salt accumulation and root burn. For soil-based substrates, 14–30 days is typical. Only semi-hydro/LECA can handle very frequent feeding.',
         });
     } else if (fertDays > 3 && fertDays <= 6 && !isHydro) {
         checks.push({
-            severity: 'warning', code: 'fert-aggressive', icon: 'ΓÜá∩╕Å',
+            severity: 'warning', code: 'fert-aggressive', icon: '⚠️',
             title: 'Fertilizing every ' + fertDays + 'd is aggressive',
             detail: 'Weekly (7d) is already considered frequent for most substrates. Watch for tip burn or leaf curl — early signs of salt stress.',
         });
@@ -12164,7 +12163,7 @@ function plantSanityChecks(plant) {
         checks.push({
             severity: 'warning', code: 'pot-huge', icon: '🪣',
             title: potNum + '" pot is very large',
-            detail: 'Most houseplants max out at 10ΓÇô14 inches. A pot this large holds enormous water volume — the plant will barely touch the outer soil, leading to anaerobic wet pockets and root rot.',
+            detail: 'Most houseplants max out at 10–14 inches. A pot this large holds enormous water volume — the plant will barely touch the outer soil, leading to anaerobic wet pockets and root rot.',
         });
     }
 
@@ -12172,13 +12171,13 @@ function plantSanityChecks(plant) {
         checks.push({
             severity: 'danger', code: 'pot-cutting-toobig', icon: '🚨',
             title: 'A ' + potNum + '" pot is WAY too large for a cutting',
-            detail: 'A freshly rooted cutting has a tiny root system. It can only drink from soil immediately around the roots. All that extra substrate stays saturated for weeks, drowning the roots before they can expand into it. Start in a 2ΓÇô4" pot and size up as roots fill the container.',
+            detail: 'A freshly rooted cutting has a tiny root system. It can only drink from soil immediately around the roots. All that extra substrate stays saturated for weeks, drowning the roots before they can expand into it. Start in a 2–4" pot and size up as roots fill the container.',
         });
     } else if (potNum !== null && isCutting && potNum > 4) {
         checks.push({
-            severity: 'warning', code: 'pot-cutting-large', icon: 'ΓÜá∩╕Å',
+            severity: 'warning', code: 'pot-cutting-large', icon: '⚠️',
             title: potNum + '" pot may be too big for a cutting',
-            detail: 'Cuttings root best in small pots (2ΓÇô3") where the entire substrate can dry out between waterings. Going larger risks the outer soil staying wet too long.',
+            detail: 'Cuttings root best in small pots (2–3") where the entire substrate can dry out between waterings. Going larger risks the outer soil staying wet too long.',
         });
     }
 
@@ -12188,7 +12187,7 @@ function plantSanityChecks(plant) {
             title: 'Moisture-retentive substrate in a large pot',
             detail: sub.includes('sphagnum') || sub.includes('moss')
                 ? 'Sphagnum moss holds water for a very long time. In an ' + potNum + '" pot the volume is enormous — the centre of the pot may stay wet for weeks. Consider a much smaller container, or mix with perlite to improve drainage.'
-                : 'Soil/coco in a large pot can take 2ΓÇô4 weeks to dry fully. Make sure your watering interval accounts for this.',
+                : 'Soil/coco in a large pot can take 2–4 weeks to dry fully. Make sure your watering interval accounts for this.',
         });
     }
 
@@ -12202,7 +12201,7 @@ function plantSanityChecks(plant) {
 
     if (fertDays > 0 && waterDays > 0 && fertDays < waterDays) {
         checks.push({
-            severity: 'danger', code: 'fert-more-than-water', icon: 'Γÿá∩╕Å',
+            severity: 'danger', code: 'fert-more-than-water', icon: '☠️',
             title: 'Fertilizing more often than watering is impossible',
             detail: 'You\'re set to fertilize every ' + fertDays + 'd but only water every ' + waterDays + 'd. Fertilizer needs water to move into the substrate — if you\'re not watering, the fertilizer just builds up as salt on the surface.',
         });
@@ -12388,11 +12387,11 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
 
     var TOOLTIP_HEALTH = {
         'IN TROUBLE': React.createElement('span', null,
-            React.createElement('strong', { style: { color: '#EF5350', display: 'block', marginBottom: 4 } }, 'ΓÜá NEEDS HELP NOW'),
+            React.createElement('strong', { style: { color: '#EF5350', display: 'block', marginBottom: 4 } }, '⚠ NEEDS HELP NOW'),
             'Your plant is showing multiple stress signals. It is overdue for water and/or fertilizer, and conditions may be risky. Check on it today — wilting or yellowing leaves are a sign things are getting serious.'
         ),
         'STRUGGLING': React.createElement('span', null,
-            React.createElement('strong', { style: { color: '#FFA726', display: 'block', marginBottom: 4 } }, 'ΓÜí NEEDS ATTENTION'),
+            React.createElement('strong', { style: { color: '#FFA726', display: 'block', marginBottom: 4 } }, '⚡ NEEDS ATTENTION'),
             'Something is a bit off — your plant is not at its best. It may be overdue for water or fertilizer, or the environment is not ideal. Give it a check soon.'
         ),
         'GOOD': React.createElement('span', null,
@@ -12400,7 +12399,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
             'Your plant is in good shape. Keep up the current routine — just stay on top of the watering schedule.'
         ),
         'THRIVING': React.createElement('span', null,
-            React.createElement('strong', { style: { color: '#66BB6A', display: 'block', marginBottom: 4 } }, 'Γÿà THRIVING'),
+            React.createElement('strong', { style: { color: '#66BB6A', display: 'block', marginBottom: 4 } }, '★ THRIVING'),
             'Everything looks great. Your plant is healthy, well-watered, and in good conditions. Nice work!'
         ),
     };
@@ -12875,8 +12874,8 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                     : !fertDeltaSignificant
                         ? 'Your ' + fertD + '-day fert schedule looks good! 👍'
                     : fertDelta < 0
-                        ? 'Fert every ' + suggestedFert + 'd — that\'s ' + Math.round(suggestedFert / Math.max(1, (suggested > 0 ? suggested : everyD))) + '├ù your watering interval.'
-                        : 'Fert every ' + suggestedFert + 'd — that\'s ' + Math.round(suggestedFert / Math.max(1, (suggested > 0 ? suggested : everyD))) + '├ù your watering interval.'
+                        ? 'Fert every ' + suggestedFert + 'd — that\'s ' + Math.round(suggestedFert / Math.max(1, (suggested > 0 ? suggested : everyD))) + '× your watering interval.'
+                        : 'Fert every ' + suggestedFert + 'd — that\'s ' + Math.round(suggestedFert / Math.max(1, (suggested > 0 ? suggested : everyD))) + '× your watering interval.'
                 )
             ),
             onSaveFertInterval && (fertDeltaSignificant || fertIsBaseline) && React.createElement('button', {
@@ -13073,7 +13072,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                             isToday && React.createElement('span', { style: {
                                 position: 'absolute', top: 1, right: 2,
                                 fontSize: '8px', lineHeight: 1,
-                            } }, 'Γÿà')
+                            } }, '★')
                         );
                     })
                 )
@@ -13160,15 +13159,15 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                     React.createElement('button', { type: 'button', onClick: function() { setCalOffset(function(o) { return o - 1; }); }, style: Object.assign({}, pxS, {
                         fontSize: '14px', fontWeight: 900, background: 'none', border: '2px solid #5C3010',
                         color: '#C8A84B', cursor: 'pointer', padding: '3px 10px', lineHeight: 1,
-                    }) }, 'ΓùÇ'),
+                    }) }, '◀'),
                     React.createElement('button', { type: 'button', onClick: function() { setCalOffset(0); }, style: Object.assign({}, pxS, {
                         fontSize: '11px', fontWeight: 900, background: 'none', border: 'none',
                         color: calOffset === 0 ? '#C8A84B' : '#7A6050', cursor: 'pointer', padding: '3px 6px',
-                    }) }, calOffset === 0 ? 'ΓùÅ NOW' : 'go to now'),
+                    }) }, calOffset === 0 ? '● NOW' : 'go to now'),
                     React.createElement('button', { type: 'button', onClick: function() { setCalOffset(function(o) { return o + 1; }); }, style: Object.assign({}, pxS, {
                         fontSize: '14px', fontWeight: 900, background: 'none', border: '2px solid #5C3010',
                         color: '#C8A84B', cursor: 'pointer', padding: '3px 10px', lineHeight: 1,
-                    }) }, 'Γû╢')
+                    }) }, '▶')
                 ),
                 React.createElement(MonthGrid, {
                     year: displayMonth.getFullYear(),
@@ -13181,7 +13180,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                 fontSize: '14px', padding: '8px', cursor: 'pointer', width: '100%', marginTop: 4, marginBottom: 8,
                 background: 'rgba(200,168,75,0.1)', border: '2px solid #C8A84B', color: '#C8A84B',
                 letterSpacing: '0.06em', textAlign: 'center',
-            }) }, 'Γ£Å EDIT SCHEDULE & SETUP'),
+            }) }, '✏ EDIT SCHEDULE & SETUP'),
             React.createElement('div', { style: { borderTop: '1px solid ' + theme.rowBorder, marginTop: 4 } },
                     React.createElement('button', {
                         type: 'button',
@@ -13541,7 +13540,7 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
         borderLeft: '3px solid ' + recColor,
         display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6,
     }},
-        React.createElement('span', { style: { fontSize: '12px' } }, 'ΓÜÖ∩╕Å'),
+        React.createElement('span', { style: { fontSize: '12px' } }, '⚙️'),
         React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: recColor, flex: 1 }) },
             isBaseline
                 ? 'algo estimate: every ' + suggested + 'd (no schedule yet)'
@@ -13595,11 +13594,11 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
                     ['🪴', 'Pot size',     plant.potSize                   || '—'],
                     ['🧱', 'Substrate',    plant.substrate || plant.medium || '—'],
                     ['🏺', 'Pot material', plant.potMaterial               || '—'],
-                    ['Γ¼ƒ',  'Pot shape',    plant.potShape                  || '—'],
+                    ['⬟',  'Pot shape',    plant.potShape                  || '—'],
                     ['📍', 'Location',     plant.location                  || '—'],
                     ['🪴', 'Last repot',   plant.lastRepotted              || '—'],
                     ['🎂', 'Birthday',     plant.birthday                  || '—'],
-                    ageStr ? ['ΓÅ│', 'Age', ageStr] : null,
+                    ageStr ? ['⏳', 'Age', ageStr] : null,
                 ].filter(Boolean).map(function(r, i) { return React.createElement(React.Fragment, { key: i },
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, r[0] + ' ' + r[1]),
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: r[2] === '—' ? theme.txtS : theme.txtP }) }, r[2])
@@ -13616,7 +13615,7 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
             border: '2px solid #C8A84B',
             background: 'rgba(200,168,75,0.1)', color: '#C8A84B',
             fontSize: '14px', letterSpacing: '0.06em', textAlign: 'center',
-        }) }, 'Γ£Å EDIT SCHEDULE & SETUP')
+        }) }, '✏ EDIT SCHEDULE & SETUP')
     );
 
     const speciesTab = React.createElement(PlantKnowledgePanel, { plant: plant });
@@ -13647,7 +13646,7 @@ function AlgoCompletionFlags({ plant, physics, onEditOpen }) {
     const missing = [];
     if (!plant.substrate && !plant.medium)   missing.push({ key: 'substrate',   icon: '🪨', label: 'Substrate', impact: 'Affects moisture retention & dry speed' });
     if (!plant.potMaterial)                  missing.push({ key: 'potMaterial', icon: '🪴', label: 'Pot Material', impact: 'Breathability changes drying rate significantly' });
-    if (!plant.potShape)                     missing.push({ key: 'potShape',    icon: 'Γ¼ƒ',  label: 'Pot Shape', impact: 'Surface area ratio affects evaporation speed' });
+    if (!plant.potShape)                     missing.push({ key: 'potShape',    icon: '⬟',  label: 'Pot Shape', impact: 'Surface area ratio affects evaporation speed' });
 
     const noWaterSched = !(plant.waterEveryDays || plant.everyDays) || Number(plant.waterEveryDays || plant.everyDays) === 0;
     const noFertSched  = !(plant.fertEveryDays || plant.fertilizeEveryDays) || Number(plant.fertEveryDays || plant.fertilizeEveryDays) === 0;
@@ -13684,7 +13683,7 @@ function AlgoCompletionFlags({ plant, physics, onEditOpen }) {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7
         }},
             React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-                React.createElement('span', { style: { fontSize: '14px' } }, dangerFlags.length > 0 ? '🚨' : 'ΓÜí'),
+                React.createElement('span', { style: { fontSize: '14px' } }, dangerFlags.length > 0 ? '🚨' : '⚡'),
                 React.createElement('span', { style: Object.assign({}, px8, { fontSize: '13px', color: dangerFlags.length > 0 ? '#F87171' : '#C8A84B', letterSpacing: '0.08em' }) },
                     dangerFlags.length > 0 ? 'SETUP ISSUES' : 'IMPROVE ACCURACY'
                 )
@@ -13697,7 +13696,7 @@ function AlgoCompletionFlags({ plant, physics, onEditOpen }) {
                     border: dangerFlags.length > 0 ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(200,168,75,0.4)',
                     color: dangerFlags.length > 0 ? '#F87171' : '#C8A84B',
                 })
-            }, 'Γ£Å Fix')
+            }, '✏ Fix')
         ),
 
         dangerFlags.length > 0 && React.createElement('div', { style: { marginBottom: (missing.length > 0 || noWaterSched || noFertSched) ? 10 : 0 } },
@@ -13885,10 +13884,10 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
         })(),
 
         (hasParent || isHybrid) && React.createElement('div', { style: { marginBottom: 10 } },
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS, marginBottom: 5 }) }, 'Γåæ PARENTS'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS, marginBottom: 5 }) }, '↑ PARENTS'),
             isHybrid ? React.createElement('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
                 React.createElement('div', { style: { flex: 1, minWidth: '45%', padding: '5px 7px', borderLeft: '4px solid #c0392b', background: theme.rowBg } },
-                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-urgent)', fontWeight: 900, marginBottom: 3 }) }, 'ΓÖÇ MOTHER'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-urgent)', fontWeight: 900, marginBottom: 3 }) }, '♀ MOTHER'),
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP, fontStyle: 'italic' }) },
                         plant.motherGenus, ' ', plant.motherSpecies || ''
                     ),
@@ -13899,7 +13898,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
                     plant.motherFreetext && !plant.motherUID && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS }) }, plant.motherFreetext)
                 ),
                 React.createElement('div', { style: { flex: 1, minWidth: '45%', padding: '5px 7px', borderLeft: '4px solid #1A6A9A', background: theme.rowBg } },
-                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#1A6A9A', fontWeight: 900, marginBottom: 3 }) }, 'ΓÖé FATHER'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#1A6A9A', fontWeight: 900, marginBottom: 3 }) }, '♂ FATHER'),
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP, fontStyle: 'italic' }) },
                         plant.fatherGenus, ' ', plant.fatherSpecies || ''
                     ),
@@ -13923,7 +13922,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
         ),
 
         hasBatch && React.createElement('div', { style: { marginBottom: 10 } },
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS, marginBottom: 5 }) }, 'Γåö BATCH SIBLINGS'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS, marginBottom: 5 }) }, '↔ BATCH SIBLINGS'),
             React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
                 (plant.divisionSiblings || []).map(uid => React.createElement(PlantChip, { key: uid, uid, color: '#7A4A1A' }))
             ),
@@ -13932,7 +13931,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
 
         hasOffspring && React.createElement('div', { style: { marginBottom: 6 } },
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS, marginBottom: 5 }) },
-                'Γåô OFFSPRING (' + offspring.length + ')'
+                '↓ OFFSPRING (' + offspring.length + ')'
             ),
             React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
                 offspring.map(function(o) {
@@ -14007,14 +14006,14 @@ function PhysicsStrip({ physics, plant, env, timeline, pxS, theme, onEditOpen, o
                     border: '1px solid rgba(255,255,255,0.2)',
                 }}, healthLabel)
             ),
-            React.createElement('span', { style: { fontSize: '13px', color: '#888' } }, expanded ? 'Γû▓' : 'Γû╝')
+            React.createElement('span', { style: { fontSize: '13px', color: '#888' } }, expanded ? '▲' : '▼')
         ),
 
         React.createElement(StatBar, { label: 'Water', icon: '💧', value: waterPct, max: 100, color: waterColor,
             pxS: pxS, theme: theme, sublabel: waterDue !== null ? (waterDue <= 0 ? 'DUE' : 'in ' + waterDue + 'd') : null }),
         React.createElement(StatBar, { label: 'Fert', icon: '🌿', value: fertPct, max: 100, color: fertColor,
             pxS: pxS, theme: theme, sublabel: fertDue !== null ? (fertDue <= 0 ? 'DUE' : 'in ' + fertDue + 'd') : null }),
-        React.createElement(StatBar, { label: 'Rot Risk', icon: 'ΓÜá', value: rotPct, max: 100, color: rotColor,
+        React.createElement(StatBar, { label: 'Rot Risk', icon: '⚠', value: rotPct, max: 100, color: rotColor,
             pxS: pxS, theme: theme, sublabel: physics.rotRiskShort }),
         React.createElement(StatBar, { label: 'Moisture', icon: '🌊', value: dryPct, max: 100, color: dryColor,
             pxS: pxS, theme: theme, sublabel: physics.drySpeedShort }),
@@ -14285,7 +14284,7 @@ function WarningBadge({ plant }) {
             " warning",
             warnings.length > 1 ? 's' : '',
             " for this genus",
-            React.createElement("span", { style: { fontSize: '13px' } }, open ? 'Γû▓' : 'Γû╝')),
+            React.createElement("span", { style: { fontSize: '13px' } }, open ? '▲' : '▼')),
         open && (React.createElement("div", { style: { marginTop: 6, border: `2px solid ${theme.rowBorder}`, background: theme.rowBg } }, warnings.map((w, i) => {
             const meta = getDeathCauseMeta(w.cause);
             return (React.createElement("div", { key: w.id, style: {
@@ -14512,7 +14511,7 @@ function PhyloScreen({ inline }) {
                         border: '2px solid ' + theme.cardBorder, background: theme.rowBg, color: theme.txtS,
                         boxShadow: '0 2px 0 ' + theme.cardBorder,
                     })
-                }, clades.some(function(c) { return !collapsed['clade:' + c]; }) ? 'Γû╛ COLLAPSE ALL' : 'Γû╕ EXPAND ALL')
+                }, clades.some(function(c) { return !collapsed['clade:' + c]; }) ? '▾ COLLAPSE ALL' : '▸ EXPAND ALL')
             ),
 
             !loading && plants.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '32px 0' } },
@@ -14531,7 +14530,7 @@ function PhyloScreen({ inline }) {
                 var CLADE_ICONS = {
                     'Monocot': '🌾', 'Dicot': '🌿', 'Magnoliid': '🌸',
                     'Fern': '🌿', 'Gymnosperm': '🌲', 'Lycophyte': '🦎',
-                    'Horsetail': '🎋', 'Basal Angiosperm': '🪷', 'Unknown': 'Γ¥ô',
+                    'Horsetail': '🎋', 'Basal Angiosperm': '🪷', 'Unknown': '❓',
                 };
                 var CLADE_DESC = {
                     'Monocot': 'Single seed leaf · includes grasses, palms, aroids, orchids',
@@ -14562,7 +14561,7 @@ function PhyloScreen({ inline }) {
                         React.createElement('div', { onClick: function() { toggle(gKey); }, style: {
                             display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '4px 0'
                         }},
-                            React.createElement('span', { style: { fontSize: '11px', color: accentColor, opacity: 0.7, fontWeight: 900 } }, isGOpen ? 'Γû╛' : 'Γû╕'),
+                            React.createElement('span', { style: { fontSize: '11px', color: accentColor, opacity: 0.7, fontWeight: 900 } }, isGOpen ? '▾' : '▸'),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, fontStyle: 'italic' }) }, genus),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginLeft: 2 }) },
                                 plantList.length + ' owned' + (knownSpecies.length > 0 ? ' · ' + knownSpecies.length + ' spp known' : '')
@@ -14570,7 +14569,7 @@ function PhyloScreen({ inline }) {
                             taxonInfo && taxonInfo.notes && React.createElement('span', {
                                 title: taxonInfo.notes,
                                 style: { fontSize: '11px', color: accentColor, opacity: 0.5, cursor: 'help', marginLeft: 4 }
-                            }, 'Γôÿ')
+                            }, 'ⓘ')
                         ),
                         isGOpen && React.createElement('div', { style: { paddingLeft: 10, paddingTop: 2, paddingBottom: 6 } },
                             plantList.map(function(p) {
@@ -14617,7 +14616,7 @@ function PhyloScreen({ inline }) {
                         React.createElement('div', { onClick: function() { toggle(fKey); }, style: {
                             display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', padding: '4px 0'
                         }},
-                            React.createElement('span', { style: { fontSize: '12px', color: accentColor, opacity: 0.8 } }, isFOpen ? 'Γû╛' : 'Γû╕'),
+                            React.createElement('span', { style: { fontSize: '12px', color: accentColor, opacity: 0.8 } }, isFOpen ? '▾' : '▸'),
                             React.createElement('span', { style: Object.assign({}, pxS, {
                                 fontSize: '12px', fontWeight: 900, color: accentColor,
                                 background: accentColor + '18', padding: '1px 6px',
@@ -14645,7 +14644,7 @@ function PhyloScreen({ inline }) {
                         React.createElement('div', { onClick: function() { toggle(oKey); }, style: {
                             display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', padding: '5px 0'
                         }},
-                            React.createElement('span', { style: { fontSize: '13px', color: accentColor } }, isOOpen ? 'Γû╛' : 'Γû╕'),
+                            React.createElement('span', { style: { fontSize: '13px', color: accentColor } }, isOOpen ? '▾' : '▸'),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 700, color: theme.txtP }) }, order),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
                                 families.length + (families.length !== 1 ? ' families' : ' family') + ' · ' + orderTotal + ' plants'
@@ -14677,7 +14676,7 @@ function PhyloScreen({ inline }) {
                                 React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
                                     orderCount + (orderCount !== 1 ? ' orders' : ' order') + ' · ' + count + (count !== 1 ? ' plants' : ' plant')
                                 ),
-                                React.createElement('span', { style: { fontSize: '11px', color: accentColor, fontWeight: 900 } }, isOpen ? 'Γû╛' : 'Γû╕')
+                                React.createElement('span', { style: { fontSize: '11px', color: accentColor, fontWeight: 900 } }, isOpen ? '▾' : '▸')
                             ),
                             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, opacity: 0.7, marginTop: 2 }) },
                                 CLADE_DESC[clade] || ''
@@ -14948,19 +14947,19 @@ const PLANT_TIPS = [
     { tip: "Self-watering pots work best for moisture-loving plants like ferns, but can rot succulents fast.", icon: "💧" },
     { tip: "Cold water straight from the tap can shock tropical plants. Use room-temperature water.", icon: "💧" },
     { tip: "Water in the morning so plants can use it during the day and leaves dry before nightfall.", icon: "💧" },
-    { tip: "A wilting plant isn't always thirsty — it could be root rot, cold, or too much sun.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Plants in terracotta need watering roughly twice as often as the same plant in plastic.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Light is plant food. No amount of fertilizer compensates for a dark corner.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "South-facing windows get the most light in the northern hemisphere. North-facing get the least.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "A plant placed 1m from a window gets roughly 4x less light than one right at the glass.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "'Bright indirect light' means near a window but not in the direct beam of sun.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Grow lights on a 12-hour timer can fully replace natural light for most houseplants.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Variegated plants need more light than their all-green counterparts to maintain their patterns.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Dust on leaves blocks light absorption. Wipe leaves with a damp cloth every few weeks.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Leggy, stretched growth is a plant asking for more light — it's reaching toward the source.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Rotating your plant a quarter turn every week prevents it leaning toward the light.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "A plant dropping its lower leaves while growing new ones upward is often chasing the light.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Cacti and succulents need 6+ hours of direct sun. A bright windowsill often isn't enough.", icon: "ΓÿÇ∩╕Å" },
+    { tip: "A wilting plant isn't always thirsty — it could be root rot, cold, or too much sun.", icon: "☀️" },
+    { tip: "Plants in terracotta need watering roughly twice as often as the same plant in plastic.", icon: "☀️" },
+    { tip: "Light is plant food. No amount of fertilizer compensates for a dark corner.", icon: "☀️" },
+    { tip: "South-facing windows get the most light in the northern hemisphere. North-facing get the least.", icon: "☀️" },
+    { tip: "A plant placed 1m from a window gets roughly 4x less light than one right at the glass.", icon: "☀️" },
+    { tip: "'Bright indirect light' means near a window but not in the direct beam of sun.", icon: "☀️" },
+    { tip: "Grow lights on a 12-hour timer can fully replace natural light for most houseplants.", icon: "☀️" },
+    { tip: "Variegated plants need more light than their all-green counterparts to maintain their patterns.", icon: "☀️" },
+    { tip: "Dust on leaves blocks light absorption. Wipe leaves with a damp cloth every few weeks.", icon: "☀️" },
+    { tip: "Leggy, stretched growth is a plant asking for more light — it's reaching toward the source.", icon: "☀️" },
+    { tip: "Rotating your plant a quarter turn every week prevents it leaning toward the light.", icon: "☀️" },
+    { tip: "A plant dropping its lower leaves while growing new ones upward is often chasing the light.", icon: "☀️" },
+    { tip: "Cacti and succulents need 6+ hours of direct sun. A bright windowsill often isn't enough.", icon: "☀️" },
     { tip: "Grow lights should sit 20-40cm above plants for most species, closer for succulents.", icon: "🪴" },
     { tip: "Leaves turning pale or bleached can mean too much direct sun — especially in summer.", icon: "🪴" },
     { tip: "North-facing rooms aren't hopeless: cast iron plants, pothos, and ZZ plants thrive there.", icon: "🪴" },
@@ -15065,19 +15064,19 @@ const PLANT_TIPS = [
     { tip: "Sooty mould is black and sooty and grows on honeydew secreted by aphids and scale insects.", icon: "🍂" },
     { tip: "Sunscald looks like pale, papery patches on leaves — move the plant out of direct harsh sun.", icon: "🍂" },
     { tip: "Edema (water-filled blisters on leaves) is caused by erratic watering, not disease.", icon: "🍂" },
-    { tip: "Sterilise cutting tools with alcohol between plants to prevent spreading disease.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Cinnamon powder is a natural antifungal — dust it on cut stems before propagating.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Charcoal in the soil mix has mild antimicrobial properties.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Good drainage is the single best disease prevention for most houseplants.", icon: "Γ¥ä∩╕Å" },
-    { tip: "A plant that smells musty near the soil almost certainly has root rot — act quickly.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Photosynthesis converts COΓéé and water into glucose using light energy — plants literally eat light.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Stomata are tiny pores on leaf undersides that exchange gas and release water vapour.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Transpiration is how plants move water from roots to leaves — like a slow, internal pump.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Auxin is a plant hormone that makes stems grow toward light and roots grow downward.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Plants can detect vibrations — some studies show they respond to sound waves.", icon: "Γ¥ä∩╕Å" },
-    { tip: "The oldest living individual plant is a Posidonia seagrass meadow estimated at 100,000 years old.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Plants communicate via underground fungal networks, sharing nutrients and chemical signals.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Chlorophyll reflects green light, which is why plants appear green — they don't use green well.", icon: "Γ¥ä∩╕Å" },
+    { tip: "Sterilise cutting tools with alcohol between plants to prevent spreading disease.", icon: "❄️" },
+    { tip: "Cinnamon powder is a natural antifungal — dust it on cut stems before propagating.", icon: "❄️" },
+    { tip: "Charcoal in the soil mix has mild antimicrobial properties.", icon: "❄️" },
+    { tip: "Good drainage is the single best disease prevention for most houseplants.", icon: "❄️" },
+    { tip: "A plant that smells musty near the soil almost certainly has root rot — act quickly.", icon: "❄️" },
+    { tip: "Photosynthesis converts CO₂ and water into glucose using light energy — plants literally eat light.", icon: "❄️" },
+    { tip: "Stomata are tiny pores on leaf undersides that exchange gas and release water vapour.", icon: "❄️" },
+    { tip: "Transpiration is how plants move water from roots to leaves — like a slow, internal pump.", icon: "❄️" },
+    { tip: "Auxin is a plant hormone that makes stems grow toward light and roots grow downward.", icon: "❄️" },
+    { tip: "Plants can detect vibrations — some studies show they respond to sound waves.", icon: "❄️" },
+    { tip: "The oldest living individual plant is a Posidonia seagrass meadow estimated at 100,000 years old.", icon: "❄️" },
+    { tip: "Plants communicate via underground fungal networks, sharing nutrients and chemical signals.", icon: "❄️" },
+    { tip: "Chlorophyll reflects green light, which is why plants appear green — they don't use green well.", icon: "❄️" },
     { tip: "Carotenoids produce yellow and orange pigments in leaves when chlorophyll breaks down in autumn.", icon: "🌿" },
     { tip: "CAM plants (like cacti) open their stomata at night to conserve water during the day.", icon: "🌿" },
     { tip: "Carnivorous plants evolved in nutrient-poor soils — they get nitrogen from insects instead.", icon: "🌿" },
@@ -15104,19 +15103,19 @@ const PLANT_TIPS = [
     { tip: "Monstera deliciosa develops its iconic splits and holes (fenestrations) as it matures and gets more light.", icon: "💧" },
     { tip: "Peace lilies are one of the few flowering plants that tolerate very low light.", icon: "💧" },
     { tip: "Snake plants (Sansevieria) store water in their leaves — water them as little as once a month in winter.", icon: "💧" },
-    { tip: "Fiddle-leaf figs hate being moved. Find them a good spot and leave them there.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Rubber plants (Ficus elastica) grow fastest when slightly root-bound and well-lit.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "ZZ plants (Zamioculcas) grow from water-storing rhizomes — they're nearly indestructible.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Spider plants produce 'babies' on long runners once they're slightly root-bound.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Aloe vera's sap is a natural burn remedy — keep one in your kitchen.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Orchids (Phalaenopsis) rebloom when given a 5┬░C temperature drop at night for 4 weeks.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "String of pearls needs very fast-draining soil and minimal water — it's surprisingly delicate.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Bird of paradise (Strelitzia) needs bright direct sun and large pots to bloom indoors.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Alocasias are drama queens — they drop leaves in protest of almost any change.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Hoyas produce flowers on spurs — never cut them off, as next season's blooms grow from the same spur.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Philodendron gloriosum is a ground creeper, not a climber — give it a wide, shallow pot.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Calatheas fold their leaves upward at night in a process called nyctinasty — they're resting.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Peperomias store water in their thick leaves and prefer to dry out between waterings.", icon: "ΓÿÇ∩╕Å" },
+    { tip: "Fiddle-leaf figs hate being moved. Find them a good spot and leave them there.", icon: "☀️" },
+    { tip: "Rubber plants (Ficus elastica) grow fastest when slightly root-bound and well-lit.", icon: "☀️" },
+    { tip: "ZZ plants (Zamioculcas) grow from water-storing rhizomes — they're nearly indestructible.", icon: "☀️" },
+    { tip: "Spider plants produce 'babies' on long runners once they're slightly root-bound.", icon: "☀️" },
+    { tip: "Aloe vera's sap is a natural burn remedy — keep one in your kitchen.", icon: "☀️" },
+    { tip: "Orchids (Phalaenopsis) rebloom when given a 5°C temperature drop at night for 4 weeks.", icon: "☀️" },
+    { tip: "String of pearls needs very fast-draining soil and minimal water — it's surprisingly delicate.", icon: "☀️" },
+    { tip: "Bird of paradise (Strelitzia) needs bright direct sun and large pots to bloom indoors.", icon: "☀️" },
+    { tip: "Alocasias are drama queens — they drop leaves in protest of almost any change.", icon: "☀️" },
+    { tip: "Hoyas produce flowers on spurs — never cut them off, as next season's blooms grow from the same spur.", icon: "☀️" },
+    { tip: "Philodendron gloriosum is a ground creeper, not a climber — give it a wide, shallow pot.", icon: "☀️" },
+    { tip: "Calatheas fold their leaves upward at night in a process called nyctinasty — they're resting.", icon: "☀️" },
+    { tip: "Peperomias store water in their thick leaves and prefer to dry out between waterings.", icon: "☀️" },
     { tip: "African violets (Saintpaulia) hate water on their leaves — water from below only.", icon: "🪴" },
     { tip: "Boston ferns need consistently moist soil and high humidity — they're among the thirstiest ferns.", icon: "🪴" },
     { tip: "Cast iron plants (Aspidistra) earned their name — nearly nothing kills them.", icon: "🪴" },
@@ -15138,7 +15137,7 @@ const PLANT_TIPS = [
     { tip: "Slow growth in winter isn't a problem — it's a plant conserving energy wisely.", icon: "🌱" },
     { tip: "Some plants will simply not suit your home. That's not failure — it's plant-environment mismatch.", icon: "🌱" },
     { tip: "Consistency matters more than perfection. A predictable routine beats occasional intense care.", icon: "🌱" },
-    { tip: "Talking to your plants isn't silly — you're breathing COΓéé near them, which they use.", icon: "🌱" },
+    { tip: "Talking to your plants isn't silly — you're breathing CO₂ near them, which they use.", icon: "🌱" },
     { tip: "A clean plant is a healthy plant. Dust, debris, and dead leaves all invite pests.", icon: "🌱" },
     { tip: "The right pot makes a significant difference. Match drainage to the plant's water needs.", icon: "🌱" },
     { tip: "Expensive rare plants aren't necessarily harder to care for than common ones.", icon: "🌱" },
@@ -15181,7 +15180,7 @@ const PLANT_TIPS = [
     { tip: "A moss pole keeps aroids moist at the roots and encourages larger, more fenestrated leaves.", icon: "🌊" },
     { tip: "Aroids grow larger leaves when climbing upward — provide support for the best results.", icon: "🌊" },
     { tip: "Aroid potting mix: 40% potting soil, 30% perlite, 20% orchid bark, 10% worm castings.", icon: "🌊" },
-    { tip: "Most aroids thrive at 18-27┬░C. Below 15┬░C growth stops and cold damage can occur.", icon: "🌊" },
+    { tip: "Most aroids thrive at 18-27°C. Below 15°C growth stops and cold damage can occur.", icon: "🌊" },
     { tip: "The variegated forms of popular aroids (e.g. albo monstera) need more light than their green counterparts.", icon: "🔬" },
     { tip: "Aroids contain calcium oxalate crystals — they're toxic to cats, dogs, and can irritate human skin.", icon: "🔬" },
     { tip: "Regular wiping of large aroid leaves removes dust and visibly improves their gloss.", icon: "🔬" },
@@ -15215,29 +15214,29 @@ const PLANT_TIPS = [
     { tip: "Regularly trimming leggy trailing stems and propagating the cuttings keeps plants full.", icon: "🍂" },
     { tip: "Hoya curtisii is one of the smallest-leaved hoyas and trails beautifully in a hanging pot.", icon: "🍂" },
     { tip: "Tradescantia pallida (purple heart) fades to green in low light — bright light keeps it vivid.", icon: "🍂" },
-    { tip: "Orchids rebloom reliably when placed in a cool room (15┬░C nights) for four weeks in autumn.", icon: "🍂" },
+    { tip: "Orchids rebloom reliably when placed in a cool room (15°C nights) for four weeks in autumn.", icon: "🍂" },
     { tip: "Anthuriums flower almost continuously in bright indirect light — red spathes all year.", icon: "🍂" },
     { tip: "Peace lilies bloom when root-bound and slightly stressed — too comfortable and they stop flowering.", icon: "🍂" },
     { tip: "Hoyas need to be root-bound, well-fed, and in bright light to produce their waxy, scented flowers.", icon: "🍂" },
     { tip: "African violets bloom best under grow lights — standard home windows often aren't bright enough.", icon: "🍂" },
     { tip: "Forced bulbs (amaryllis, paperwhites) are incredibly rewarding — plant in autumn for winter blooms.", icon: "🍂" },
-    { tip: "Jasmine needs cool nights and bright days to set flower buds — a windowsill in autumn works.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Cyclamen thrive in cool conditions (10-15┬░C) — they hate central heating.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Spathiphyllum (peace lily) flowers are technically a spathe and spadix, not petals.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Kalanchoe needs 6 weeks of short days (under 12 hours of light) to produce new flower buds.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Monstera obliqua is one of the rarest monsteras — what's usually sold as obliqua is actually adansonii.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Philodendron melanochrysum velvet leaves are among the most tactile textures in the plant world.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Alocasia 'Dragon Scale' derives its name from its heavily ribbed, scale-like leaf texture.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Begonia pavonina produces iridescent blue leaves due to a structural optical effect in its cells.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Anthuriums can take 3-5 years to produce their first spathe from a seedling — patience is key.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Hoya kerrii sold as single leaves rarely grows — the full plant needs a node to develop.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Rhaphidophora tetrasperma (mini monstera) is not a monstera — it's a different genus entirely.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Cebu blue pothos has blue-silver juvenile leaves that only develop mature fenestrations when climbing.", icon: "Γ¥ä∩╕Å" },
-    { tip: "Many rare plants are rare because they're slow growers, not because they're hard to care for.", icon: "Γ¥ä∩╕Å" },
+    { tip: "Jasmine needs cool nights and bright days to set flower buds — a windowsill in autumn works.", icon: "❄️" },
+    { tip: "Cyclamen thrive in cool conditions (10-15°C) — they hate central heating.", icon: "❄️" },
+    { tip: "Spathiphyllum (peace lily) flowers are technically a spathe and spadix, not petals.", icon: "❄️" },
+    { tip: "Kalanchoe needs 6 weeks of short days (under 12 hours of light) to produce new flower buds.", icon: "❄️" },
+    { tip: "Monstera obliqua is one of the rarest monsteras — what's usually sold as obliqua is actually adansonii.", icon: "❄️" },
+    { tip: "Philodendron melanochrysum velvet leaves are among the most tactile textures in the plant world.", icon: "❄️" },
+    { tip: "Alocasia 'Dragon Scale' derives its name from its heavily ribbed, scale-like leaf texture.", icon: "❄️" },
+    { tip: "Begonia pavonina produces iridescent blue leaves due to a structural optical effect in its cells.", icon: "❄️" },
+    { tip: "Anthuriums can take 3-5 years to produce their first spathe from a seedling — patience is key.", icon: "❄️" },
+    { tip: "Hoya kerrii sold as single leaves rarely grows — the full plant needs a node to develop.", icon: "❄️" },
+    { tip: "Rhaphidophora tetrasperma (mini monstera) is not a monstera — it's a different genus entirely.", icon: "❄️" },
+    { tip: "Cebu blue pothos has blue-silver juvenile leaves that only develop mature fenestrations when climbing.", icon: "❄️" },
+    { tip: "Many rare plants are rare because they're slow growers, not because they're hard to care for.", icon: "❄️" },
     { tip: "Variegated plants are more expensive because they can only be propagated vegetatively, not from seed.", icon: "🌿" },
     { tip: "Swapping cuttings with other plant lovers is the most sustainable (and social) way to grow a collection.", icon: "🌿" },
     { tip: "Homemade compost tea is a free, gentle fertiliser — steep compost in water for 24 hours.", icon: "🌿" },
-    { tip: "Reusing old soil is possible if you sterilise it: bake it at 80┬░C for 30 minutes to kill pathogens.", icon: "🌿" },
+    { tip: "Reusing old soil is possible if you sterilise it: bake it at 80°C for 30 minutes to kill pathogens.", icon: "🌿" },
     { tip: "Repurpose household containers as pots — drill drainage holes and they're ready to use.", icon: "🌿" },
     { tip: "Buying plants from local nurseries reduces transport emissions compared to online imports.", icon: "🌿" },
     { tip: "Peat-free compost protects irreplaceable peatland habitats — make the switch where you can.", icon: "🌿" },
@@ -15260,23 +15259,23 @@ const PLANT_TIPS = [
     { tip: "A plant photo taken from the same angle each week shows you growth you'd otherwise miss.", icon: "💧" },
     { tip: "The first sign of a recovering plant is new growth — even a tiny bud is a win.", icon: "💧" },
     { tip: "Your home is an ecosystem. Plants, light, humidity, and airflow all interact — observe it all.", icon: "💧" },
-    { tip: "Grouping plants by water needs makes your routine much simpler — water the thirsty section, not all.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "A pot with no drainage hole isn't a planter — it's a bucket. Drill it or use it as a cachepot only.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Nitrogen deficiency starts at the oldest leaves — they yellow from the bottom up.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Phosphorus deficiency often shows as purple undersides on leaves.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Plants near south windows in winter can actually be further from the glass — the sun is low and direct.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Leaf curl inward usually means the plant is too dry or too cold — both are stress responses.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Leggy growth in succulents can't be reversed on existing stems — propagate the healthy top instead.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "A plant in a bright room but away from a window may still get low light — measure with a light meter app.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Chlorophytum (spider plants) are one of the most effective plants for removing formaldehyde from air.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "The ideal water temperature for most houseplants is 18-22┬░C — the same as a comfortable room.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Haworthias produce offshoots freely — separate them in spring for new plants at no cost.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Root-to-leaf ratio matters: a small-rooted plant in a large pot will always stay too wet.", icon: "ΓÿÇ∩╕Å" },
-    { tip: "Activated charcoal in terrariums absorbs toxins and prevents bacterial build-up.", icon: "ΓÿÇ∩╕Å" },
+    { tip: "Grouping plants by water needs makes your routine much simpler — water the thirsty section, not all.", icon: "☀️" },
+    { tip: "A pot with no drainage hole isn't a planter — it's a bucket. Drill it or use it as a cachepot only.", icon: "☀️" },
+    { tip: "Nitrogen deficiency starts at the oldest leaves — they yellow from the bottom up.", icon: "☀️" },
+    { tip: "Phosphorus deficiency often shows as purple undersides on leaves.", icon: "☀️" },
+    { tip: "Plants near south windows in winter can actually be further from the glass — the sun is low and direct.", icon: "☀️" },
+    { tip: "Leaf curl inward usually means the plant is too dry or too cold — both are stress responses.", icon: "☀️" },
+    { tip: "Leggy growth in succulents can't be reversed on existing stems — propagate the healthy top instead.", icon: "☀️" },
+    { tip: "A plant in a bright room but away from a window may still get low light — measure with a light meter app.", icon: "☀️" },
+    { tip: "Chlorophytum (spider plants) are one of the most effective plants for removing formaldehyde from air.", icon: "☀️" },
+    { tip: "The ideal water temperature for most houseplants is 18-22°C — the same as a comfortable room.", icon: "☀️" },
+    { tip: "Haworthias produce offshoots freely — separate them in spring for new plants at no cost.", icon: "☀️" },
+    { tip: "Root-to-leaf ratio matters: a small-rooted plant in a large pot will always stay too wet.", icon: "☀️" },
+    { tip: "Activated charcoal in terrariums absorbs toxins and prevents bacterial build-up.", icon: "☀️" },
     { tip: "Most plants prefer a consistent environment over a perfect one. Stability reduces stress.", icon: "🪴" },
     { tip: "Unglazed terracotta absorbs salts and minerals from water — the white crust is normal and harmless.", icon: "🪴" },
     { tip: "Cleaning drainage holes prevents salt crust from blocking water flow over time.", icon: "🪴" },
-    { tip: "Plants breathe in COΓéé during the day and oxygen at night — the opposite of us, broadly speaking.", icon: "🪴" },
+    { tip: "Plants breathe in CO₂ during the day and oxygen at night — the opposite of us, broadly speaking.", icon: "🪴" },
     { tip: "A newly purchased plant will often drop leaves as it adjusts from nursery conditions to your home.", icon: "🪴" },
     { tip: "Never feed a plant that is wilting — fix the water issue first, then feed once it has recovered.", icon: "🪴" },
     { tip: "Etiolated seedlings (pale, stretched) need more light immediately — they won't recover on their own.", icon: "🪴" },
@@ -15491,30 +15490,30 @@ function DevScreen() {
                         gasCall('plantosGetAllPlantsLite').then(function(res) {
                             var msg = '';
                             if (res && typeof res === 'object' && Array.isArray(res.plants)) {
-                                msg = 'Γ£à Inventory OK — ' + res.plants.length + ' plants';
-                                if (res.errors && res.errors.length) msg += '\nΓÜá ' + res.errors.length + ' row error(s): ' + res.errors[0];
+                                msg = '✅ Inventory OK — ' + res.plants.length + ' plants';
+                                if (res.errors && res.errors.length) msg += '\n⚠ ' + res.errors.length + ' row error(s): ' + res.errors[0];
                                 if (res.meta) msg += '\nTime: ' + (res.meta.ms||'?') + 'ms';
                             } else if (res == null) {
-                                msg = 'Γ¥î NULL returned — redeploy Apps Script';
+                                msg = '❌ NULL returned — redeploy Apps Script';
                             } else {
-                                msg = 'ΓÜá Unexpected: ' + typeof res;
+                                msg = '⚠ Unexpected: ' + typeof res;
                             }
                             if (el) { el.style.color = '#7BE87B'; el.textContent = msg; }
                         }).catch(function(err) {
-                            if (el) { el.style.color = '#F87171'; el.textContent = 'Γ¥î ' + (err&&err.message?err.message:String(err)); }
+                            if (el) { el.style.color = '#F87171'; el.textContent = '❌ ' + (err&&err.message?err.message:String(err)); }
                         });
                     }}, '🌿 Plant Inventory'),
                     React.createElement(PlantButton, { onClick: function() {
                         var el = document.getElementById('gastestout');
                         if (el) { el.style.color = '#A0A8FF'; el.textContent = 'Checking KB (kbDump)...'; }
                         gasCall('kbDump').then(function(res) {
-                            if (!res) { if (el) { el.style.color = '#F87171'; el.textContent = 'Γ¥î kbDump returned null — duplicate function in GAS? Check PlantOS_Data_Engine.gs vs Code.gs'; } return; }
+                            if (!res) { if (el) { el.style.color = '#F87171'; el.textContent = '❌ kbDump returned null — duplicate function in GAS? Check PlantOS_Data_Engine.gs vs Code.gs'; } return; }
                             var msg = res.ok
-                                ? 'Γ£à KB OK — pests: ' + (res.pests||[]).length + ', plant: ' + (res.plant||[]).length + ', hints: ' + (res.hints||[]).length
-                                : 'Γ¥î KB error: ' + (res.error || 'unknown');
+                                ? '✅ KB OK — pests: ' + (res.pests||[]).length + ', plant: ' + (res.plant||[]).length + ', hints: ' + (res.hints||[]).length
+                                : '❌ KB error: ' + (res.error || 'unknown');
                             if (el) { el.style.color = res.ok ? '#7BE87B' : '#F87171'; el.textContent = msg; }
                         }).catch(function(err) {
-                            if (el) { el.style.color = '#F87171'; el.textContent = 'Γ¥î kbDump failed: ' + (err&&err.message?err.message:String(err)); }
+                            if (el) { el.style.color = '#F87171'; el.textContent = '❌ kbDump failed: ' + (err&&err.message?err.message:String(err)); }
                         });
                     }}, '🧠 KB Dump'),
                     React.createElement(PlantButton, { onClick: function() {
@@ -15522,20 +15521,20 @@ function DevScreen() {
                         if (el) { el.style.color = '#A0A8FF'; el.textContent = 'Checking Carl conversation patterns...'; }
                         gasCall('carlGetConversationPatterns').then(function(res) {
                             var patterns = (res && Array.isArray(res.patterns)) ? res.patterns : [];
-                            var msg = 'Γ£à Conv patterns: ' + patterns.length;
+                            var msg = '✅ Conv patterns: ' + patterns.length;
                             if (el) { el.style.color = '#7BE87B'; el.textContent = msg; }
                         }).catch(function(err) {
-                            if (el) { el.style.color = '#F87171'; el.textContent = 'Γ¥î ' + (err&&err.message?err.message:String(err)); }
+                            if (el) { el.style.color = '#F87171'; el.textContent = '❌ ' + (err&&err.message?err.message:String(err)); }
                         });
                     }}, '💬 Conversations')
                 ),
                 React.createElement('div', { id: 'gastestout', style: Object.assign({}, pxS, { fontSize: '11px', marginTop: 8, padding: '6px 10px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS, minHeight: 36, wordBreak: 'break-all', lineHeight: 1.6, whiteSpace: 'pre-wrap' }) }, 'Tap a button above to check.')
             ),
             React.createElement('div', { style: sectionStyle },
-                React.createElement('div', { style: headStyle }, '🔀 MIGRATE CARL ΓåÆ PLANT KB'),
+                React.createElement('div', { style: headStyle }, '🔀 MIGRATE CARL → PLANT KB'),
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 10 }) }, 'Copy all Carl Learned entries into Plant Knowledge Base as ai_hint rows. Safe to run multiple times — skips already-migrated.'),
                 React.createElement(PlantButton, { onClick: runMigrate, disabled: migrateLoading },
-                    migrateLoading ? 'Migrating...' : 'Migrate Carl Learned ΓåÆ Plant KB'
+                    migrateLoading ? 'Migrating...' : 'Migrate Carl Learned → Plant KB'
                 ),
                 migrateResult && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', marginTop: 8, padding: '6px 10px',
                     background: migrateResult.ok ? '#0A2A0A' : '#2A0A0A',
@@ -15562,7 +15561,7 @@ function DevScreen() {
                             if (!res.ok) { el.textContent = 'ERROR: ' + (res.error || 'failed'); return; }
                             var lines = ['locCol=' + res.locCol + '\n'];
                             Object.entries(res.locationCounts).sort(function(a,b){ return b[1]-a[1]; }).forEach(function(e) {
-                                lines.push(e[0] + ' ΓåÆ ' + e[1] + ' plants (sample UID: ' + res.sampleUids[e[0]] + ')');
+                                lines.push(e[0] + ' → ' + e[1] + ' plants (sample UID: ' + res.sampleUids[e[0]] + ')');
                             });
                             el.textContent = lines.join('\n');
                         }
@@ -15680,34 +15679,34 @@ function GalleryScreen({ uid, name }) {
             React.createElement('button', { type: 'button', onClick: goBack, style: Object.assign({}, px8, {
                 fontSize: '10px', padding: '5px 10px', cursor: 'pointer',
                 background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS,
-            }) }, 'ΓåÉ Back'),
+            }) }, '← Back'),
             React.createElement('div', { style: Object.assign({}, px8, { fontSize: '13px', color: '#A8E89C', flex: 1 }) }, '📸 ' + (name || 'Gallery')),
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, photos.length + ' photo' + (photos.length !== 1 ? 's' : '')),
             // Toggle grid / then-now
             photos.length >= 2 && React.createElement('button', { type: 'button', onClick: function() { setView(function(v) { return v === 'grid' ? 'then-now' : 'grid'; }); }, style: Object.assign({}, pxS, {
                 fontSize: '12px', padding: '4px 10px', cursor: 'pointer', marginLeft: 8,
                 border: '2px solid ' + theme.cardBorder, background: view === 'then-now' ? theme.btnP.bg : theme.rowBg, color: view === 'then-now' ? '#fff' : theme.txtS,
-            }) }, view === 'then-now' ? '🔲 Grid' : 'ΓÅ▒ Then / Now')
+            }) }, view === 'then-now' ? '🔲 Grid' : '⏱ Then / Now')
         ),
 
         // Body
         React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
 
-            loading && React.createElement('div', { style: Object.assign({}, pxS, { textAlign: 'center', color: theme.txtS, padding: 40 }) }, 'ΓÅ│ Loading photos...'),
-            error && React.createElement('div', { style: Object.assign({}, pxS, { color: '#B83030', padding: 16 }) }, 'Γ¥î ' + error),
+            loading && React.createElement('div', { style: Object.assign({}, pxS, { textAlign: 'center', color: theme.txtS, padding: 40 }) }, '⏳ Loading photos...'),
+            error && React.createElement('div', { style: Object.assign({}, pxS, { color: '#B83030', padding: 16 }) }, '❌ ' + error),
             !loading && !error && photos.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '40px 20px' } },
                 React.createElement('div', { style: { fontSize: 48, marginBottom: 12 } }, '📷'),
                 React.createElement('div', { style: Object.assign({}, px8, { fontSize: '12px', color: theme.txtS, lineHeight: 2 }) }, 'No photos yet'),
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, marginTop: 8 }) }, 'Tap Photo on the plant page to add one')
             ),
 
-            // ΓöÇΓöÇ THEN / NOW view ΓöÇΓöÇ
+            // ── THEN / NOW view ──
             !loading && view === 'then-now' && photos.length >= 2 && React.createElement('div', null,
                 React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, marginBottom: 10, letterSpacing: '0.06em' }) }, 'THEN vs NOW'),
                 React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 } },
                     // THEN
                     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#C87820', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, 'ΓÅ« THEN — ' + formatDate(oldest.name)),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#C87820', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, '⏮ THEN — ' + formatDate(oldest.name)),
                         React.createElement('div', { onClick: function() { setLightbox({ url: oldest.viewUrl, name: oldest.name, idx: photos.length - 1 }); }, style: {
                             width: '100%', paddingTop: '125%', position: 'relative',
                             border: '3px solid #C87820', borderRadius: 4, overflow: 'hidden', cursor: 'pointer',
@@ -15718,7 +15717,7 @@ function GalleryScreen({ uid, name }) {
                     ),
                     // NOW
                     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#5A9A60', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, 'ΓÅ¡ NOW — ' + formatDate(newest.name)),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#5A9A60', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, '⏭ NOW — ' + formatDate(newest.name)),
                         React.createElement('div', { onClick: function() { setLightbox({ url: newest.viewUrl, name: newest.name, idx: 0 }); }, style: {
                             width: '100%', paddingTop: '125%', position: 'relative',
                             border: '3px solid #5A9A60', borderRadius: 4, overflow: 'hidden', cursor: 'pointer',
@@ -15733,7 +15732,7 @@ function GalleryScreen({ uid, name }) {
                 )
             ),
 
-            // ΓöÇΓöÇ GRID view ΓöÇΓöÇ
+            // ── GRID view ──
             !loading && view === 'grid' && photos.length > 0 && React.createElement('div', { style: {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(' + cols + ', 1fr)',
@@ -15758,7 +15757,7 @@ function GalleryScreen({ uid, name }) {
                                 padding: '2px 5px', borderRadius: 3,
                                 background: isNewest ? 'rgba(58,122,72,0.85)' : 'rgba(140,90,20,0.85)',
                                 color: '#fff', fontFamily: "'Pixelify Sans',cursive", fontSize: '10px', fontWeight: 900,
-                            }}, isNewest ? 'Γ£¿ Latest' : '📅 First')
+                            }}, isNewest ? '✨ Latest' : '📅 First')
                         ),
                         dateStr && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 3, textAlign: 'center' }) }, dateStr)
                     );
@@ -15766,7 +15765,7 @@ function GalleryScreen({ uid, name }) {
             )
         ),
 
-        // ΓöÇΓöÇ Lightbox ΓöÇΓöÇ
+        // ── Lightbox ──
         lightbox && React.createElement('div', {
             onClick: function() { setLightbox(null); },
             style: {
@@ -15778,11 +15777,11 @@ function GalleryScreen({ uid, name }) {
             React.createElement('div', { onClick: function(e) { e.stopPropagation(); }, style: { position: 'relative', maxWidth: '90vw', maxHeight: '85vh' } },
                 React.createElement('img', { src: lightbox.url, alt: lightbox.name, style: { maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', border: '3px solid ' + theme.cardBorder, borderRadius: 4, display: 'block' } }),
                 // Close
-                React.createElement('button', { onClick: function() { setLightbox(null); }, style: { position: 'absolute', top: -14, right: -14, width: 28, height: 28, borderRadius: '50%', background: '#333', border: '2px solid #666', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '├ù'),
+                React.createElement('button', { onClick: function() { setLightbox(null); }, style: { position: 'absolute', top: -14, right: -14, width: 28, height: 28, borderRadius: '50%', background: '#333', border: '2px solid #666', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '×'),
                 // Prev
-                photos.length > 1 && React.createElement('button', { onClick: function(e) { e.stopPropagation(); setLightbox(function(lb) { var prev = (lb.idx - 1 + photos.length) % photos.length; return { url: photos[prev].viewUrl, name: photos[prev].name, idx: prev }; }); }, style: { position: 'absolute', left: -40, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, 'ΓÇ╣'),
+                photos.length > 1 && React.createElement('button', { onClick: function(e) { e.stopPropagation(); setLightbox(function(lb) { var prev = (lb.idx - 1 + photos.length) % photos.length; return { url: photos[prev].viewUrl, name: photos[prev].name, idx: prev }; }); }, style: { position: 'absolute', left: -40, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '‹'),
                 // Next
-                photos.length > 1 && React.createElement('button', { onClick: function(e) { e.stopPropagation(); setLightbox(function(lb) { var next = (lb.idx + 1) % photos.length; return { url: photos[next].viewUrl, name: photos[next].name, idx: next }; }); }, style: { position: 'absolute', right: -40, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, 'ΓÇ║')
+                photos.length > 1 && React.createElement('button', { onClick: function(e) { e.stopPropagation(); setLightbox(function(lb) { var next = (lb.idx + 1) % photos.length; return { url: photos[next].viewUrl, name: photos[next].name, idx: next }; }); }, style: { position: 'absolute', right: -40, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '›')
             ),
             React.createElement('div', { style: Object.assign({}, pxS, { color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginTop: 10 }) },
                 (lightbox.idx + 1) + ' / ' + photos.length + (lightbox.name ? '  ·  ' + formatDate(lightbox.name) : '') + '  ·  tap outside to close'
@@ -15825,7 +15824,7 @@ function DiaryScreen({ uid, name }) {
             const ts = new Date().toISOString().slice(0, 19).replace('T', ' ');
             setTimeline(prev => [{ uid, ts, action: 'NOTE', details: noteText.trim() }, ...prev]);
             setNoteText('');
-            setNoteStatus({ type: 'success', message: 'Note saved Γ£à' });
+            setNoteStatus({ type: 'success', message: 'Note saved ✅' });
             setTimeout(() => setNoteStatus(null), 1800);
         }
         catch (e) {
