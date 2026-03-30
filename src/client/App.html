@@ -9066,6 +9066,7 @@ function PlantKnowledgePanel({ plant, inline }) {
                 dbEntry.water       && ['\uD83D\uDD01',  '~' + dbEntry.water + 'd', '🔁 Water interval'],
                 (plant.potSize) && ['\uD83D\uDCCF', plant.potSize, '\uD83D\uDCCF Pot size'],
                 (Number(plant.fertEveryDays || plant.fertilizeEveryDays) > 0) && ['\uD83C\uDF31', (plant.fertEveryDays || plant.fertilizeEveryDays) + 'd', '\uD83C\uDF31 Fert every'],
+                (plant.purchasePrice) && ['\uD83D\uDCB5', '$' + plant.purchasePrice, '\uD83D\uDCB5 Price paid'],
             ].filter(Boolean).map(function(r, i) {
                 return React.createElement(React.Fragment, { key: i },
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS }) }, r[2]),
@@ -16100,7 +16101,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '4.5';
+const PLANTOS_VERSION = '4.6';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
