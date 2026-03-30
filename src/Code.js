@@ -1426,6 +1426,7 @@ function plantosRowToPlant_(hmap, row) {
   const hybridNote   = plantosGetByHeader_(hmap, row, H.HYBRID_NOTE);    // FIX #15
   const infraRank    = plantosGetByHeader_(hmap, row, H.INFRA_RANK);     // FIX #15
   const infraEpithet = plantosGetByHeader_(hmap, row, H.INFRA_EPITHET);  // FIX #15
+  const purchasePrice = plantosGetByHeader_(hmap, row, H.PURCHASE_PRICE);
 
   const genusStr = String(genus || '').trim();
   const taxonStr = String(taxon || '').trim();
@@ -1486,6 +1487,7 @@ function plantosRowToPlant_(hmap, row) {
     hybridNote:    hybridNote   || '',   // FIX #15
     infraRank:     infraRank    || '',   // FIX #15
     infraEpithet:  infraEpithet || '',   // FIX #15
+    purchasePrice: purchasePrice || '',
   };
 }
 
