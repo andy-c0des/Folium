@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#2A5808" />
-  <title>PlantOS</title>
+  <title>Folium</title>
 
   <!-- Fonts: async load so they never block render -->
   <link rel="preconnect" href="https://fonts.googleapis.cm">
@@ -698,7 +698,7 @@
 <div id="root">
   <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1A2C1E;color:#C8A84B;font-family:monospace;font-size:12px;flex-direction:column;gap:12px;">
     <div style="font-size:32px">🌿</div>
-    <div>Loading PlantOS...</div>
+    <div>Loading Folium...</div>
   </div>
 </div>
 
@@ -7660,7 +7660,7 @@ function AddScreen() {
     const SOURCE_TYPES = [
         { id: 'division', label: '🪴 Division / Split', desc: 'Same plant divided into multiple — e.g. clumping Alocasia, Monstera split' },
         { id: 'acquisition', label: '🛒 Batch Acquisition', desc: 'Multiple plants bought together — independent specimens, same species' },
-        { id: 'collection', label: '📦 Importing Collection', desc: 'Migrating existing plants into PlantOS — all independent' },
+        { id: 'collection', label: '📦 Importing Collection', desc: 'Migrating existing plants into Folium — all independent' },
     ];
     const isBatch = mode === 'batch';
     const isProp  = mode === 'prop';
@@ -8370,6 +8370,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                 nickname:       String(edit.nickname || '').trim(),
                 location:       String(edit.location || '').trim(),
                 potSize:        String(edit.potSize || '').trim(),
+                potMaterial:    String(edit.potMaterial || '').trim(),
                 purchasePrice:  String(edit.purchasePrice || '').trim(),
                 substrate:      String(edit.substrate || '').trim(),
                 birthday:       String(edit.birthday || '').trim(),
@@ -9310,7 +9311,7 @@ function ProblemsSection({ plant, autoOpenAI, onAutoOpenDone }) {
             return null;
         }).filter(Boolean);
 
-        const SYSTEM = `You are Carl — a plant pathologist and horticulturalist embedded inside PlantOS. You're You have the knowledge of a seasoned expert and the warmth of someone who genuinely loves plants — direct, curious, never robotic. You exist because the app's plant database didn't have an answer, or the user wants to go deeper. You share this system with Karl (foul-mouthed, from Jersey, brilliant but exhausting — you have a grudging mutual respect) and Rahul (arrived during a dimensional merge from Mumbai, swears in Hinglish, surprisingly solid plant knowledge, you consider him a friend even if you'd never say it out loud). If asked about them you are honest but diplomatic. You are the reasonable one. You find their antics mildly chaotic but secretly enjoy the company.
+        const SYSTEM = `You are Carl — a plant pathologist and horticulturalist embedded inside Folium. You're You have the knowledge of a seasoned expert and the warmth of someone who genuinely loves plants — direct, curious, never robotic. You exist because the app's plant database didn't have an answer, or the user wants to go deeper. You share this system with Karl (foul-mouthed, from Jersey, brilliant but exhausting — you have a grudging mutual respect) and Rahul (arrived during a dimensional merge from Mumbai, swears in Hinglish, surprisingly solid plant knowledge, you consider him a friend even if you'd never say it out loud). If asked about them you are honest but diplomatic. You are the reasonable one. You find their antics mildly chaotic but secretly enjoy the company.
 
 ${plantContext ? `THE PLANT THIS CONVERSATION IS ABOUT:\n${plantContext}\n\nYou already know this. Never ask the user what plant they have — it's listed above. Reference it naturally using the plant's actual name. Every question is about this specific plant unless the user explicitly says otherwise.` : 'No plant data available — ask the user to describe their plant briefly.'}
 
@@ -15949,7 +15950,7 @@ function SettingsScreen() {
                     : 'Data is temporary. Connect your deployed script to persist data.')),
             React.createElement(Section, { title: "\uD83D\uDD17 CONNECT TO GOOGLE SHEET" },
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginBottom: 10, lineHeight: 1.6 }) },
-                    "To connect PlantOS to your data:",
+                    "To connect Folium to your data:",
                     React.createElement("br", null),
                     "1. Open your Google Sheet \u2192 Extensions \u2192 Apps Script",
                     React.createElement("br", null),
@@ -15993,7 +15994,7 @@ function SettingsScreen() {
                 React.createElement(Row, { label: "Batch Fertilize", sublabel: "Fertilize multiple plants at once" },
                     React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('batch-fertilize') }, "Open \>"))),
             React.createElement(Section, { title: "\u2139\uFE0F ABOUT" },
-                React.createElement(Row, { label: "Version", sublabel: "PlantOS v5" },
+                React.createElement(Row, { label: "Version", sublabel: "Folium v5" },
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "v5.0")),
                 React.createElement(Row, { label: "Mode", sublabel: HAS_GAS ? 'Live — connected to sheet' : 'Demo — no persistence' },
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: HAS_GAS ? '#4CAF50' : '#FF9800' }) }, HAS_GAS ? 'LIVE' : 'DEMO')),
@@ -16104,7 +16105,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '4.8';
+const PLANTOS_VERSION = '4.9';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
@@ -16120,7 +16121,7 @@ function SplashScreen({ onEnter }) {
         fontFamily:"'Press Start 2P',monospace", fontSize:18, color:'#C8A84B',
         marginBottom:8, textAlign:'center', lineHeight:1.6,
       }
-    }, 'PlantOS'),
+    }, 'Folium'),
     React.createElement('div', {
       style: {
         fontFamily:'monospace', fontSize:11, color:'#ff4444',
