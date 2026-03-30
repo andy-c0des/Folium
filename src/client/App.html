@@ -8994,7 +8994,8 @@ function PlantKnowledgePanel({ plant, inline }) {
 
     var hasPests    = sortedPests.length > 0;
     var hasSpecies  = dbEntry && dbEntry.species && dbEntry.species.length > 0;
-    if (!dbEntry && !hasPests) return null;
+    var hasPlantData = !!(plant.purchasePrice || plant.potSize || Number(plant.fertEveryDays || plant.fertilizeEveryDays) > 0);
+    if (!dbEntry && !hasPests && !hasPlantData) return null;
 
     var validTabs = ['overview'];
     if (hasPests)   validTabs.push('pests');
@@ -9051,29 +9052,31 @@ function PlantKnowledgePanel({ plant, inline }) {
             }) }, '"' + dbEntry.common[0] + '"')
         ),
 
-        dbEntry && React.createElement('div', { style: {
-            display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '5px 12px',
-            alignItems: 'center', marginBottom: dbEntry.notes ? 10 : 0,
-            padding: '8px 10px',
-            background: theme.rowBg,
-            border: '2px solid ' + theme.rowBorder,
-        }},
-            [
-                dbEntry.light       && ['\u2600\uFE0F',  dbEntry.light,       '☀️ Light'],
-                dbEntry.humidity    && ['\uD83D\uDCA7',  dbEntry.humidity,    '💧 Humidity'],
-                dbEntry.substrate   && ['\uD83E\uDEB8',  dbEntry.substrate,   '🪨 Substrate'],
-                dbEntry.potMaterial && ['\uD83E\uDEB4',  dbEntry.potMaterial, '🪴 Pot'],
-                dbEntry.water       && ['\uD83D\uDD01',  '~' + dbEntry.water + 'd', '🔁 Water interval'],
+        (function() {
+            var rows = [
+                dbEntry && dbEntry.light       && ['\u2600\uFE0F',  dbEntry.light,       '\u2600\uFE0F Light'],
+                dbEntry && dbEntry.humidity    && ['\uD83D\uDCA7',  dbEntry.humidity,    '\uD83D\uDCA7 Humidity'],
+                dbEntry && dbEntry.substrate   && ['\uD83E\uDEB8',  dbEntry.substrate,   '\uD83E\uDEB8 Substrate'],
+                dbEntry && dbEntry.potMaterial && ['\uD83E\uDEB4',  dbEntry.potMaterial, '\uD83E\uDEB4 Pot'],
+                dbEntry && dbEntry.water       && ['\uD83D\uDD01',  '~' + dbEntry.water + 'd', '\uD83D\uDD01 Water interval'],
                 (plant.potSize) && ['\uD83D\uDCCF', plant.potSize, '\uD83D\uDCCF Pot size'],
                 (Number(plant.fertEveryDays || plant.fertilizeEveryDays) > 0) && ['\uD83C\uDF31', (plant.fertEveryDays || plant.fertilizeEveryDays) + 'd', '\uD83C\uDF31 Fert every'],
                 (plant.purchasePrice) && ['\uD83D\uDCB5', '$' + plant.purchasePrice, '\uD83D\uDCB5 Price paid'],
-            ].filter(Boolean).map(function(r, i) {
+            ].filter(Boolean);
+            if (!rows.length) return null;
+            return React.createElement('div', { style: {
+                display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '5px 12px',
+                alignItems: 'center', marginBottom: (dbEntry && dbEntry.notes) ? 10 : 0,
+                padding: '8px 10px',
+                background: theme.rowBg,
+                border: '2px solid ' + theme.rowBorder,
+            }}, rows.map(function(r, i) {
                 return React.createElement(React.Fragment, { key: i },
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS }) }, r[2]),
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP }) }, r[1])
                 );
-            })
-        ),
+            }));
+        })(),
 
         dbEntry && dbEntry.notes && React.createElement('div', { style: {
             padding: '8px 10px', marginTop: 8,
@@ -16101,7 +16104,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '4.6';
+const PLANTOS_VERSION = '4.7';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
