@@ -5143,7 +5143,14 @@ function PlantDataProvider({ children }) {
     };
     const getProgressHistory = (uid) => {
         return getTimeline(uid, 200).then(function(tl) {
-            return (tl || []).filter(function(e) { return e.action === 'PROGRESS_UPDATE'; });
+            return (tl || []).filter(function(e) {
+                if (e.action === 'PROGRESS_UPDATE') return true;
+                // Backwards-compat: entries logged as UPDATE before the fix, if details is JSON with a status field
+                if ((e.action === 'UPDATE' || e.action === 'NOTE') && e.details) {
+                    try { var d = JSON.parse(e.details); return !!(d && d.status); } catch(x) {}
+                }
+                return false;
+            });
         });
     };
     const batchWater = (uids, actionLabel) => {

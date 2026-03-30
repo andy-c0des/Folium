@@ -1498,7 +1498,7 @@ function plantosTimelineAppend_(uid, payload, when) {
   let items = [];
   try { items = JSON.parse(PropertiesService.getScriptProperties().getProperty(key) || '[]'); } catch (e) {}
   const ts = Utilities.formatDate(when, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
-  const action = payload.repot ? 'REPOT' : payload.water && payload.fertilize ? 'WATERED+FERTILIZED' : payload.water ? 'WATERED' : payload.fertilize ? 'FERTILIZED' : 'UPDATE';
+  const action = payload.progressUpdate ? 'PROGRESS_UPDATE' : payload.repot ? 'REPOT' : payload.water && payload.fertilize ? 'WATERED+FERTILIZED' : payload.water ? 'WATERED' : payload.fertilize ? 'FERTILIZED' : 'UPDATE';
   let details = '';
   if (payload.repot) details = `Pot: ${payload.potSize || ''} • Substrate: ${payload.substrate || ''}`;
   if (payload.notes) details = (details ? details + ' • ' : '') + payload.notes;
