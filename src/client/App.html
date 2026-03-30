@@ -8732,7 +8732,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                             " locations selected"))),
                     hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-3" },
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, plants.length + ' plants loaded · ' + filteredPlants.length + ' showing'),
-                        React.createElement("input", { value: plantFilter, onChange: e => setPlantFilter(e.target.value), placeholder: "Filter plants...", className: "w-full border-4  p-2 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
+                        React.createElement("input", { value: plantFilter, onChange: e => { setPlantFilter(e.target.value); setPlantPage(0); }, placeholder: "Filter plants...", className: "w-full border-4  p-2 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
                     loading && React.createElement("div", { className: "space-y-2" },
                         Array.from({ length: 6 }).map(function(_, i) {
                             return React.createElement("div", { key: 'skel-' + i, className: "flex items-center gap-2 border-2 p-2", style: { borderColor: '#7A4A1A', opacity: 1 - i * 0.1 } },
@@ -8855,14 +8855,14 @@ function MyPlantsScreen({ openTab, prefill }) {
                         React.createElement("div", { className: "flex gap-2 mt-3" },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel"))))),
-                    plants.length > 10 && React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+                    filteredPlants.length > 10 && React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
                         React.createElement("button", { type: "button", onClick: function() { setPlantPage(function(p) { return Math.max(0, p - 1); }); }, disabled: plantPage === 0,
                             style: { fontFamily: "'Press Start 2P', monospace", fontSize: 10, padding: '6px 12px', cursor: plantPage === 0 ? 'default' : 'pointer', opacity: plantPage === 0 ? 0.4 : 1, background: 'transparent', border: '2px solid #7A4A1A', color: '#3C1800' } }, "< PREV"),
-                        React.createElement("div", { style: { fontFamily: "'Pixelify Sans', sans-serif", fontSize: 13, color: '#3C1800' } }, (plantPage * 10 + 1) + "-" + Math.min((plantPage + 1) * 10, plants.length) + " of " + plants.length),
-                        React.createElement("button", { type: "button", onClick: function() { setPlantPage(function(p) { return Math.min(Math.ceil(plants.length / 10) - 1, p + 1); }); }, disabled: plantPage >= Math.ceil(plants.length / 10) - 1,
-                            style: { fontFamily: "'Press Start 2P', monospace", fontSize: 10, padding: '6px 12px', cursor: plantPage >= Math.ceil(plants.length / 10) - 1 ? 'default' : 'pointer', opacity: plantPage >= Math.ceil(plants.length / 10) - 1 ? 0.4 : 1, background: 'transparent', border: '2px solid #7A4A1A', color: '#3C1800' } }, "NEXT >")
+                        React.createElement("div", { style: { fontFamily: "'Pixelify Sans', sans-serif", fontSize: 13, color: '#3C1800' } }, (plantPage * 10 + 1) + "-" + Math.min((plantPage + 1) * 10, filteredPlants.length) + " of " + filteredPlants.length),
+                        React.createElement("button", { type: "button", onClick: function() { setPlantPage(function(p) { return Math.min(Math.ceil(filteredPlants.length / 10) - 1, p + 1); }); }, disabled: plantPage >= Math.ceil(filteredPlants.length / 10) - 1,
+                            style: { fontFamily: "'Press Start 2P', monospace", fontSize: 10, padding: '6px 12px', cursor: plantPage >= Math.ceil(filteredPlants.length / 10) - 1 ? 'default' : 'pointer', opacity: plantPage >= Math.ceil(filteredPlants.length / 10) - 1 ? 0.4 : 1, background: 'transparent', border: '2px solid #7A4A1A', color: '#3C1800' } }, "NEXT >")
                     ),
-                    plants.length > 0 && (React.createElement("div", { style: isDesktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } : { display: 'flex', flexDirection: 'column', gap: 8 } }, plants.slice(plantPage * 10, (plantPage + 1) * 10).map(p => {
+                    filteredPlants.length > 0 && (React.createElement("div", { style: isDesktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } : { display: 'flex', flexDirection: 'column', gap: 8 } }, filteredPlants.slice(plantPage * 10, (plantPage + 1) * 10).map(p => {
                         const uid = String(p.uid || '');
                         const sharedPatch = getSharedPatch ? getSharedPatch(uid) : null;
                         const q = sharedPatch ? Object.assign({}, p, sharedPatch) : p;
@@ -16100,7 +16100,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '4.4';
+const PLANTOS_VERSION = '4.5';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
