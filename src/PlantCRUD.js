@@ -66,6 +66,7 @@ function plantosUpdatePlant(uid, patch) {
     infraRank:         H.INFRA_RANK,       // FIX #15
     infraEpithet:      H.INFRA_EPITHET,    // FIX #15
     lastRepotted:      H.LAST_REPOTTED,    // FIX #15
+    purchasePrice:     H.PURCHASE_PRICE,   // FIX: enable saving purchase price
   };
 
   // FIX #14: waterEveryDays needs multi-header lookup since sheet may use either name
@@ -207,6 +208,8 @@ function plantosBatchFertilize(uids, actionLabel) {
   const uidCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.UID);
   const fertilizedCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.FERTILIZED);
   const lastFertilizedCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
+  const wateredCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.WATERED);
+  const lastWateredCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_WATERED);
   if (uidCol < 0) throw new Error('Missing Plant UID');
   const set = {};
   uids.forEach(u => { const k = plantosSafeStr_(u).trim(); if (k) set[k] = true; });
@@ -218,7 +221,9 @@ function plantosBatchFertilize(uids, actionLabel) {
     if (!uid || !set[uid]) continue;
     if (fertilizedCol >= 0) sh.getRange(r + 1, fertilizedCol + 1).setValue(true);
     if (lastFertilizedCol >= 0) sh.getRange(r + 1, lastFertilizedCol + 1).setValue(now);
-    plantosTimelineAppend_(uid, label ? { fertilize: true, notes: label } : { fertilize: true }, now);
+    if (wateredCol >= 0) sh.getRange(r + 1, wateredCol + 1).setValue(true);
+    if (lastWateredCol >= 0) sh.getRange(r + 1, lastWateredCol + 1).setValue(now);
+    plantosTimelineAppend_(uid, label ? { water: true, fertilize: true, notes: label } : { water: true, fertilize: true }, now);
     count++;
   }
   return { ok: true, count };

@@ -166,7 +166,7 @@ function plantosEnsureOptionalColumns() {
   const headerRow = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0] || [];
   const hmap = plantosHeaderMap_(headerRow);
   const H = PLANTOS_BACKEND_CFG.HEADERS;
-  const desired = [H.POT_MATERIAL, H.POT_SHAPE, H.CULTIVAR, H.HYBRID_NOTE, H.INFRA_RANK, H.INFRA_EPITHET, H.LAST_REPOTTED];
+  const desired = [H.POT_MATERIAL, H.POT_SHAPE, H.CULTIVAR, H.HYBRID_NOTE, H.INFRA_RANK, H.INFRA_EPITHET, H.LAST_REPOTTED, H.PURCHASE_PRICE];
   const added = [];
   desired.forEach(function(col) {
     if (plantosCol_(hmap, col) < 0) {
@@ -1070,6 +1070,7 @@ function plantosUpdatePlant(uid, patch) {
     infraRank:         H.INFRA_RANK,       // FIX #15
     infraEpithet:      H.INFRA_EPITHET,    // FIX #15
     lastRepotted:      H.LAST_REPOTTED,    // FIX #15
+    purchasePrice:     H.PURCHASE_PRICE,
   };
 
   // FIX #14: waterEveryDays needs multi-header lookup since sheet may use either name
@@ -2882,3 +2883,4 @@ function chatGenerateLoreMessage(charId, loreContext) {
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
+
