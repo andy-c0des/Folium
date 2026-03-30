@@ -5687,13 +5687,6 @@ function HomeScreen() {
             React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCA7"),
             React.createElement("span", null, "Watering"),
             dueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '12px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, dueNow.length)),
-        React.createElement("button", { type: "button", onClick: () => navigate('carl'),
-            className: "nav-grid-btn hover-lift relative",
-            style: { borderColor: '#2E7A2E', background: '#1A3A1A', color: '#A8E89C', boxShadow: '0 3px 0 #1A5A1A' }
-        },
-            React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
-            React.createElement("span", null, "Carl"),
-            React.createElement("span", { style: { position: 'absolute', top: -6, right: -6, background: '#2E7A2E', border: '2px solid #A8E89C', color: '#A8E89C', fontSize: '10px', fontFamily: "'Press Start 2P', cursive", padding: '1px 5px', lineHeight: 1.4 } }, "AI")),
         React.createElement("button", { type: "button", onClick: () => navigate('add'),
             className: "nav-grid-btn hover-lift",
             style: { borderColor: theme.btnS.border, background: theme.btnS.bg, color: theme.btnS.text, boxShadow: '0 3px 0 ' + theme.btnS.border }
@@ -5748,13 +5741,6 @@ function HomeScreen() {
                 React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCA7"),
                 React.createElement("span", null, "Log Watering"),
                 dueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '10px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, dueNow.length)),
-            React.createElement("button", { type: "button", onClick: () => navigate('carl'),
-                className: "header-nav-btn hover-lift relative",
-                style: { borderColor: '#3A6A20', background: '#2A5A14', color: '#C8E8A8', boxShadow: '0 2px 0 #1A4A08' }
-            },
-                React.createElement("span", { className: "nav-icon" }, "\uD83D\uDC74"),
-                React.createElement("span", null, "Carl"),
-                React.createElement("span", { style: { position: 'absolute', top: -5, right: -5, background: '#3A6A20', border: '2px solid #C8E8A8', color: '#C8E8A8', fontSize: '8px', fontFamily: "'Press Start 2P', cursive", padding: '1px 4px', lineHeight: 1.4 } }, "AI")),
             React.createElement("button", { type: "button", onClick: () => navigate('add'),
                 className: "header-nav-btn hover-lift",
                 style: { borderColor: '#8AA868', background: '#B8CCA0', color: '#2D5016', boxShadow: '0 2px 0 #7A9858' }
@@ -8334,6 +8320,7 @@ function MyPlantsScreen({ openTab, prefill }) {
             nickname: p.nickname || '',
             location: p.location || '',
             potSize: p.potSize || '',
+            potMaterial: p.potMaterial || '',
             purchasePrice: p.purchasePrice || '',
             substrate: p.substrate || p.medium || '',
             genus: genus,
@@ -13234,9 +13221,6 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
         }
     }
 
-    if (activeTab === 'carl') {
-        tabContent = React.createElement(CarlNPCPanel, { plant: plant, pxS: pxS, theme: theme, activeChar: activeChar, setActiveChar: setActiveChar, kbEnabled: kbEnabled, setKbEnabled: setKbEnabled });
-    }
 
     return React.createElement('div', { style: { marginTop: 10 } },
         React.createElement('div', { style: {
@@ -13248,7 +13232,6 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
             React.createElement(TabBtn, { id: 'status',   icon: '\uD83D\uDCCA', label: 'STATUS' }),
             React.createElement(TabBtn, { id: 'schedule', icon: '\uD83D\uDCC5', label: 'SCHED' }),
             React.createElement(TabBtn, { id: 'info',     icon: '\uD83D\uDCD6', label: 'INFO' }),
-            React.createElement(TabBtn, { id: 'carl',     icon: '\uD83C\uDF3F', label: 'CARL' })
         ),
         React.createElement('div', { key: activeTab, style: {
             border: '3px solid ' + theme.cardBorder,
@@ -15590,7 +15573,6 @@ function BottomNav({ current, navigate, goBack }) {
         { id: 'home',      icon: '🏠' },
         { id: 'my-plants', icon: '🌿' },
         { id: 'watering',  icon: '💧' },
-        { id: 'carl',      icon: '👴' },
         { id: 'add',       icon: '➕' },
     ];
     return React.createElement("div", {
@@ -16054,8 +16036,8 @@ function AppContent() {
             case 'watering': return React.createElement(WateringScreen, null);
             case 'quick-log': return React.createElement(WateringScreen, null);
             case 'add': return React.createElement(AddScreen, null);
-            case 'carl': return React.createElement(CarlHomeScreen, null);
-            case 'carl-chat': return React.createElement(CarlClassicScreen, null);
+            case 'carl': return React.createElement(HomeScreen, null);
+            case 'carl-chat': return React.createElement(HomeScreen, null);
             case 'my-plants': return React.createElement(MyPlantsScreen, { openTab: (route.params && route.params.openTab) ? route.params.openTab : null, prefill: (route.params && route.params.prefill) ? route.params.prefill : null });
             case 'environments': return React.createElement(EnvironmentsScreen, null);
             case 'archive': return React.createElement(ArchiveScreen, null);
@@ -16105,7 +16087,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '4.9';
+const PLANTOS_VERSION = '5.0';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
