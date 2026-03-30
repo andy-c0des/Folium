@@ -21,9 +21,10 @@ function plantosHome() {
   const lastWateredCol = plantosCol_(hmap, H.LAST_WATERED), everyDaysCol = plantosColMulti_(hmap, H.WATER_EVERY_DAYS, H.WATER_EVERY_DAYS_ALT); // FIX #14
   const birthdayCol = plantosCol_(hmap, H.BIRTHDAY), lastFertCol = plantosCol_(hmap, H.LAST_FERTILIZED);
   const fertEveryCol = plantosCol_(hmap, H.FERT_EVERY_DAYS);
+  const lpuCol = plantosCol_(hmap, H.LAST_PROGRESS_UPDATE);
   const now = plantosNow_(), tz = Session.getScriptTimeZone();
   const today = Utilities.formatDate(now, tz, 'MM/dd');
-  const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [];
+  const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [], progressDueNow = [];
   let totalCount = 0;
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
@@ -59,6 +60,14 @@ function plantosHome() {
         else if (diffDays >= 1 && diffDays <= 7) { fertBucket = 'upcoming'; fertDue = plantosFmtDate_(dueDate); }
       }
     }
+    // Progress update: due every 14 days from lastProgressUpdate, or from birthday if never updated
+    const lpu = lpuCol >= 0 ? plantosAsDate_(row[lpuCol]) : null;
+    const bd2 = birthdayCol >= 0 ? plantosAsDate_(row[birthdayCol]) : null;
+    const progBaseline = lpu || bd2;
+    if (progBaseline) {
+      const progDue = plantosAddDays_(progBaseline, 14);
+      if (progDue <= now) progressDueNow.push({ uid, primary, lastUpdate: lpu ? plantosFmtDate_(lpu) : '' });
+    }
     if (waterBucket === 'now') dueNow.push({ uid, primary, due: waterDue });
     if (waterBucket === 'upcoming') upcoming.push({ uid, primary, due: waterDue });
     if (fertBucket === 'now') fertDueNow.push({ uid, primary, due: fertDue });
@@ -68,7 +77,7 @@ function plantosHome() {
   }
   const byDue = (a, b) => String(a.due || '').localeCompare(String(b.due || ''));
   [dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming].forEach(a => a.sort(byDue));
-  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount };
+  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow };
 }
 
 /* ===================== FIX #5: Case-insensitive location matching ===================== */
@@ -148,6 +157,8 @@ function plantosGetPlantsByLocationLite(location) {
   const pidCol   = plantosCol_(hmap, H.PLANT_ID);
   const ppCol    = plantosCol_(hmap, H.PLANT_PAGE_URL);
   const purchCol = plantosCol_(hmap, H.PURCHASE_PRICE);
+  const lpuCol2  = plantosCol_(hmap, H.LAST_PROGRESS_UPDATE);
+  const progStCol2 = plantosCol_(hmap, H.PROGRESS_STATUS);
 
   const out = [], errors = [];
   let matched = 0, skipped = 0;
@@ -201,7 +212,9 @@ function plantosGetPlantsByLocationLite(location) {
         potMaterial:   potMatCol >= 0  ? plantosSafeStr_(row[potMatCol]).trim()   : '',
         potShape:      potShpCol >= 0  ? plantosSafeStr_(row[potShpCol]).trim()   : '',
         cultivar:      cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '',
-        purchasePrice: purchCol >= 0   ? plantosSafeStr_(row[purchCol]).trim()    : '',
+        purchasePrice:      purchCol >= 0   ? plantosSafeStr_(row[purchCol]).trim()    : '',
+        lastProgressUpdate: lpuCol2 >= 0 ? (plantosAsDate_(row[lpuCol2]) ? plantosFmtDate_(plantosAsDate_(row[lpuCol2])) : '') : '',
+        progressStatus:     progStCol2 >= 0 ? plantosSafeStr_(row[progStCol2]).trim() : '',
       });
     } catch(e) {
       let failUid = '';
@@ -285,9 +298,11 @@ function plantosGetAllPlantsLite() {
   const potMatCol = plantosCol_(hmap, H.POT_MATERIAL);
   const potShpCol = plantosCol_(hmap, H.POT_SHAPE);
   const cultivarCol = plantosCol_(hmap, H.CULTIVAR);
-  const pidCol   = plantosCol_(hmap, H.PLANT_ID);
-  const ppCol    = plantosCol_(hmap, H.PLANT_PAGE_URL);
-  const purchCol = plantosCol_(hmap, H.PURCHASE_PRICE);
+  const pidCol     = plantosCol_(hmap, H.PLANT_ID);
+  const ppCol      = plantosCol_(hmap, H.PLANT_PAGE_URL);
+  const purchCol   = plantosCol_(hmap, H.PURCHASE_PRICE);
+  const lpuCol3    = plantosCol_(hmap, H.LAST_PROGRESS_UPDATE);
+  const progStCol3 = plantosCol_(hmap, H.PROGRESS_STATUS);
 
   const out = [], errors = [];
   let skipped = 0;
@@ -338,8 +353,10 @@ function plantosGetAllPlantsLite() {
         fertilizeEveryDays: feCol >= 0 ? plantosSafeStr_(row[feCol]) : '',
         potMaterial:   potMatCol >= 0  ? plantosSafeStr_(row[potMatCol]).trim()   : '',
         potShape:      potShpCol >= 0  ? plantosSafeStr_(row[potShpCol]).trim()   : '',
-        cultivar:      cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '',
-        purchasePrice: purchCol >= 0   ? plantosSafeStr_(row[purchCol]).trim()    : '',
+        cultivar:           cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '',
+        purchasePrice:      purchCol >= 0   ? plantosSafeStr_(row[purchCol]).trim()    : '',
+        lastProgressUpdate: lpuCol3 >= 0 ? (plantosAsDate_(row[lpuCol3]) ? plantosFmtDate_(plantosAsDate_(row[lpuCol3])) : '') : '',
+        progressStatus:     progStCol3 >= 0 ? plantosSafeStr_(row[progStCol3]).trim() : '',
       });
     } catch(e) {
       let failUid = '';

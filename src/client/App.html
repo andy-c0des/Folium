@@ -3874,6 +3874,17 @@ const SUBSTRATE_PROPS = {
 };
 const SUBSTRATE_DEFAULT = { wh: 5, aer: 5, wick: 5, decomp: 2 };
 
+const PROGRESS_STATUS_COLORS = {
+    'Bad':   { bg: '#5A0A0A', border: '#C03030', text: '#FFB0B0', emoji: '😔' },
+    'Okay':  { bg: '#4A3000', border: '#A07020', text: '#FFD080', emoji: '😐' },
+    'Good':  { bg: '#0F3A18', border: '#3A8A3A', text: '#90EE90', emoji: '🙂' },
+    'Great': { bg: '#0A1E4A', border: '#2A6AB0', text: '#80C0FF', emoji: '😄' },
+};
+const PROGRESS_NOTICING_OPTIONS = [
+    'New leaf', 'Healthy roots', 'Flowering', 'Plantelet',
+    'Big Leaves', 'New Shoots', 'Done flowering', 'High variegation'
+];
+
 // ── Custom mix ingredient physics ──────────────────────────────────────────
 // wh=water-holding, aer=aeration, wick=wicking, decomp=decomposition speed
 const MIX_INGREDIENT_PROPS = {
@@ -4689,7 +4700,7 @@ function PlantDataProvider({ children }) {
         const dueNow = [], upcoming = [];
         const fertDueNow = [], fertUpcoming = [];
         const bothDueNow = [], bothUpcoming = [];
-        const birthdays = [];
+        const birthdays = [], progressDueNow = [];
         const parseDay = (iso) => {
             const d = new Date(String(iso || '').trim());
             if (isNaN(d))
@@ -4733,8 +4744,18 @@ function PlantDataProvider({ children }) {
                     bothUpcoming.push(item);
             }
             const b = String(p.birthday || '').trim();
-            if (b)
-                birthdays.push(primary);
+            if (b) birthdays.push(primary);
+            // Progress update: due every 14 days from lastProgressUpdate or birthday
+            const lpuStr = String(p.lastProgressUpdate || '').trim();
+            const lpuDate = lpuStr ? parseDay(lpuStr) : null;
+            const bdStr = String(p.birthday || '').trim();
+            const bdDate = bdStr ? parseDay(bdStr) : null;
+            const progBaseline = lpuDate || bdDate;
+            if (progBaseline) {
+                const progDue = new Date(progBaseline);
+                progDue.setDate(progDue.getDate() + 14);
+                if (progDue <= today) progressDueNow.push({ uid: p.uid, primary, lastUpdate: lpuStr });
+            }
         });
         dueNow.sort((a, b) => String(a.due).localeCompare(String(b.due)));
         upcoming.sort((a, b) => String(a.due).localeCompare(String(b.due)));
@@ -4750,7 +4771,8 @@ function PlantDataProvider({ children }) {
             bothDueNow,
             bothUpcoming,
             birthdays: birthdays.slice(0, 3),
-            totalCount: (plantsList || []).length
+            totalCount: (plantsList || []).length,
+            progressDueNow,
         };
     };
     useEffect(() => {
@@ -5094,7 +5116,10 @@ function PlantDataProvider({ children }) {
                 demoSetPlant_(uid, { lastRepotted: today, potSize: payload.potSize || p.potSize, substrate: payload.substrate || p.substrate, medium: payload.substrate || p.medium });
                 demoPushLog_(uid, 'REPOT', notes || 'Repotted');
             }
-            if (!payload.water && !payload.fertilize && !payload.repot && (notes || payload.note)) {
+            if (payload && payload.progressUpdate) {
+                demoPushLog_(uid, 'PROGRESS_UPDATE', notes || 'Progress Update');
+            }
+            if (!payload.water && !payload.fertilize && !payload.repot && !payload.progressUpdate && (notes || payload.note)) {
                 demoPushLog_(uid, 'NOTE', notes || 'Note');
             }
             return Promise.resolve({ ok: true });
@@ -5102,6 +5127,23 @@ function PlantDataProvider({ children }) {
         return gasCall('plantosQuickLog', uid, payload || {}).then(r => {
             if (r && r.ok === false) console.warn('[PlantOS] quickLog returned ok:false for uid', uid, r);
             return r;
+        });
+    };
+    const saveProgressUpdate = async (uid, data) => {
+        if (!uid) return { ok: false, error: 'No UID' };
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const notes = JSON.stringify({
+            status: data.status || '', size: data.size || '',
+            noticing: data.noticing || [], comment: data.comment || ''
+        });
+        await updatePlant(uid, { lastProgressUpdate: todayIso, progressStatus: data.status || '' });
+        await quickLog(uid, { progressUpdate: true, notes });
+        if (data.photoDataUrl) await uploadPlantPhoto(uid, data.photoDataUrl, data.photoName || 'progress.jpg');
+        return { ok: true };
+    };
+    const getProgressHistory = (uid) => {
+        return getTimeline(uid, 200).then(function(tl) {
+            return (tl || []).filter(function(e) { return e.action === 'PROGRESS_UPDATE'; });
         });
     };
     const batchWater = (uids, actionLabel) => {
@@ -5276,6 +5318,7 @@ function PlantDataProvider({ children }) {
         getPlantsByLocation, getPlant, getTimeline, getRecentLog,
         createPlant, updatePlant, setNickname, addLocation,
         quickLog, batchWater, batchFertilize, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
+        saveProgressUpdate, getProgressHistory,
         getProps, getPropTimeline, createProp, updatePropStatus, addPropNote, graduateProp,
         updateProp: (propId, patch) => {
             var arr = demoPropsRef.current || [];
@@ -5299,6 +5342,7 @@ function PlantDataProvider({ children }) {
         getPlantsByLocation, getPlant, setNickname,
         createPlant, updatePlant, quickLog, batchWater, batchFertilize, addLocation,
         getRecentLog, getTimeline, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
+        saveProgressUpdate, getProgressHistory,
         getProps: () => gasCall('plantosGetProps').then(parseGasProps).catch(() => []),
         getPropTimeline: (propId) => gasCall('plantosGetPropTimeline', propId).then(r => (r && r.items) ? r.items : (Array.isArray(r) ? r : [])).catch(() => []),
         createProp: (payload) => { var gp = Object.assign({}, payload); if (gp.generation && typeof gp.generation === 'object') gp.generation = gp.generation.str || ''; return gasCall('plantosCreateProp', gp); },
@@ -5430,8 +5474,9 @@ function HomeScreen() {
     const fertDueNow = (homeData && homeData.fertDueNow) ? homeData.fertDueNow : [];
     const fertUpcoming = (homeData && homeData.fertUpcoming) ? homeData.fertUpcoming : [];
     const birthdays = (homeData && homeData.birthdays) ? homeData.birthdays : [];
+    const progressDueNow = (homeData && homeData.progressDueNow) ? homeData.progressDueNow : [];
     const totalCount = (homeData && homeData.totalCount != null) ? homeData.totalCount : null;
-    const allHappy = !loading && dueNow.length === 0 && upcoming.length === 0 && fertDueNow.length === 0;
+    const allHappy = !loading && dueNow.length === 0 && upcoming.length === 0 && fertDueNow.length === 0 && progressDueNow.length === 0;
     const overdueTotal = dueNow.length + fertDueNow.length;
 
     // ── Quick Stats Bar ──
@@ -5497,6 +5542,36 @@ function HomeScreen() {
         React.createElement("div", null,
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: '#1A2A08' }) }, "All plants are happy!"),
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#2A5808', marginTop: 2 }) }, "No watering or fertilizer needed right now.")))) : null;
+
+    // ── Progress Due Section ──
+    const ProgressDueSection = () => {
+        if (progressDueNow.length === 0) return null;
+        const cap = isDesktop ? 8 : 5;
+        return React.createElement("div", { className: "mb-3" },
+            React.createElement("div", { className: "flex items-center justify-between mb-2" },
+                React.createElement("div", { className: "flex items-center gap-2" },
+                    React.createElement("span", { style: { fontSize: 16 } }, "\uD83D\uDCCA"),
+                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: '#7B9FD4', letterSpacing: '0.04em' }) },
+                        "PROGRESS UPDATE DUE (", progressDueNow.length, ")")),
+                progressDueNow.length > cap && React.createElement("button", {
+                    type: "button", onClick: () => navigate('progress-updates'),
+                    style: Object.assign({}, pxS, { fontSize: '12px', color: '#7B9FD4', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 900 })
+                }, "See all \>")),
+            React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" },
+                progressDueNow.slice(0, cap).map(function(p, i) {
+                    return React.createElement("div", {
+                        key: p.uid || i,
+                        className: "flex items-center gap-2 border-2 px-3 py-2 cursor-pointer plant-item",
+                        style: { borderColor: '#2A5080', background: 'rgba(42,80,128,0.12)', animationDelay: Math.min(i * 0.04, 0.24) + 's' },
+                        onClick: function() { navigate('progress-update', { uid: p.uid, name: p.primary || p.uid }); }
+                    },
+                        React.createElement("span", { style: { fontSize: 20, lineHeight: 1, flexShrink: 0 } }, "\uD83D\uDCCA"),
+                        React.createElement("div", { className: "flex-1 min-w-0" },
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#7B9FD4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.primary || p.uid),
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: '#7B9FD4', opacity: 0.8 }) }, p.lastUpdate ? 'Last update: ' + p.lastUpdate : 'No updates yet')),
+                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#fff', background: '#2A5080', padding: '3px 8px', flexShrink: 0, whiteSpace: 'nowrap' }) }, 'UPDATE'));
+                })));
+    };
 
     // ── Birthday Banner ──
     const BirthdayBanner = () => birthdays.length > 0 ? (React.createElement("div", { className: "border-4 border-[#ffc107] px-3 py-2 mb-3 flex items-center gap-2", style: { background: '#fff8e1' } },
@@ -5763,6 +5838,7 @@ function HomeScreen() {
                         React.createElement(BirthdayBanner, null),
                         React.createElement(HappyBanner, null),
                         React.createElement(NeedsAttention, null),
+                        React.createElement(ProgressDueSection, null),
                         React.createElement(UpcomingSection, null))),
                 React.createElement("div", null,
                     React.createElement(PlantCard, null,
@@ -5776,6 +5852,7 @@ function HomeScreen() {
         React.createElement(BirthdayBanner, null),
         React.createElement(HappyBanner, null),
         React.createElement(NeedsAttention, null),
+        React.createElement(ProgressDueSection, null),
         React.createElement(UpcomingSection, null),
         React.createElement(PlantCard, null,
             React.createElement(VerticalCalendar, null)),
@@ -11476,10 +11553,11 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     }, '\uD83C\uDF3E FERT DUE')),
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '16px' : '22px', fontWeight: 900, color: theme.txtP, lineHeight: 1.2, wordBreak: 'break-word', overflowWrap: 'anywhere' }) }, titleLine),
                                 showTax && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS, fontWeight: 800, fontStyle: 'italic', marginTop: 2 }), className: "truncate" }, taxLine),
-                                (isHybrid || hasCultivar || hasInfra) && React.createElement("div", { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 } },
+                                (isHybrid || hasCultivar || hasInfra || plant.progressStatus) && React.createElement("div", { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 } },
                                     isHybrid && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '2px 6px', background: '#7b4f9e', color: '#fff' }) }, "\u00d7 HYBRID"),
                                     hasCultivar && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '2px 6px', background: theme.btnP.bg, color: '#fff' }) }, "'" + plant.cultivar + "'"),
-                                    hasInfra && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', padding: '2px 6px', background: theme.rowBg, color: theme.txtS, border: '1px solid ' + theme.rowBorder }) }, plant.infraRank + ' ' + plant.infraEpithet)),
+                                    hasInfra && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', padding: '2px 6px', background: theme.rowBg, color: theme.txtS, border: '1px solid ' + theme.rowBorder }) }, plant.infraRank + ' ' + plant.infraEpithet),
+                                    plant.progressStatus && PROGRESS_STATUS_COLORS[plant.progressStatus] && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '2px 6px', background: PROGRESS_STATUS_COLORS[plant.progressStatus].bg, color: PROGRESS_STATUS_COLORS[plant.progressStatus].text, border: '1px solid ' + PROGRESS_STATUS_COLORS[plant.progressStatus].border }) }, PROGRESS_STATUS_COLORS[plant.progressStatus].emoji + ' ' + plant.progressStatus)),
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '11px' : '13px', color: theme.txtS, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) },
                                     plant.location ? '\uD83D\uDCCD ' + plant.location + '  \u2022  ' : '',
                                     "UID ", plant.uid),
@@ -11556,7 +11634,9 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         ),
                         React.createElement("div", { className: "flex gap-2 mb-2 flex-wrap" },
                             React.createElement(PlantButton, { block: false, onClick: openPhotoPicker, className: "px-3 py-1", variant: "secondary" }, "\uD83D\uDCF8 Photo"),
-                            React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3 py-1", onClick: function() { navigate('gallery', { uid: plant.uid, name: plant.nickname || plant.genus || 'Gallery' }); } }, "\uD83D\uDDBC\uFE0F Gallery")),
+                            React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3 py-1", onClick: function() { navigate('gallery', { uid: plant.uid, name: plant.nickname || plant.genus || 'Gallery' }); } }, "\uD83D\uDDBC\uFE0F Gallery"),
+                            React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3 py-1", onClick: function() { navigate('progress-update', { uid: plant.uid, name: plant.nickname || plant.primary || 'Progress' }); } }, "\uD83D\uDCCA Progress"),
+                            React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3 py-1", onClick: function() { navigate('plant-history', { uid: plant.uid, name: plant.nickname || plant.primary || plant.uid }); } }, "\uD83D\uDCC6 History")),
                         React.createElement(WarningBadge, { plant: plant }),
                         nickOpen && (React.createElement("div", { className: "flex gap-2 mb-2" },
                             React.createElement("input", { value: nickVal, onChange: e => setNickVal(e.target.value), placeholder: "Enter nickname...", className: "flex-1 border-4 px-3 py-2 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) }),
@@ -13279,6 +13359,48 @@ function ScheduleCard({ icon, label, color, everyDays, lastDate, nextDate, dueLa
     );
 }
 
+function PlantHistoryTab({ uid, pxS, px8, theme }) {
+    var { getProgressHistory } = usePlantData();
+    var navigate = useNavigation().navigate;
+    var [entries, setEntries] = React.useState([]);
+    var [loading, setLoading] = React.useState(true);
+    React.useEffect(function() {
+        if (!uid) { setLoading(false); return; }
+        getProgressHistory(uid).then(function(items) { setEntries(items || []); setLoading(false); }).catch(function() { setLoading(false); });
+    }, [uid]);
+
+    if (loading) return React.createElement('div', { style: { padding: '20px 12px', textAlign: 'center', color: '#666' } },
+        React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '11px', color: '#555' } }, 'Loading history...'));
+
+    if (entries.length === 0) return React.createElement('div', { style: { padding: '24px 16px', textAlign: 'center' } },
+        React.createElement('div', { style: { fontSize: 36, marginBottom: 10 } }, '\uD83D\uDCC6'),
+        React.createElement('div', { style: Object.assign({}, px8, { fontSize: '13px', color: '#666', marginBottom: 8 }) }, 'No progress updates yet'),
+        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#555' }) }, 'Tap \uD83D\uDCCA Progress above to log your first update'));
+
+    return React.createElement('div', { style: { padding: '10px 12px' } },
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+            React.createElement('span', { style: Object.assign({}, px8, { fontSize: '13px', color: '#666', letterSpacing: '0.06em' }) }, 'PROGRESS HISTORY'),
+            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#666' }) }, entries.length + ' entries')),
+        entries.map(function(entry, i) {
+            var data = {};
+            try { data = JSON.parse(entry.details || '{}'); } catch(e) {}
+            var sc = PROGRESS_STATUS_COLORS[data.status] || null;
+            var noticing = Array.isArray(data.noticing) ? data.noticing : [];
+            var ts = entry.ts || '';
+            var dateLabel = '';
+            if (ts) { var d = new Date(ts); dateLabel = isNaN(d.getTime()) ? ts : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+            return React.createElement('div', { key: i, style: { borderLeft: '3px solid ' + (sc ? sc.border : '#444'), paddingLeft: 10, marginBottom: 16, paddingBottom: i < entries.length - 1 ? 12 : 0, borderBottom: i < entries.length - 1 ? '1px solid ' + theme.sep : 'none' } },
+                React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 } },
+                    React.createElement('div', { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
+                        sc && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, padding: '2px 6px', background: sc.bg, color: sc.text, border: '1px solid ' + sc.border }) }, sc.emoji + ' ' + data.status),
+                        data.size && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#888', padding: '2px 5px', border: '1px solid #333' }) }, '\uD83D\uDCCF ' + data.size + ' cm')),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#666', flexShrink: 0 }) }, dateLabel)),
+                noticing.length > 0 && React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 4 } },
+                    noticing.map(function(n, ni) { return React.createElement('span', { key: ni, style: Object.assign({}, pxS, { fontSize: '10px', padding: '1px 5px', background: 'rgba(58,122,56,0.2)', border: '1px solid #3A7A38', color: '#90EE90' }) }, n); })),
+                data.comment && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, fontStyle: 'italic', marginTop: 2 }) }, '\u201c' + data.comment + '\u201d'));
+        }));
+}
+
 function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveInterval }) {
     const [tab, setTab] = React.useState('status');
     const [activeChar, setActiveChar] = React.useState('carl');
@@ -13332,6 +13454,7 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
         { id: 'schedule', emoji: '\uD83D\uDCC5',  short: 'SCHEDULE' },
         { id: 'species',  emoji: '\uD83C\uDF3F',  short: 'SPECIES'  },
         { id: 'carl',     emoji: '\uD83C\uDF93',  short: 'CARL'     },
+        { id: 'history',  emoji: '\uD83D\uDCC6',  short: 'HISTORY'  },
     ];
 
     const tabBar = React.createElement('div', { style: { display: 'flex', borderBottom: '2px solid ' + theme.cardBorder, background: 'rgba(0,0,0,0.12)' } },
@@ -13608,9 +13731,12 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
 
     const carlTab = React.createElement(CarlNPCPanel, { plant: plant, pxS: pxS, theme: theme, activeChar: activeChar, setActiveChar: setActiveChar, kbEnabled: kbEnabled, setKbEnabled: setKbEnabled });
 
+    const historyTab = React.createElement(PlantHistoryTab, { uid: plant.uid, pxS: pxS, px8: px8, theme: theme });
+
     const content = tab === 'status'   ? statusTab
                   : tab === 'schedule' ? scheduleTab
                   : tab === 'species'  ? speciesTab
+                  : tab === 'history'  ? historyTab
                   : carlTab;
 
     return React.createElement('div', { style: {
@@ -15567,10 +15693,11 @@ function BottomNav({ current, navigate, goBack }) {
     const theme = useTheme();
     if (!isMobile) return null;
     const tabs = [
-        { id: 'home',      icon: '🏠' },
-        { id: 'my-plants', icon: '🌿' },
-        { id: 'watering',  icon: '💧' },
-        { id: 'add',       icon: '➕' },
+        { id: 'home',             icon: '🏠' },
+        { id: 'my-plants',        icon: '🌿' },
+        { id: 'watering',         icon: '💧' },
+        { id: 'progress-updates', icon: '📊' },
+        { id: 'add',              icon: '➕' },
     ];
     return React.createElement("div", {
         style: {
@@ -15601,6 +15728,184 @@ function BottomNav({ current, navigate, goBack }) {
             }, t.icon);
         })
     );
+}
+
+function PlantHistoryScreen({ uid, name }) {
+    var { goBack, navigate } = useNavigation();
+    var theme = useTheme();
+    var { isSmall } = useScreenSize();
+    var pxS = { fontFamily: "'Pixelify Sans', sans-serif" };
+    var px8 = { fontFamily: "'Press Start 2P', cursive" };
+    return React.createElement('div', { className: 'flex flex-col screen-enter', style: { maxWidth: 600, margin: '0 auto', padding: isSmall ? 12 : 20 } },
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 } },
+            React.createElement('button', { type: 'button', onClick: goBack, style: Object.assign({}, px8, { fontSize: 9, padding: '7px 12px', background: 'transparent', border: '2px solid #3A5A18', color: '#8AC868', cursor: 'pointer' }) }, '< Back'),
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '13px', color: theme.txtP }) }, '\uD83D\uDCC6 PLANT HISTORY'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginLeft: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }) }, name || uid)),
+        React.createElement('div', { style: { border: '2px solid ' + theme.cardBorder, background: theme.cardBg } },
+            React.createElement(PlantHistoryTab, { uid: uid, pxS: pxS, px8: px8, theme: theme })),
+        React.createElement('div', { style: { marginTop: 14 } },
+            React.createElement('button', { type: 'button', onClick: function() { navigate('progress-update', { uid: uid, name: name }); }, className: 'btn-press w-full', style: Object.assign({}, px8, { fontSize: '12px', padding: '12px', border: '3px solid #2A5080', background: 'rgba(42,80,128,0.15)', color: '#7B9FD4', cursor: 'pointer' }) }, '\uD83D\uDCCA ADD PROGRESS UPDATE')));
+}
+
+function ProgressUpdateScreen({ uid, name }) {
+    var { goBack, navigate } = useNavigation();
+    var { saveProgressUpdate, patchSharedPlant } = usePlantData();
+    var theme = useTheme();
+    var { isSmall } = useScreenSize();
+    var pxS = { fontFamily: "'Pixelify Sans', sans-serif" };
+    var px8 = { fontFamily: "'Press Start 2P', cursive" };
+
+    var [status, setStatus] = React.useState('');
+    var [sizeVal, setSizeVal] = React.useState(15);
+    var [sizeEnabled, setSizeEnabled] = React.useState(false);
+    var [comment, setComment] = React.useState('');
+    var [noticing, setNoticing] = React.useState([]);
+    var [photoDataUrl, setPhotoDataUrl] = React.useState(null);
+    var [saving, setSaving] = React.useState(false);
+    var [saveMsg, setSaveMsg] = React.useState(null);
+    var fileRef = React.useRef(null);
+
+    function toggleNoticing(opt) {
+        setNoticing(function(prev) { return prev.includes(opt) ? prev.filter(function(x) { return x !== opt; }) : prev.concat([opt]); });
+    }
+
+    async function onPhotoPicked(e) {
+        var file = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+            var dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
+            setPhotoDataUrl(dataUrl);
+        } catch(err) { setSaveMsg({ type: 'error', text: 'Could not load photo' }); }
+    }
+
+    async function handleSave() {
+        if (!status) { setSaveMsg({ type: 'error', text: 'Please select a status first' }); return; }
+        setSaving(true); setSaveMsg(null);
+        try {
+            var res = await saveProgressUpdate(uid, {
+                status, size: sizeEnabled ? String(sizeVal) : '',
+                noticing, comment,
+                photoDataUrl: photoDataUrl || null, photoName: 'progress.jpg'
+            });
+            if (res && res.ok) {
+                patchSharedPlant && patchSharedPlant(uid, { progressStatus: status, lastProgressUpdate: new Date().toISOString().slice(0, 10) });
+                setSaveMsg({ type: 'success', text: 'Progress saved! \uD83C\uDF31' });
+                setTimeout(function() { goBack(); }, 1200);
+            } else { setSaveMsg({ type: 'error', text: 'Save failed' }); setSaving(false); }
+        } catch(e) { setSaveMsg({ type: 'error', text: e && e.message ? e.message : 'Error saving' }); setSaving(false); }
+    }
+
+    var STATUS_OPTS = ['Bad', 'Okay', 'Good', 'Great'];
+    return React.createElement('div', { className: 'flex flex-col screen-enter', style: { maxWidth: 600, margin: '0 auto', padding: isSmall ? 12 : 20 } },
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 } },
+            React.createElement('button', { type: 'button', onClick: goBack, style: Object.assign({}, px8, { fontSize: 9, padding: '7px 12px', background: 'transparent', border: '2px solid #3A5A18', color: '#8AC868', cursor: 'pointer' }) }, '< Back'),
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '13px', color: theme.txtP }) }, '\uD83D\uDCCA PROGRESS UPDATE'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginLeft: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }) }, name || uid)),
+
+        saveMsg && React.createElement('div', { style: { padding: '8px 12px', marginBottom: 12, border: '2px solid ' + (saveMsg.type === 'success' ? '#3A8A3A' : '#C03030'), background: saveMsg.type === 'success' ? 'rgba(58,138,58,0.15)' : 'rgba(192,48,48,0.15)' } },
+            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', color: saveMsg.type === 'success' ? '#90EE90' : '#FFB0B0' }) }, saveMsg.text)),
+
+        // Photo
+        React.createElement('div', { style: { marginBottom: 16, border: '2px solid ' + theme.cardBorder, padding: 12, background: theme.rowBg } },
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, marginBottom: 8 }) }, 'PHOTO (OPTIONAL)'),
+            photoDataUrl
+                ? React.createElement('div', { style: { position: 'relative' } },
+                    React.createElement('img', { src: photoDataUrl, alt: '', style: { width: '100%', maxHeight: 200, objectFit: 'cover', border: '2px solid ' + theme.cardBorder } }),
+                    React.createElement('button', { type: 'button', onClick: function() { setPhotoDataUrl(null); }, style: { position: 'absolute', top: 6, right: 6, background: '#C03030', border: 'none', color: '#fff', padding: '4px 8px', cursor: 'pointer', fontFamily: "'Press Start 2P',cursive", fontSize: 9 } }, '\u2715 Remove'))
+                : React.createElement('button', { type: 'button', onClick: function() { fileRef.current && fileRef.current.click(); }, style: { width: '100%', padding: '20px', border: '2px dashed ' + theme.cardBorder, background: 'transparent', color: theme.txtS, cursor: 'pointer', textAlign: 'center' } },
+                    React.createElement('div', { style: { fontSize: 28, marginBottom: 6 } }, '\uD83D\uDCF8'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px' }) }, 'Tap to add photo')),
+            React.createElement('input', { ref: fileRef, type: 'file', accept: 'image/*', capture: 'environment', style: { display: 'none' }, onChange: onPhotoPicked })),
+
+        // Status
+        React.createElement('div', { style: { marginBottom: 16, border: '2px solid ' + theme.cardBorder, padding: 12, background: theme.rowBg } },
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, marginBottom: 10 }) }, 'HOW IS YOUR PLANT DOING? *'),
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+                STATUS_OPTS.map(function(s) {
+                    var sc = PROGRESS_STATUS_COLORS[s];
+                    var active = status === s;
+                    return React.createElement('button', {
+                        key: s, type: 'button', onClick: function() { setStatus(s); },
+                        style: { padding: '10px 6px', border: '3px solid ' + (active ? sc.border : theme.cardBorder), background: active ? sc.bg : 'transparent', color: active ? sc.text : theme.txtS, cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s ease' }
+                    },
+                        React.createElement('div', { style: { fontSize: 20, marginBottom: 4 } }, sc.emoji),
+                        React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: active ? sc.text : theme.txtS }) }, s.toUpperCase()));
+                }))),
+
+        // Size
+        React.createElement('div', { style: { marginBottom: 16, border: '2px solid ' + theme.cardBorder, padding: 12, background: theme.rowBg } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: sizeEnabled ? 12 : 0 } },
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, flex: 1 }) }, 'PLANT SIZE (CM)'),
+                React.createElement('button', { type: 'button', onClick: function() { setSizeEnabled(function(v) { return !v; }); }, style: { padding: '4px 10px', border: '2px solid ' + theme.cardBorder, background: sizeEnabled ? theme.btnP.bg : 'transparent', color: sizeEnabled ? theme.btnP.text : theme.txtS, cursor: 'pointer', fontFamily: "'Press Start 2P',cursive", fontSize: 9 } }, sizeEnabled ? 'ON' : 'OFF')),
+            sizeEnabled && React.createElement('div', null,
+                React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 12 } },
+                    React.createElement('input', { type: 'range', min: 1, max: 200, value: sizeVal, onChange: function(e) { setSizeVal(Number(e.target.value)); }, style: { flex: 1, accentColor: '#C8A84B' } }),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '20px', fontWeight: 900, color: theme.txtP, minWidth: 50, textAlign: 'right' }) }, sizeVal + ' cm')))),
+
+        // Worth noticing
+        React.createElement('div', { style: { marginBottom: 16, border: '2px solid ' + theme.cardBorder, padding: 12, background: theme.rowBg } },
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, marginBottom: 10 }) }, 'WORTH NOTICING (OPTIONAL)'),
+            React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6 } },
+                PROGRESS_NOTICING_OPTIONS.map(function(opt) {
+                    var active = noticing.includes(opt);
+                    return React.createElement('button', {
+                        key: opt, type: 'button', onClick: function() { toggleNoticing(opt); },
+                        style: { padding: '6px 10px', border: '2px solid ' + (active ? '#3A8A3A' : theme.cardBorder), background: active ? 'rgba(58,138,58,0.25)' : 'transparent', color: active ? '#90EE90' : theme.txtS, cursor: 'pointer', fontFamily: "'Pixelify Sans',sans-serif", fontSize: '13px', fontWeight: active ? 900 : 400 }
+                    }, (active ? '\u2713 ' : '') + opt);
+                }))),
+
+        // Comment
+        React.createElement('div', { style: { marginBottom: 20, border: '2px solid ' + theme.cardBorder, padding: 12, background: theme.rowBg } },
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, marginBottom: 8 }) }, 'ADD A COMMENT (OPTIONAL)'),
+            React.createElement('textarea', { value: comment, onChange: function(e) { setComment(e.target.value); }, placeholder: 'How is it looking? Any notes\u2026', rows: 3, style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, border: '2px solid ' + theme.cardBorder, padding: '8px', background: theme.rowBg, width: '100%', boxSizing: 'border-box', resize: 'none' }) })),
+
+        // Save
+        React.createElement('button', {
+            type: 'button', onClick: handleSave, disabled: saving || !status,
+            className: 'btn-press w-full',
+            style: Object.assign({}, px8, { fontSize: '13px', padding: '14px', border: '3px solid ' + (status ? theme.btnP.border : theme.cardBorder), background: status ? theme.btnP.bg : '#333', color: status ? theme.btnP.text : '#666', cursor: status && !saving ? 'pointer' : 'default', boxShadow: status ? '0 3px 0 ' + theme.btnP.shadow : 'none', opacity: saving ? 0.6 : 1 })
+        }, saving ? 'SAVING\u2026' : '\u2705 SAVE PROGRESS UPDATE'));
+}
+
+function ProgressUpdatesScreen() {
+    var { navigate } = useNavigation();
+    var { homeData, refreshHome } = usePlantData();
+    var theme = useTheme();
+    var { isSmall, isDesktop } = useScreenSize();
+    var pxS = { fontFamily: "'Pixelify Sans', sans-serif" };
+    var px8 = { fontFamily: "'Press Start 2P', cursive" };
+    var [loading, setLoading] = React.useState(false);
+    var progressDueNow = (homeData && homeData.progressDueNow) ? homeData.progressDueNow : [];
+
+    React.useEffect(function() {
+        setLoading(true);
+        refreshHome().catch(function(){}).finally(function() { setLoading(false); });
+    }, []);
+
+    return React.createElement('div', { className: 'flex flex-col screen-enter', style: { maxWidth: 700, margin: '0 auto', padding: isSmall ? 12 : 20 } },
+        React.createElement('div', { style: Object.assign({}, px8, { fontSize: '13px', color: '#7B9FD4', marginBottom: 16 }) }, '\uD83D\uDCCA PROGRESS UPDATES'),
+        loading && React.createElement('div', { style: Object.assign({}, pxS, { color: theme.txtS, padding: 16, textAlign: 'center' }) }, 'Loading\u2026'),
+        !loading && progressDueNow.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '32px 16px' } },
+            React.createElement('div', { style: { fontSize: 40, marginBottom: 12 } }, '\uD83C\uDF31'),
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '12px', color: '#7B9FD4', marginBottom: 8 }) }, 'All caught up!'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS }) }, 'No progress updates due right now')),
+        !loading && progressDueNow.length > 0 && React.createElement(React.Fragment, null,
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, marginBottom: 12 }) }, progressDueNow.length + ' plant' + (progressDueNow.length !== 1 ? 's' : '') + ' need a progress update'),
+            React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+                progressDueNow.map(function(p, i) {
+                    return React.createElement('div', {
+                        key: p.uid || i,
+                        className: 'flex items-center gap-3 border-2 px-3 py-3 cursor-pointer plant-item',
+                        style: { borderColor: '#2A5080', background: 'rgba(42,80,128,0.10)' },
+                        onClick: function() { navigate('progress-update', { uid: p.uid, name: p.primary || p.uid }); }
+                    },
+                        React.createElement('div', { style: { fontSize: 28, flexShrink: 0 } }, '\uD83D\uDCCA'),
+                        React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '15px', fontWeight: 900, color: '#7B9FD4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.primary || p.uid),
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#555' }) }, p.lastUpdate ? 'Last updated: ' + p.lastUpdate : 'Never updated')),
+                        React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: '#7B9FD4', padding: '6px 10px', border: '2px solid #2A5080' }) }, 'UPDATE >'));
+                }))));
 }
 
 function GalleryScreen({ uid, name }) {
@@ -16099,6 +16404,9 @@ function AppContent() {
             case 'plant-log': return React.createElement(PlantLogScreen, null);
             case 'diary': return React.createElement(DiaryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
             case 'gallery': return React.createElement(GalleryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
+            case 'progress-update': return React.createElement(ProgressUpdateScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
+            case 'progress-updates': return React.createElement(ProgressUpdatesScreen, null);
+            case 'plant-history': return React.createElement(PlantHistoryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
             case 'spec': return React.createElement(DevScreen, null);
             case 'phylo': { navigate('my-plants', { openTab: 'phylo' }); return null; }
             case 'batch-water': return React.createElement(BatchWaterScreen, null);
@@ -16141,7 +16449,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '5.0';
+const PLANTOS_VERSION = '5.1';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);

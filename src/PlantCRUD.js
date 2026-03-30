@@ -66,7 +66,9 @@ function plantosUpdatePlant(uid, patch) {
     infraRank:         H.INFRA_RANK,       // FIX #15
     infraEpithet:      H.INFRA_EPITHET,    // FIX #15
     lastRepotted:      H.LAST_REPOTTED,    // FIX #15
-    purchasePrice:     H.PURCHASE_PRICE,   // FIX: enable saving purchase price
+    purchasePrice:        H.PURCHASE_PRICE,   // FIX: enable saving purchase price
+    lastProgressUpdate:   H.LAST_PROGRESS_UPDATE,
+    progressStatus:       H.PROGRESS_STATUS,
   };
 
   // FIX #14: waterEveryDays needs multi-header lookup since sheet may use either name
@@ -446,7 +448,9 @@ function plantosRowToPlant_(hmap, row) {
   const hybridNote   = plantosGetByHeader_(hmap, row, H.HYBRID_NOTE);    // FIX #15
   const infraRank    = plantosGetByHeader_(hmap, row, H.INFRA_RANK);     // FIX #15
   const infraEpithet = plantosGetByHeader_(hmap, row, H.INFRA_EPITHET);  // FIX #15
-  const purchasePrice = plantosGetByHeader_(hmap, row, H.PURCHASE_PRICE);
+  const purchasePrice      = plantosGetByHeader_(hmap, row, H.PURCHASE_PRICE);
+  const lastProgressUpdate = plantosGetByHeaderDate_(hmap, row, H.LAST_PROGRESS_UPDATE);
+  const progressStatus     = plantosGetByHeader_(hmap, row, H.PROGRESS_STATUS);
 
   const genusStr = String(genus || '').trim();
   const taxonStr = String(taxon || '').trim();
@@ -508,6 +512,8 @@ function plantosRowToPlant_(hmap, row) {
     infraRank:     infraRank    || '',   // FIX #15
     infraEpithet:  infraEpithet || '',   // FIX #15
     purchasePrice: purchasePrice || '',
+    lastProgressUpdate: lastProgressUpdate ? plantosFmtDate_(plantosAsDate_(lastProgressUpdate)) : '',
+    progressStatus:     progressStatus || '',
   };
 }
 
@@ -518,7 +524,7 @@ function plantosTimelineAppend_(uid, payload, when) {
   let items = [];
   try { items = JSON.parse(PropertiesService.getScriptProperties().getProperty(key) || '[]'); } catch (e) {}
   const ts = Utilities.formatDate(when, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
-  const action = payload.repot ? 'REPOT' : payload.water && payload.fertilize ? 'WATERED+FERTILIZED' : payload.water ? 'WATERED' : payload.fertilize ? 'FERTILIZED' : 'UPDATE';
+  const action = payload.progressUpdate ? 'PROGRESS_UPDATE' : payload.repot ? 'REPOT' : payload.water && payload.fertilize ? 'WATERED+FERTILIZED' : payload.water ? 'WATERED' : payload.fertilize ? 'FERTILIZED' : 'UPDATE';
   let details = '';
   if (payload.repot) details = `Pot: ${payload.potSize || ''} • Substrate: ${payload.substrate || ''}`;
   if (payload.notes) details = (details ? details + ' • ' : '') + payload.notes;
