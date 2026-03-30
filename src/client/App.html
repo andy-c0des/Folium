@@ -7693,7 +7693,7 @@ function AddScreen() {
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Substrate"),
                         React.createElement("select", { value: propSubstrate, onChange: e => setPropSubstrate(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                             React.createElement("option", { value: "" }, "\u2014 select \u2014"),
-                            PROP_SUBSTRATES.map(s => React.createElement("option", { key: s, value: s }, s))
+                            Object.keys(SUBSTRATE_PROPS).map(s => React.createElement("option", { key: s, value: s }, s))
                         )
                     )
                 ),
@@ -7784,8 +7784,7 @@ function AddScreen() {
                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Substrate / Medium"),
                     React.createElement("select", { value: isCustomMix(medium) ? (isSemiHydro ? 'Custom PON mix' : 'Custom soil mix') : medium, onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { setMedium(encodeCustomMix([{ ingredient: (isSemiHydro ? PON_MIX_INGREDIENTS : SOIL_MIX_INGREDIENTS)[0], parts: 1 }], isSemiHydro)); } else { setMedium(v); } }, className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                         React.createElement("option", { value: "" }, "\u2014 select \u2014"),
-                        PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                        React.createElement("option", { value: "Soil mix" }, "Soil mix"),
+                        Object.keys(SUBSTRATE_PROPS).map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
                         React.createElement("option", { value: isSemiHydro ? 'Custom PON mix' : 'Custom soil mix' }, isSemiHydro ? '\uD83E\uDEA8 Custom PON mix...' : '\uD83C\uDF31 Custom soil mix...')),
                     isCustomMix(medium) && React.createElement(CustomMixBuilder, { value: medium, onChange: setMedium, growingMethod: growingMethod, pxS: pxS, theme: theme })),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
@@ -8647,8 +8646,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Substrate"),
                             React.createElement("select", { value: isCustomMix(edit.substrate) ? 'Custom soil mix' : (edit.substrate || ''), onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { setEdit(function(prev) { return Object.assign({}, prev, { substrate: encodeCustomMix([{ ingredient: SOIL_MIX_INGREDIENTS[0], parts: 1 }], false) }); }); } else { setEdit(function(prev) { return Object.assign({}, prev, { substrate: v }); }); } }, className: "w-full border-4 px-2 py-1.5 mt-1", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                                 React.createElement("option", { value: "" }, "\u2014 select \u2014"),
-                                PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                                React.createElement("option", { value: "Soil mix" }, "Soil mix"),
+                                Object.keys(SUBSTRATE_PROPS).map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
                                 React.createElement("option", { value: "Custom soil mix" }, "\uD83C\uDF31 Custom soil mix...")),
                             isCustomMix(edit.substrate) && React.createElement(CustomMixBuilder, { value: edit.substrate, onChange: function(enc) { setEdit(function(prev) { return Object.assign({}, prev, { substrate: enc }); }); }, growingMethod: 'substrate', pxS: pxS, theme: theme })),
                         React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
@@ -8780,8 +8778,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Substrate"),
                             React.createElement("select", { value: isCustomMix(edit.substrate) ? 'Custom soil mix' : (edit.substrate || ''), onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { setEdit(function(prev) { return Object.assign({}, prev, { substrate: encodeCustomMix([{ ingredient: SOIL_MIX_INGREDIENTS[0], parts: 1 }], false) }); }); } else { setEdit(function(prev) { return Object.assign({}, prev, { substrate: v }); }); } }, className: "w-full border-4 px-2 py-1.5 mt-1", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                                 React.createElement("option", { value: "" }, "\u2014 select \u2014"),
-                                PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                                React.createElement("option", { value: "Soil mix" }, "Soil mix"),
+                                Object.keys(SUBSTRATE_PROPS).map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
                                 React.createElement("option", { value: "Custom soil mix" }, "\uD83C\uDF31 Custom soil mix...")),
                             isCustomMix(edit.substrate) && React.createElement(CustomMixBuilder, { value: edit.substrate, onChange: function(enc) { setEdit(function(prev) { return Object.assign({}, prev, { substrate: enc }); }); }, growingMethod: 'substrate', pxS: pxS, theme: theme }),
                         React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
@@ -9044,8 +9041,8 @@ function PlantKnowledgePanel({ plant, inline }) {
             var rows = [
                 dbEntry && dbEntry.light       && ['\u2600\uFE0F',  dbEntry.light,       '\u2600\uFE0F Light'],
                 dbEntry && dbEntry.humidity    && ['\uD83D\uDCA7',  dbEntry.humidity,    '\uD83D\uDCA7 Humidity'],
-                dbEntry && dbEntry.substrate   && ['\uD83E\uDEB8',  dbEntry.substrate,   '\uD83E\uDEB8 Substrate'],
-                dbEntry && dbEntry.potMaterial && ['\uD83E\uDEB4',  dbEntry.potMaterial, '\uD83E\uDEB4 Pot'],
+                (plant.substrate || plant.medium) && ['\uD83E\uDEB8', plant.substrate || plant.medium, '\uD83E\uDEB8 Substrate'],
+                plant.potMaterial && ['\uD83E\uDEB4', plant.potMaterial, '\uD83E\uDEB4 Pot'],
                 dbEntry && dbEntry.water       && ['\uD83D\uDD01',  '~' + dbEntry.water + 'd', '\uD83D\uDD01 Water interval'],
                 (plant.potSize) && ['\uD83D\uDCCF', plant.potSize, '\uD83D\uDCCF Pot size'],
                 (Number(plant.fertEveryDays || plant.fertilizeEveryDays) > 0) && ['\uD83C\uDF31', (plant.fertEveryDays || plant.fertilizeEveryDays) + 'd', '\uD83C\uDF31 Fert every'],
@@ -10163,7 +10160,7 @@ function PropsSection({ locations, prefill }) {
                             React.createElement("select", { value: form.propType, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { propType: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_TYPES.map(t => React.createElement("option", { key: t, value: t }, t)))),
                         React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Substrate"),
-                            React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_SUBSTRATES.map(s => React.createElement("option", { key: s, value: s }, s)))),
+                            React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, Object.keys(SUBSTRATE_PROPS).map(s => React.createElement("option", { key: s, value: s }, s)))),
                         React.createElement("div", { className: 'col-span-2' },
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Notes"),
                             React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "Conditions, vessel, observations...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
@@ -10196,7 +10193,7 @@ function PropsSection({ locations, prefill }) {
                             React.createElement("select", { value: form.propType, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { propType: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_TYPES.map(t => React.createElement("option", { key: t, value: t }, t)))),
                         React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Substrate"),
-                            React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_SUBSTRATES.map(s => React.createElement("option", { key: s, value: s }, s))))),
+                            React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, Object.keys(SUBSTRATE_PROPS).map(s => React.createElement("option", { key: s, value: s }, s))))),
                     React.createElement("div", { style: { marginTop: 8 } },
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Notes"),
                         React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "Describe the cutting, source, conditions...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
@@ -11829,8 +11826,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "New Substrate"),
                                 React.createElement("select", { value: isCustomMix(repotSub) ? ((plant && plant.growingMethod) === 'semihydro' ? 'Custom PON mix' : 'Custom soil mix') : repotSub, onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { var sh = (plant && plant.growingMethod) === 'semihydro'; setRepotSub(encodeCustomMix([{ ingredient: (sh ? PON_MIX_INGREDIENTS : SOIL_MIX_INGREDIENTS)[0], parts: 1 }], sh)); } else { setRepotSub(v); } }, className: "w-full border-4 px-3 py-2 mt-1", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
                                     React.createElement("option", { value: "" }, "\u2014 select \u2014"),
-                                    PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                                    React.createElement("option", { value: "Soil mix" }, "Soil mix"),
+                                    Object.keys(SUBSTRATE_PROPS).map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
                                     React.createElement("option", { value: (plant && plant.growingMethod) === 'semihydro' ? 'Custom PON mix' : 'Custom soil mix' }, (plant && plant.growingMethod) === 'semihydro' ? '\uD83E\uDEA8 Custom PON mix...' : '\uD83C\uDF31 Custom soil mix...')),
                                 isCustomMix(repotSub) && React.createElement(CustomMixBuilder, { value: repotSub, onChange: setRepotSub, growingMethod: (plant && plant.growingMethod) || 'substrate', pxS: pxS, theme: theme }),
                             React.createElement("div", { className: "flex gap-2 pt-2" },
@@ -12695,9 +12691,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: theme.txtS, marginBottom: 2 }) }, '\uD83E\uDDF1 Substrate'),
                             React.createElement('select', { value: quickVals.substrate || '', onChange: function(e){ setQuickVals(function(p){ return Object.assign({}, p, { substrate: e.target.value }); }); }, style: inp },
                                 React.createElement('option', { value: '' }, '\u2014 select \u2014'),
-                                PROP_SUBSTRATES.map(function(s){ return React.createElement('option', { key: s, value: s }, s); }),
-                                React.createElement('option', { value: 'Soil mix' }, 'Soil mix'),
-                                React.createElement('option', { value: 'Custom mix' }, 'Custom mix')
+                                Object.keys(SUBSTRATE_PROPS).map(function(s){ return React.createElement('option', { key: s, value: s }, s); })
                             )
                         ),
                         missing.includes('potMaterial') && React.createElement('div', { style: { marginBottom: 6 } },
