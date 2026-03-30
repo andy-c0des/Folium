@@ -15756,8 +15756,7 @@ function ProgressUpdateScreen({ uid, name }) {
     var px8 = { fontFamily: "'Press Start 2P', cursive" };
 
     var [status, setStatus] = React.useState('');
-    var [sizeVal, setSizeVal] = React.useState(15);
-    var [sizeEnabled, setSizeEnabled] = React.useState(false);
+    var [sizeVal, setSizeVal] = React.useState('');
     var [comment, setComment] = React.useState('');
     var [noticing, setNoticing] = React.useState([]);
     var [photoDataUrl, setPhotoDataUrl] = React.useState(null);
@@ -15784,7 +15783,7 @@ function ProgressUpdateScreen({ uid, name }) {
         setSaving(true); setSaveMsg(null);
         try {
             var res = await saveProgressUpdate(uid, {
-                status, size: sizeEnabled ? String(sizeVal) : '',
+                status, size: sizeVal ? String(sizeVal) : '',
                 noticing, comment,
                 photoDataUrl: photoDataUrl || null, photoName: 'progress.jpg'
             });
@@ -15835,13 +15834,10 @@ function ProgressUpdateScreen({ uid, name }) {
 
         // Size
         React.createElement('div', { style: { marginBottom: 16, border: '2px solid ' + theme.cardBorder, padding: 12, background: theme.rowBg } },
-            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: sizeEnabled ? 12 : 0 } },
-                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, flex: 1 }) }, 'PLANT SIZE (CM)'),
-                React.createElement('button', { type: 'button', onClick: function() { setSizeEnabled(function(v) { return !v; }); }, style: { padding: '4px 10px', border: '2px solid ' + theme.cardBorder, background: sizeEnabled ? theme.btnP.bg : 'transparent', color: sizeEnabled ? theme.btnP.text : theme.txtS, cursor: 'pointer', fontFamily: "'Press Start 2P',cursive", fontSize: 9 } }, sizeEnabled ? 'ON' : 'OFF')),
-            sizeEnabled && React.createElement('div', null,
-                React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 12 } },
-                    React.createElement('input', { type: 'range', min: 1, max: 200, value: sizeVal, onChange: function(e) { setSizeVal(Number(e.target.value)); }, style: { flex: 1, accentColor: '#C8A84B' } }),
-                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '20px', fontWeight: 900, color: theme.txtP, minWidth: 50, textAlign: 'right' }) }, sizeVal + ' cm')))),
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '11px', color: theme.txtS, marginBottom: 8 }) }, 'PLANT SIZE (CM) — OPTIONAL'),
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                React.createElement('input', { type: 'number', min: 1, max: 9999, placeholder: 'e.g. 25', value: sizeVal === '' ? '' : sizeVal, onChange: function(e) { setSizeVal(e.target.value); }, style: Object.assign({}, pxS, { fontSize: '16px', fontWeight: 900, color: theme.txtP, border: '2px solid ' + theme.cardBorder, padding: '8px 10px', background: theme.rowBg, width: 100, boxSizing: 'border-box' }) }),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS }) }, 'cm'))),
 
         // Worth noticing
         React.createElement('div', { style: { marginBottom: 16, border: '2px solid ' + theme.cardBorder, padding: 12, background: theme.rowBg } },
