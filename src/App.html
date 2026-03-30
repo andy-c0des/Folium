@@ -11,8 +11,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#2A5808" />
   <title>PlantOS</title>
+
   <!-- Fonts: async load so they never block render -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.cm">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
@@ -730,13 +731,30 @@
 const { useState, useEffect, useRef, createContext, useContext, useMemo } = React;
 const BOOT = window.PLANTOS_BOOT || {};
 const HAS_GAS = !!(window.google && google.script && google.script.run);
-const PLANTOS_API_URL = 'https://script.google.com/macros/s/AKfycbzAWtnYqneeYUgzOrUcu6-cLfC6Die_y5WGZarsAx29sRDPGL3cTmun61nJp9hsBK7Tvg/exec';
+const PLANTOS_API_URL = 'https://script.google.com/macros/s/AKfycbw1EMhF1Mhqxtq6pQnM-K-1JkHw5rTesHwsBpaz6FFoNzc5vyzDMLwa8aIJsyjP5_cbyA/exec';
 const DEMO_MODE = false;
 const pxS = { fontFamily: "'Pixelify Sans', cursive" };
 const px8 = { fontFamily: "'Press Start 2P', cursive" };
 
 
 function normStr(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+function relativeDate(isoStr) {
+    if (!isoStr) return 'Overdue';
+    const d = new Date(isoStr + 'T00:00:00');
+    if (isNaN(d)) return isoStr;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.round((today - d) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return '1 day ago';
+    if (diff > 1 && diff <= 13) return diff + ' days ago';
+    if (diff === 14) return '2 weeks ago';
+    if (diff > 14 && diff < 60) return Math.round(diff / 7) + ' weeks ago';
+    if (diff >= 60) return Math.round(diff / 30) + ' months ago';
+    if (diff === -1) return 'Tomorrow';
+    if (diff < -1) return 'In ' + Math.abs(diff) + ' days';
+    return isoStr;
+}
 
 const TAXON_DB = {
   "Monstera": {
@@ -5426,140 +5444,114 @@ function HomeScreen() {
     const upcoming = (homeData && homeData.upcoming) ? homeData.upcoming : [];
     const fertDueNow = (homeData && homeData.fertDueNow) ? homeData.fertDueNow : [];
     const fertUpcoming = (homeData && homeData.fertUpcoming) ? homeData.fertUpcoming : [];
+    const progressDueNow = (homeData && homeData.progressDueNow) ? homeData.progressDueNow : [];
     const birthdays = (homeData && homeData.birthdays) ? homeData.birthdays : [];
     const totalCount = (homeData && homeData.totalCount != null) ? homeData.totalCount : null;
-    const allHappy = !loading && dueNow.length === 0 && upcoming.length === 0 && fertDueNow.length === 0;
-    const overdueTotal = dueNow.length + fertDueNow.length;
+    const overdueTotal = dueNow.length + fertDueNow.length + progressDueNow.length;
+    const allHappy = !loading && overdueTotal === 0 && upcoming.length === 0 && fertUpcoming.length === 0;
 
-    // ΓöÇΓöÇ Quick Stats Bar ΓöÇΓöÇ
-    const StatsBar = () => !loading && totalCount != null ? (React.createElement("div", {
-        className: "stats-bar mb-3",
-        style: { borderColor: theme.cardBorder, background: theme.cardBg }
-    },
-        React.createElement("div", { className: "stat-cell" },
-            React.createElement("div", { className: "stat-val", style: { color: theme.txtP } }, totalCount),
-            React.createElement("div", { className: "stat-label", style: { color: theme.txtS } }, "PLANTS")),
-        React.createElement("div", { className: "stat-cell", style: { background: overdueTotal > 0 ? 'var(--c-urgent-bg)' : undefined } },
-            React.createElement("div", { className: "stat-val", style: { color: overdueTotal > 0 ? 'var(--c-urgent)' : 'var(--c-happy)' } }, overdueTotal),
-            React.createElement("div", { className: "stat-label", style: { color: overdueTotal > 0 ? 'var(--c-urgent)' : theme.txtS } }, "OVERDUE")),
-        React.createElement("div", { className: "stat-cell" },
-            React.createElement("div", { className: "stat-val", style: { color: 'var(--c-soon)' } }, upcoming.length),
-            React.createElement("div", { className: "stat-label", style: { color: theme.txtS } }, "DUE SOON")),
-        React.createElement("div", { className: "stat-cell" },
-            React.createElement("div", { className: "stat-val", style: { color: 'var(--c-fert)' } }, fertDueNow.length + fertUpcoming.length),
-            React.createElement("div", { className: "stat-label", style: { color: theme.txtS } }, "FERT"))
-    )) : null;
-
-    // ΓöÇΓöÇ Needs Attention Section (compact urgent cards) ΓöÇΓöÇ
-    const NeedsAttention = () => {
-        const allUrgent = [
-            ...dueNow.map(p => Object.assign({}, p, { _urgentType: 'water' })),
-            ...fertDueNow.map(p => Object.assign({}, p, { _urgentType: 'fert' }))
-        ];
-        if (allUrgent.length === 0) return null;
-        const cap = isDesktop ? 10 : 6;
-        return React.createElement("div", { className: "mb-3" },
-            React.createElement("div", { className: "flex items-center justify-between mb-2" },
-                React.createElement("div", { className: "flex items-center gap-2" },
-                    React.createElement("span", { style: { fontSize: 16 } }, "\uD83D\uDEA8"),
-                    React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: 'var(--c-urgent)', letterSpacing: '0.04em' }) },
-                        "NEEDS ATTENTION (",
-                        allUrgent.length,
-                        ")")),
-                allUrgent.length > cap && React.createElement("button", {
-                    type: "button", onClick: () => navigate('watering'),
-                    style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-urgent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 900 })
-                }, "See all \>")),
-            React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2" : "space-y-2" },
-                allUrgent.slice(0, cap).map((p, i) => React.createElement("div", {
-                    key: (p._urgentType || '') + '-' + (p.uid || i),
-                    className: "urgent-card stagger-item" + (p._urgentType === 'fert' ? " urgent-card-fert" : ""),
-                    onClick: () => navigate('plant', { uid: p.uid }),
-                    style: { animationDelay: Math.min(i * 0.04, 0.24) + 's' }
-                },
-                    React.createElement("span", { style: { fontSize: 20, lineHeight: 1, flexShrink: 0 } },
-                        p._urgentType === 'fert' ? '\uD83C\uDF3E' : '\uD83D\uDCA7'),
-                    React.createElement("div", { className: "flex-1 min-w-0" },
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: p._urgentType === 'fert' ? 'var(--c-fert)' : 'var(--c-urgent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.primary || p.uid),
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: p._urgentType === 'fert' ? 'var(--c-fert)' : 'var(--c-urgent)', opacity: 0.8 }) },
-                            p._urgentType === 'fert' ? 'Needs fertilizer' : (p.due || 'Overdue'))),
-                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#fff', background: p._urgentType === 'fert' ? 'var(--c-fert)' : 'var(--c-urgent)', padding: '3px 8px', flexShrink: 0, whiteSpace: 'nowrap' }) },
-                        p._urgentType === 'fert' ? 'FERT' : 'WATER')
-                ))));
+    // ── Greeting Bar ──
+    const GreetingBar = () => {
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+        const tip = PLANT_TIPS[dayOfYear % PLANT_TIPS.length];
+        return React.createElement('div', { style: { display: 'flex', alignItems: 'stretch', background: '#F4EDD8', border: '3px solid #8B6C3A', marginBottom: 10 } },
+            React.createElement('div', { style: { flex: 1, padding: '10px 14px' } },
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isDesktop ? '15px' : '14px', fontWeight: 900, color: '#2A4A10', marginBottom: 3 }) }, greeting + ', plant parent!'),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#5A4020', lineHeight: 1.4 }) }, tip)),
+            totalCount != null && React.createElement('div', { style: { background: '#E8F4D8', borderLeft: '3px solid #8B6C3A', padding: '8px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 100, flexShrink: 0 } },
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '26px', fontWeight: 900, color: '#2A4A10', lineHeight: 1 }) }, totalCount),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: '#5A7A30', fontWeight: 700, marginTop: 3, letterSpacing: '0.04em' }) }, 'TOTAL PLANTS')));
     };
 
-    // ΓöÇΓöÇ All Happy Banner ΓöÇΓöÇ
-    const HappyBanner = () => allHappy ? (React.createElement("div", { className: "border-4 border-[#4A7C1E] px-4 py-4 mb-3 flex items-center gap-3", style: { background: 'linear-gradient(135deg, #C4E898 0%, #A8D870 100%)' } },
-        React.createElement("span", { style: { fontSize: 32 } }, "\uD83C\uDF89"),
-        React.createElement("div", null,
-            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: '#1A2A08' }) }, "All plants are happy!"),
-            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#2A5808', marginTop: 2 }) }, "No watering or fertilizer needed right now.")))) : null;
+    // ── Birthday Banner ──
+    const BirthdayBanner = () => birthdays.length > 0 ? (
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, background: '#fff8e1', border: '3px solid #ffc107', padding: '8px 12px', marginBottom: 8 } },
+            React.createElement('span', { style: { fontSize: 20 } }, '🎂'),
+            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-soon)', fontWeight: 800 }) }, 'Birthday today: ' + birthdays.join(', ')))
+    ) : null;
 
-    // ΓöÇΓöÇ Birthday Banner ΓöÇΓöÇ
-    const BirthdayBanner = () => birthdays.length > 0 ? (React.createElement("div", { className: "border-4 border-[#ffc107] px-3 py-2 mb-3 flex items-center gap-2", style: { background: '#fff8e1' } },
-        React.createElement("span", { style: { fontSize: 22 } }, "\uD83C\uDF82"),
-        React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: 'var(--c-soon)', fontWeight: 800 }) },
-            "Birthday today: ",
-            birthdays.join(', ')))) : null;
+    // ── All Happy Banner ──
+    const HappyBanner = () => allHappy ? (
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, background: 'linear-gradient(135deg,#C4E898,#A8D870)', border: '3px solid #4A7C1E', padding: '12px 16px', marginBottom: 8 } },
+            React.createElement('span', { style: { fontSize: 28 } }, '🎉'),
+            React.createElement('div', null,
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: '#1A2A08' }) }, 'All plants are happy!'),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#2A5808', marginTop: 2 }) }, 'No action needed right now.')))
+    ) : null;
 
-    // ΓöÇΓöÇ Upcoming Section (compact) ΓöÇΓöÇ
-    const UpcomingSection = () => {
-        if (upcoming.length === 0 && fertUpcoming.length === 0) return null;
-        const _upState = React.useState(false);
-        const upOpen = _upState[0], setUpOpen = _upState[1];
-        const cap = isDesktop ? 6 : 4;
-        const total = upcoming.length + fertUpcoming.length;
-        return React.createElement("div", { className: "mb-3" },
-            React.createElement("button", {
-                type: "button",
-                className: "collapsible-toggle" + (upOpen ? " open" : ""),
-                onClick: () => setUpOpen(!upOpen),
-                style: { color: 'var(--c-soon)', padding: '8px 4px' }
+    // ── Accordion Row helper ──
+    const AccordionRow = ({ label, count, items, color, bgColor, borderColor, renderItem }) => {
+        var _aoState = React.useState(false);
+        var open = _aoState[0], setOpen = _aoState[1];
+        if (count === 0) return null;
+        return React.createElement('div', { style: { border: '2px solid ' + (borderColor || '#8B6C3A'), marginBottom: 6 } },
+            React.createElement('button', {
+                type: 'button',
+                onClick: function() { setOpen(function(o) { return !o; }); },
+                style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', background: bgColor || '#F4EDD8', border: 'none', cursor: 'pointer' }
             },
-                React.createElement("div", { className: "flex items-center gap-2" },
-                    React.createElement("span", { style: { fontSize: 14 } }, "\u23F0"),
-                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, letterSpacing: '0.04em' }) },
-                        "COMING UP (" + total + ")")),
-                React.createElement("span", { className: "chevron", style: { fontSize: 14 } }, "\u25BC")),
-            upOpen && React.createElement("div", { className: "space-y-1" },
-                upcoming.slice(0, cap).map(p => React.createElement("div", {
-                    key: 'w-' + p.uid,
-                    onClick: () => navigate('plant', { uid: p.uid }),
-                    className: "flex items-center gap-2 border-2 px-3 py-2 cursor-pointer plant-item row-soon",
-                    style: { borderColor: 'var(--c-soon-border)' }
-                },
-                    React.createElement("span", { style: { fontSize: 14, flexShrink: 0 } }, "\uD83D\uDCA7"),
-                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.primary),
-                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: 'var(--c-soon)', flexShrink: 0 }) }, p.due))),
-                fertUpcoming.slice(0, Math.max(1, cap - upcoming.length)).map(p => React.createElement("div", {
-                    key: 'f-' + p.uid,
-                    onClick: () => navigate('plant', { uid: p.uid }),
-                    className: "flex items-center gap-2 border-2 px-3 py-2 cursor-pointer plant-item",
-                    style: { borderColor: 'var(--c-fert-border)', background: 'var(--c-fert-bg)' }
-                },
-                    React.createElement("span", { style: { fontSize: 14, flexShrink: 0 } }, "\uD83C\uDF3E"),
-                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.primary),
-                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: 'var(--c-fert)', flexShrink: 0 }) }, p.due))),
-                total > cap && React.createElement("div", {
-                    style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-soon)', paddingLeft: 4, cursor: 'pointer' }),
-                    onClick: () => navigate('watering')
-                }, "+" + (total - cap) + " more \u2014 see all")));
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: color || '#2A4A10' }) },
+                    label + ' (',
+                    React.createElement('span', { style: { color: 'var(--c-urgent)' } }, count),
+                    ')'),
+                React.createElement('span', { style: { fontSize: 12, color: color || '#2A4A10', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' } }, '\u25BC')),
+            open && React.createElement('div', { style: { background: '#FAFAF5', borderTop: '2px solid ' + (borderColor || '#8B6C3A') } },
+                items.map(function(item, i) { return renderItem(item, i); })));
     };
 
-    // -- Vertical Calendar (sidebar) --
-    const VerticalCalendar = () => {
+    // ── Needs Attention (accordion) ──
+    const NeedsAttention = () => {
+        var total = dueNow.length + fertDueNow.length + progressDueNow.length;
+        if (total === 0) return null;
+        function plantRow(p, type, i) {
+            return React.createElement('div', {
+                key: type + '-' + (p.uid || i),
+                onClick: function() { navigate('plant', { uid: p.uid }); },
+                style: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: '1px solid #D8C8A0', cursor: 'pointer', background: 'rgba(255,255,255,0.5)' }
+            },
+                React.createElement('span', { style: { fontSize: 15, flexShrink: 0 } }, type === 'fert' ? '\uD83C\uDF3E' : type === 'progress' ? '\uD83D\uDCCA' : '\uD83D\uDCA7'),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 700, color: '#2A4A10', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.primary || p.uid),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: 'var(--c-urgent)', fontWeight: 700, flexShrink: 0, background: 'rgba(192,48,30,0.08)', padding: '2px 6px' }) },
+                    type === 'progress' ? 'Update due' : relativeDate(p.due)));
+        }
+        return React.createElement('div', { style: { marginBottom: 12 } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+                React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: '#2A4A10' }) }, 'Needs Attention'),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: '#fff', background: 'var(--c-urgent)', padding: '2px 8px' }) }, total)),
+                React.createElement('button', {
+                    type: 'button', onClick: function() { navigate('watering'); },
+                    style: { display: 'flex', alignItems: 'center', gap: 4, background: '#E8F4D8', border: '2px solid #8AA868', padding: '4px 10px', cursor: 'pointer' }
+                },
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#2A5808', fontWeight: 700 }) }, 'View All'),
+                    React.createElement('span', { style: { fontSize: 11, color: '#2A5808' } }, '\u25BC'))),
+            React.createElement(AccordionRow, {
+                label: 'Watering Overdue', count: dueNow.length, color: '#1A6A9A', bgColor: '#EFF8FF', borderColor: '#A8D0F0',
+                items: dueNow, renderItem: function(p, i) { return plantRow(p, 'water', i); }
+            }),
+            React.createElement(AccordionRow, {
+                label: 'Fertilizer Overdue', count: fertDueNow.length, color: '#5A2880', bgColor: '#F8F0FF', borderColor: '#C0A0E0',
+                items: fertDueNow, renderItem: function(p, i) { return plantRow(p, 'fert', i); }
+            }),
+            React.createElement(AccordionRow, {
+                label: 'Progress Update Overdue', count: progressDueNow.length, color: '#2A6B1A', bgColor: '#F0FAE8', borderColor: '#90C070',
+                items: progressDueNow, renderItem: function(p, i) { return plantRow(p, 'progress', i); }
+            }));
+    };
+
+    // ── Weekly Schedule (calendar + footer buttons) ──
+    const WeeklySchedule = () => {
         var _ecState = React.useState({});
         var expandedDays = _ecState[0], setExpandedDays = _ecState[1];
-        var _pd = usePlantData();
-        var homeData = _pd.homeData;
-
         var eventMap = {};
         function markEvt(list, type) {
             (list || []).forEach(function(p) {
                 var key = p.due || p.waterDue || p.fertDue || '';
                 if (!key) return;
                 if (!eventMap[key]) eventMap[key] = { water: [], fert: [] };
-                var name = p.nickname || p.primary || p.classification || p.gs || '#' + (p.uid || '?');
+                var name = p.nickname || p.primary || p.classification || '#' + (p.uid || '?');
                 eventMap[key][type].push(name);
             });
         }
@@ -5567,109 +5559,67 @@ function HomeScreen() {
         markEvt(homeData && homeData.upcoming, 'water');
         markEvt(homeData && homeData.fertDueNow, 'fert');
         markEvt(homeData && homeData.fertUpcoming, 'fert');
-
         var today = new Date();
         var DOW_SHORT = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-        var MON_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var CAL_W = '#42A5F5', CAL_F = '#66BB6A', CAL_GOLD = '#C8A84B';
-
+        var MON_FULL = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         var weekDays = [];
         for (var i = 0; i < 7; i++) {
             var d = new Date(today); d.setDate(today.getDate() + i);
-            var key = d.toISOString().slice(0, 10);
-            weekDays.push({ d: d, key: key, isToday: i === 0 });
+            weekDays.push({ d: d, key: d.toISOString().slice(0, 10), isToday: i === 0 });
         }
-
         function toggleDay(key) {
-            setExpandedDays(function(prev) {
-                var next = Object.assign({}, prev);
-                next[key] = !next[key];
-                return next;
-            });
+            setExpandedDays(function(prev) { var n = Object.assign({}, prev); n[key] = !n[key]; return n; });
         }
-
-        return React.createElement('div', null,
-            React.createElement('div', { className: 'vcal-title', style: { color: theme.txtS } },
-                MON_SHORT[today.getMonth()] + ' ' + today.getFullYear() + ' \u2014 This Week'),
-            weekDays.map(function(item) {
-                var d = item.d, key = item.key, isToday = item.isToday;
-                var ev = eventMap[key] || {};
-                var waterList = ev.water || [];
-                var fertList = ev.fert || [];
-                var total = waterList.length + fertList.length;
-                var isOpen = expandedDays[key];
-
-                return React.createElement('div', { key: key },
-                    React.createElement('div', {
-                        className: 'vcal-day' + (isToday ? ' vcal-day-today' : ''),
-                        onClick: function() { if (total > 0) toggleDay(key); },
-                        style: { cursor: total > 0 ? 'pointer' : 'default' }
-                    },
-                        React.createElement('div', { className: 'vcal-day-label' },
-                            React.createElement('div', { style: Object.assign({}, pxS, {
-                                fontSize: '10px', fontWeight: 900,
-                                color: isToday ? CAL_GOLD : theme.txtS,
-                                letterSpacing: '0.04em',
-                            }) }, DOW_SHORT[d.getDay()]),
-                            React.createElement('div', { style: Object.assign({}, pxS, {
-                                fontSize: isToday ? '20px' : '16px', fontWeight: 900,
-                                color: isToday ? CAL_GOLD : theme.txtP,
-                                lineHeight: 1.2,
-                            }) }, String(d.getDate())),
-                            isToday && React.createElement('div', { style: Object.assign({}, pxS, {
-                                fontSize: '8px', color: CAL_GOLD, fontWeight: 900,
-                            }) }, '\u2605 TODAY')
-                        ),
-                        total > 0
-                            ? React.createElement('button', {
-                                type: 'button',
-                                className: 'vcal-expand-btn' + (isOpen ? ' open' : ''),
-                                style: {
-                                    background: 'rgba(66,165,245,0.08)',
-                                    border: '1px solid ' + CAL_W,
-                                    color: CAL_W,
-                                },
-                                onClick: function(e) { e.stopPropagation(); toggleDay(key); }
-                            },
-                                React.createElement('span', null, 'Show Plants (x' + total + ')'),
-                                React.createElement('span', { className: 'chevron' }, '\u25BC')
-                            )
-                            : React.createElement('div', { style: Object.assign({}, pxS, {
-                                fontSize: '11px', color: theme.txtS, opacity: 0.5, flex: 1, textAlign: 'center',
-                            }) }, '\u2014')
-                    ),
-                    isOpen && total > 0 && React.createElement('div', { className: 'vcal-plant-list' },
-                        waterList.map(function(name, i) {
-                            return React.createElement('div', { key: 'w' + i, className: 'vcal-plant-item', style: { color: CAL_W } },
-                                '\uD83D\uDCA7 ' + name);
-                        }),
-                        fertList.map(function(name, i) {
-                            return React.createElement('div', { key: 'f' + i, className: 'vcal-plant-item', style: { color: CAL_F } },
-                                '\uD83C\uDF31 ' + name);
-                        })
-                    )
-                );
-            })
-        );
+        return React.createElement('div', { style: { background: '#F4EDD8', border: '3px solid #8B6C3A', display: 'flex', flexDirection: 'column' } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '2px solid #8B6C3A', background: '#E8F4D8' } },
+                React.createElement('span', { style: { fontSize: 16 } }, '\uD83D\uDCC5'),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: '#2A4A10', flex: 1 }) }, 'WEEKLY SCHEDULE'),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: '#5A7A30', fontWeight: 700 }) }, '(' + MON_FULL[today.getMonth()].toUpperCase() + ' ' + today.getFullYear() + ')')),
+            React.createElement('div', { style: { flex: 1 } },
+                weekDays.map(function(item) {
+                    var d = item.d, key = item.key, isToday = item.isToday;
+                    var ev = eventMap[key] || {};
+                    var waterList = ev.water || [];
+                    var fertList = ev.fert || [];
+                    var total = waterList.length + fertList.length;
+                    var isOpen = expandedDays[key];
+                    return React.createElement('div', { key: key, style: { borderBottom: '1px solid #D8C8A0' } },
+                        React.createElement('div', {
+                            style: { display: 'flex', alignItems: 'center', cursor: total > 0 ? 'pointer' : 'default', background: isToday ? 'rgba(200,168,75,0.10)' : 'transparent' },
+                            onClick: function() { if (total > 0) toggleDay(key); }
+                        },
+                            React.createElement('div', { style: { minWidth: 62, padding: '8px 10px', borderRight: '1px solid #D8C8A0', background: isToday ? 'rgba(200,168,75,0.18)' : 'transparent', textAlign: 'center', flexShrink: 0 } },
+                                isToday && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '7px', color: '#C8A84B', fontWeight: 900, marginBottom: 1 }) }, 'TODAY'),
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: isToday ? '#C8A84B' : '#8B6C3A', fontWeight: 700 }) }, DOW_SHORT[d.getDay()]),
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '17px', fontWeight: 900, color: isToday ? '#C8A84B' : '#2A4A10', lineHeight: 1.1 }) }, String(d.getDate()))),
+                            React.createElement('div', { style: { flex: 1, padding: '6px 10px' } },
+                                total > 0
+                                    ? React.createElement('button', {
+                                        type: 'button',
+                                        onClick: function(e) { e.stopPropagation(); toggleDay(key); },
+                                        style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: '#E8F4D8', border: '1px solid #8AA868', padding: '4px 8px', cursor: 'pointer' }
+                                    },
+                                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#2A5808', fontWeight: 700 }) }, 'Show Plants (' + total + ')'),
+                                        React.createElement('span', { style: { fontSize: 10, color: '#2A5808', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' } }, '\u25BC'))
+                                    : React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#8B6C3A', opacity: 0.45 }) }, '\u2014'))),
+                        isOpen && total > 0 && React.createElement('div', { style: { background: '#FAFAF5', borderTop: '1px solid #D8C8A0', padding: '4px 0' } },
+                            waterList.map(function(name, i) { return React.createElement('div', { key: 'w'+i, style: Object.assign({}, pxS, { fontSize: '11px', color: '#1A6A9A', padding: '3px 14px' }) }, '\uD83D\uDCA7 ' + name); }),
+                            fertList.map(function(name, i) { return React.createElement('div', { key: 'f'+i, style: Object.assign({}, pxS, { fontSize: '11px', color: '#4A7A28', padding: '3px 14px' }) }, '\uD83C\uDF3E ' + name); })));
+                })),
+            React.createElement('div', { style: { display: 'flex', borderTop: '2px solid #8B6C3A' } },
+                React.createElement('button', { type: 'button', onClick: function() { navigate('plant-log'); },
+                    style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', background: '#E8F4D8', border: 'none', borderRight: '1px solid #8B6C3A', cursor: 'pointer' }
+                },
+                    React.createElement('span', { style: { fontSize: 15 } }, '\uD83D\uDCCB'),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#2A5808', fontWeight: 700 }) }, 'Activity Log')),
+                React.createElement('button', { type: 'button', onClick: function() { navigate('environments'); },
+                    style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', background: '#E8F4D8', border: 'none', cursor: 'pointer' }
+                },
+                    React.createElement('span', { style: { fontSize: 15 } }, '\uD83D\uDCCD'),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#2A5808', fontWeight: 700 }) }, 'Locations'))));
     };
 
-    // -- Sidebar Buttons --
-    const SidebarButtons = () => React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 12 } },
-        React.createElement('button', { type: 'button', onClick: () => navigate('plant-log'),
-            className: 'sidebar-btn hover-lift',
-            style: { borderColor: theme.cardBorder, background: theme.cardBg, color: theme.txtP, boxShadow: '0 3px 0 ' + theme.cardBorder, flex: 1 }
-        },
-            React.createElement('span', { style: { fontSize: 18 } }, '\uD83D\uDCCB'),
-            React.createElement('span', null, 'Activity Log')),
-        React.createElement('button', { type: 'button', onClick: () => navigate('environments'),
-            className: 'sidebar-btn hover-lift',
-            style: { borderColor: theme.cardBorder, background: theme.cardBg, color: theme.txtP, boxShadow: '0 3px 0 ' + theme.cardBorder, flex: 1 }
-        },
-            React.createElement('span', { style: { fontSize: 18 } }, '\uD83D\uDCCD'),
-            React.createElement('span', null, 'Locations'))
-    );
-
-    // ΓöÇΓöÇ Navigation Grid (cleaner) ΓöÇΓöÇ
+    // ── Mobile Nav Grid ──
     const NavGrid = () => React.createElement("div", { className: "grid grid-cols-2 gap-2" },
         React.createElement("button", { type: "button", onClick: () => navigate('my-plants'),
             className: "nav-grid-btn hover-lift",
@@ -5685,13 +5635,13 @@ function HomeScreen() {
             React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCA7"),
             React.createElement("span", null, "Watering"),
             dueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '12px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, dueNow.length)),
-        React.createElement("button", { type: "button", onClick: () => navigate('carl'),
+        React.createElement("button", { type: "button", onClick: () => navigate('progress-updates'),
             className: "nav-grid-btn hover-lift relative",
-            style: { borderColor: '#2E7A2E', background: '#1A3A1A', color: '#A8E89C', boxShadow: '0 3px 0 #1A5A1A' }
+            style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 3px 0 #3A6A18' }
         },
-            React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
-            React.createElement("span", null, "Carl"),
-            React.createElement("span", { style: { position: 'absolute', top: -6, right: -6, background: '#2E7A2E', border: '2px solid #A8E89C', color: '#A8E89C', fontSize: '10px', fontFamily: "'Press Start 2P', cursive", padding: '1px 5px', lineHeight: 1.4 } }, "AI")),
+            React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCCA"),
+            React.createElement("span", null, "Progress"),
+            progressDueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '12px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, progressDueNow.length)),
         React.createElement("button", { type: "button", onClick: () => navigate('add'),
             className: "nav-grid-btn hover-lift",
             style: { borderColor: theme.btnS.border, background: theme.btnS.bg, color: theme.btnS.text, boxShadow: '0 3px 0 ' + theme.btnS.border }
@@ -5713,84 +5663,74 @@ function HomeScreen() {
 
     const pad = isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4';
     const maxW = isDesktop ? '1200px' : '680px';
-    var LOGO_PNG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNDQgNzIiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PGcgZmlsbD0iIzgxQzc4NCI+PHJlY3QgeD0iMjgiIHk9IjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNCIgeT0iNCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjwvZz48ZyBmaWxsPSIjNjZCQjZBIj48cmVjdCB4PSIyOCIgeT0iNCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI0IiB5PSI4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzYiIHk9IjgiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNiIgeT0iMTIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzNiIgeT0iMTIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxMiIgeT0iMTYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzNiIgeT0iMTYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxMiIgeT0iMjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzNiIgeT0iMjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzNiIgeT0iMjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxMiIgeT0iMjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI4IiB5PSIzMiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4IiB5PSI0NCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI0IiB5PSI0OCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI0IiB5PSI1MiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjwvZz48ZyBmaWxsPSIjMkU3RDMyIj48cmVjdCB4PSIyMCIgeT0iOCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4IiB5PSI4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjgiIHk9IjEyIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iOCIgeT0iMTYiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMCIgeT0iMTYiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMiIgeT0iMTYiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI4IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE2IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMyIiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjQ0IiB5PSIyMCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjEyIiB5PSIyNCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMyIiB5PSIyNCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjQ0IiB5PSIyNCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjgiIHk9IjI4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzYiIHk9IjI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNCIgeT0iMzIiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNiIgeT0iMzIiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI4IiB5PSIzNiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjgiIHk9IjQwIiB3aWR0aD0iMzYiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjgiIHk9IjQ0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNDAiIHk9IjQ0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIiIHk9IjQ4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzYiIHk9IjQ4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIiIHk9IjUyIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzYiIHk9IjUyIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTYiIHk9IjU2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzIiIHk9IjU2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTYiIHk9IjYwIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzIiIHk9IjYwIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjAiIHk9IjY0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjgiIHk9IjY0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjAiIHk9IjY4IiB3aWR0aD0iMTIiIGhlaWdodD0iNCIvPjwvZz48ZyBmaWxsPSIjMzg4RTNDIj48cmVjdCB4PSIyOCIgeT0iMjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNCIgeT0iMjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNCIgeT0iMjgiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNCIgeT0iMzIiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNCIgeT0iMzYiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48L2c+PGcgZmlsbD0iIzRDQUY1MCI+PHJlY3QgeD0iMTIiIHk9IjQ0IiB3aWR0aD0iMTYiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMyIiB5PSI0NCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE2IiB5PSI0OCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMyIiB5PSI0OCIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE2IiB5PSI1MiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMyIiB5PSI1MiIgd2lkdGg9IjQiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIwIiB5PSI1NiIgd2lkdGg9IjEyIiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMCIgeT0iNjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyOCIgeT0iNjAiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNCIgeT0iNjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiLz48L2c+PGcgZmlsbD0iIzUyQjc4OCI+PHJlY3QgeD0iMjQiIHk9IjYwIiB3aWR0aD0iNCIgaGVpZ2h0PSI0Ii8+PC9nPjxnIGZpbGw9IiMxQjQzMzIiPjxyZWN0IHg9Ijc2IiB5PSI4IiB3aWR0aD0iMzIiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjEyMCIgeT0iOCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMTYiIHk9IjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMzYiIHk9IjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyODgiIHk9IjgiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjEyIiB3aWR0aD0iMzIiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjEyMCIgeT0iMTIiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTcyIiB5PSIxMiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIxNiIgeT0iMTIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMzYiIHk9IjEyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjY4IiB5PSIxMiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4OCIgeT0iMTIiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjE2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSIxNiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iMTYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjE2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjM2IiB5PSIxNiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI2OCIgeT0iMTYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyODgiIHk9IjE2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzEyIiB5PSIxNiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMzNiIgeT0iMTYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI3NiIgeT0iMjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxMjAiIHk9IjIwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTUyIiB5PSIyMCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE3MiIgeT0iMjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMzYiIHk9IjIwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjY4IiB5PSIyMCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4OCIgeT0iMjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMTIiIHk9IjIwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzM2IiB5PSIyMCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9Ijc2IiB5PSIyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxMjAiIHk9IjI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTUyIiB5PSIyNCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE3MiIgeT0iMjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMTYiIHk9IjI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjM2IiB5PSIyNCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI2OCIgeT0iMjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyODgiIHk9IjI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzEyIiB5PSIyNCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMzNiIgeT0iMjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSI3NiIgeT0iMjgiIHdpZHRoPSIyNCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSIyOCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iMjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjE2IiB5PSIyOCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIzNiIgeT0iMjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjg4IiB5PSIyOCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMxMiIgeT0iMjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMzYiIHk9IjI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjMyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSIzMiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iMzIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjMyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjE2IiB5PSIzMiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIzNiIgeT0iMzIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjMyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjg4IiB5PSIzMiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMxMiIgeT0iMzIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMzYiIHk9IjMyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjM2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSIzNiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iMzYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjM2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjE2IiB5PSIzNiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIzNiIgeT0iMzYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjM2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjg4IiB5PSIzNiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMxMiIgeT0iMzYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMzYiIHk9IjM2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjQwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSI0MCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iNDAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjQwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjE2IiB5PSI0MCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIzNiIgeT0iNDAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjQwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjg4IiB5PSI0MCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMxMiIgeT0iNDAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMzYiIHk9IjQwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjQ0IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSI0NCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iNDQiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjQ0IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjE2IiB5PSI0NCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIzNiIgeT0iNDQiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjQ0IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjg4IiB5PSI0NCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMxMiIgeT0iNDQiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMzYiIHk9IjQ0IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjQ4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSI0OCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iNDgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjQ4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjE2IiB5PSI0OCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIzNiIgeT0iNDgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjQ4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjg4IiB5PSI0OCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMxMiIgeT0iNDgiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMzYiIHk9IjQ4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjUyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSI1MiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjE1MiIgeT0iNTIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjUyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjE2IiB5PSI1MiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIzNiIgeT0iNTIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyNjgiIHk9IjUyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjg4IiB5PSI1MiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMxMiIgeT0iNTIiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMzYiIHk9IjUyIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iNzYiIHk9IjU2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTIwIiB5PSI1NiIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIxNzIiIHk9IjU2IiB3aWR0aD0iMzIiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjIxNiIgeT0iNTYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMzYiIHk9IjU2IiB3aWR0aD0iNDAiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjI4OCIgeT0iNTYiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIzMTIiIHk9IjU2IiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzM2IiB5PSI1NiIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9Ijc2IiB5PSI2MCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjEyMCIgeT0iNjAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMTcyIiB5PSI2MCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyMTYiIHk9IjYwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMjM2IiB5PSI2MCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQiLz48cmVjdCB4PSIyODgiIHk9IjYwIiB3aWR0aD0iOCIgaGVpZ2h0PSI0Ii8+PHJlY3QgeD0iMzEyIiB5PSI2MCIgd2lkdGg9IjgiIGhlaWdodD0iNCIvPjxyZWN0IHg9IjMzNiIgeT0iNjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjQiLz48L2c+PC9zdmc+';
+    var LOGO_PNG = 'data:image/png;base64,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';
 
     const HeaderLogo = () => React.createElement('img', {
         src: LOGO_PNG,
         alt: 'Folium',
         onClick: () => navigate('home'),
-        style: { width: '30%', maxWidth: 280, height: 'auto', imageRendering: 'pixelated', cursor: 'pointer', flexShrink: 0 }
+        style: { width: '30%', maxWidth: 280, height: 'auto', cursor: 'pointer', flexShrink: 0 }
     });
 
     const { isMobile: _headerIsMobile } = useScreenSize();
     const Header = () => {
         if (_headerIsMobile) return null;
         return React.createElement("div", {
-        className: "sticky-header",
-        style: { background: '#C8D8A8', borderColor: '#8AA868' }
-    },
-        React.createElement(HeaderLogo, null),
-        DEMO_MODE && React.createElement("div", { className: "px-2 py-1 border-2 border-[#C0392B] badge-pulse", style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: 'var(--c-urgent)' }) }, "DEMO"),
-        React.createElement("div", { className: "header-nav-scroll" },
-            React.createElement("button", { type: "button", onClick: () => navigate('my-plants'),
-                className: "header-nav-btn hover-lift",
-                style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
-            },
-                React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
-                React.createElement("span", null, "My Plants"),
-                totalCount != null && React.createElement("span", { className: "nav-badge", style: { borderColor: '#E8F4D8', color: '#E8F4D8', background: 'rgba(0,0,0,0.15)' } }, totalCount)),
-            React.createElement("button", { type: "button", onClick: () => navigate('watering'),
-                className: "header-nav-btn hover-lift relative",
-                style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
-            },
-                React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCA7"),
-                React.createElement("span", null, "Log Watering"),
-                dueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '10px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, dueNow.length)),
-            React.createElement("button", { type: "button", onClick: () => navigate('carl'),
-                className: "header-nav-btn hover-lift relative",
-                style: { borderColor: '#3A6A20', background: '#2A5A14', color: '#C8E8A8', boxShadow: '0 2px 0 #1A4A08' }
-            },
-                React.createElement("span", { className: "nav-icon" }, "\uD83D\uDC74"),
-                React.createElement("span", null, "Carl"),
-                React.createElement("span", { style: { position: 'absolute', top: -5, right: -5, background: '#3A6A20', border: '2px solid #C8E8A8', color: '#C8E8A8', fontSize: '8px', fontFamily: "'Press Start 2P', cursive", padding: '1px 4px', lineHeight: 1.4 } }, "AI")),
-            React.createElement("button", { type: "button", onClick: () => navigate('add'),
-                className: "header-nav-btn hover-lift",
-                style: { borderColor: '#8AA868', background: '#B8CCA0', color: '#2D5016', boxShadow: '0 2px 0 #7A9858' }
-            },
-                React.createElement("span", { className: "nav-icon" }, "\u2795"),
-                React.createElement("span", null, "Add Plant"))
-        ),
-        React.createElement(ThemePicker, null));
+            className: "sticky-header",
+            style: { background: '#C8D8A8', borderColor: '#8AA868' }
+        },
+            React.createElement(HeaderLogo, null),
+            DEMO_MODE && React.createElement("div", { className: "px-2 py-1 border-2 border-[#C0392B] badge-pulse", style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: 'var(--c-urgent)' }) }, "DEMO"),
+            React.createElement("div", { className: "header-nav-scroll" },
+                React.createElement("button", { type: "button", onClick: () => navigate('my-plants'),
+                    className: "header-nav-btn hover-lift",
+                    style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
+                },
+                    React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
+                    React.createElement("span", null, "My Plants"),
+                    totalCount != null && React.createElement("span", { className: "nav-badge", style: { borderColor: '#E8F4D8', color: '#E8F4D8', background: 'rgba(0,0,0,0.15)' } }, totalCount)),
+                React.createElement("button", { type: "button", onClick: () => navigate('watering'),
+                    className: "header-nav-btn hover-lift relative",
+                    style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
+                },
+                    React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCA7"),
+                    React.createElement("span", null, "Log Watering"),
+                    dueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '10px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, dueNow.length)),
+                React.createElement("button", { type: "button", onClick: () => navigate('progress-updates'),
+                    className: "header-nav-btn hover-lift relative",
+                    style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
+                },
+                    React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCCA"),
+                    React.createElement("span", null, "Progress Update"),
+                    progressDueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '10px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, progressDueNow.length)),
+                React.createElement("button", { type: "button", onClick: () => navigate('add'),
+                    className: "header-nav-btn hover-lift",
+                    style: { borderColor: '#8AA868', background: '#B8CCA0', color: '#2D5016', boxShadow: '0 2px 0 #7A9858' }
+                },
+                    React.createElement("span", { className: "nav-icon" }, "\u2795"),
+                    React.createElement("span", null, "Add Plant"))),
+            React.createElement(ThemePicker, null));
     };
 
     if (isDesktop) {
-        return (React.createElement("div", { className: `flex flex-col ${pad} w-full pb-4 screen-enter`, style: { maxWidth: maxW, margin: '0 auto' } },
+        return React.createElement("div", { className: 'flex flex-col ' + pad + ' w-full pb-4 screen-enter', style: { maxWidth: maxW, margin: '0 auto' } },
             React.createElement(Header, null),
-            React.createElement(HomeGreeting, null),
-            React.createElement(StatsBar, null),
-            React.createElement("div", { className: "grid grid-cols-3 gap-4" },
-                React.createElement("div", { className: "col-span-2" },
-                    React.createElement(PlantCard, null,
-                        React.createElement(BirthdayBanner, null),
-                        React.createElement(HappyBanner, null),
-                        React.createElement(NeedsAttention, null),
-                        React.createElement(UpcomingSection, null))),
+            React.createElement(GreetingBar, null),
+            React.createElement(BirthdayBanner, null),
+            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, alignItems: 'start' } },
                 React.createElement("div", null,
-                    React.createElement(PlantCard, null,
-                        React.createElement(VerticalCalendar, null)),
-                    React.createElement(SidebarButtons, null)))));
+                    React.createElement(HappyBanner, null),
+                    React.createElement(NeedsAttention, null)),
+                React.createElement(WeeklySchedule, null)));
     }
-    return (React.createElement("div", { className: `flex flex-col ${pad} w-full pb-4 screen-enter`, style: { maxWidth: maxW, margin: '0 auto' } },
-        React.createElement(Header, null),
-        React.createElement(HomeGreeting, null),
-        React.createElement(StatsBar, null),
+    return React.createElement("div", { className: 'flex flex-col ' + pad + ' w-full pb-4 screen-enter', style: { maxWidth: maxW, margin: '0 auto' } },
+        React.createElement(GreetingBar, null),
         React.createElement(BirthdayBanner, null),
         React.createElement(HappyBanner, null),
         React.createElement(NeedsAttention, null),
-        React.createElement(UpcomingSection, null),
-        React.createElement(PlantCard, null,
-            React.createElement(VerticalCalendar, null)),
-        React.createElement(SidebarButtons, null)));
+        React.createElement("div", { style: { marginBottom: 12 } },
+            React.createElement(WeeklySchedule, null)),
+        React.createElement(NavGrid, null));
 }
 function CustomMixBuilder({ value, onChange, growingMethod, pxS, theme }) {
     var isSemiHydro = growingMethod === 'semihydro';
@@ -15958,7 +15898,7 @@ function SettingsScreen() {
 }
 </script>
 
-<?!= include('client/carl') ?>
+<?!= include('Carl') ?>
 
 <script type="text/javascript">
 function CarlHomeScreen() {
@@ -16028,12 +15968,13 @@ function AppContent() {
         React.createElement(SceneBackground, null),
         showTopLeftNav && (React.createElement("div", { style: {
                 position: 'relative', zIndex: 30, display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 10px', borderBottom: '2px solid #2A4010', background: '#0A1208',
+                padding: '6px 10px', borderBottom: '2px solid ' + (isDesktop ? '#8AA868' : '#2A4010'),
+                background: isDesktop ? '#C8D8A8' : '#0A1208',
             } },
-            canGoBack && React.createElement("button", { onClick: goBack, style: { fontFamily: "'Press Start 2P',monospace", fontSize: 9, padding: '7px 12px', background: 'transparent', border: '2px solid #3A5A18', color: '#8AC868', cursor: 'pointer' } }, "< Back"),
-            React.createElement("button", { onClick: () => navigate('home'), style: { fontFamily: "'Press Start 2P',monospace", fontSize: 9, padding: '7px 10px', background: 'transparent', border: '2px solid #3A5A18', color: '#8AC868', cursor: 'pointer' } }, "🏠"),
+            canGoBack && React.createElement("button", { onClick: goBack, style: { fontFamily: "'Press Start 2P',monospace", fontSize: 9, padding: '7px 12px', background: 'transparent', border: '2px solid ' + (isDesktop ? '#5A8A38' : '#3A5A18'), color: isDesktop ? '#2A5808' : '#8AC868', cursor: 'pointer' } }, "< Back"),
+            React.createElement("button", { onClick: () => navigate('home'), style: { fontFamily: "'Press Start 2P',monospace", fontSize: 9, padding: '7px 10px', background: 'transparent', border: '2px solid ' + (isDesktop ? '#5A8A38' : '#3A5A18'), color: isDesktop ? '#2A5808' : '#8AC868', cursor: 'pointer' } }, "\uD83C\uDFE0"),
             React.createElement("div", { style: { flex: 1 } }),
-            React.createElement("button", { onClick: () => window.location.reload(), style: { fontFamily: "'Press Start 2P',monospace", fontSize: 11, padding: '7px 10px', background: 'transparent', border: '2px solid #3A5A18', color: '#8AC868', cursor: 'pointer' } }, "↻")
+            React.createElement("button", { onClick: () => window.location.reload(), style: { fontFamily: "'Press Start 2P',monospace", fontSize: 11, padding: '7px 10px', background: 'transparent', border: '2px solid ' + (isDesktop ? '#5A8A38' : '#3A5A18'), color: isDesktop ? '#2A5808' : '#8AC868', cursor: 'pointer' } }, "\u21BB")
         )),
         React.createElement("div", { className: "scroll-y", style: { flex: 1, minHeight: 0, position: 'relative', zIndex: 10, overflowY: 'auto', paddingTop: 0, paddingBottom: !isDesktop ? 60 : 0 } }, render()),
         React.createElement(BottomNav, { current: currentScreen, navigate: navigate, goBack: goBack })));
@@ -16056,7 +15997,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '4.3';
+const PLANTOS_VERSION = '5.2';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);

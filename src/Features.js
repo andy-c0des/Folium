@@ -14,7 +14,7 @@ function doGet(e) {
     if (!mode) mode = 'home';
     const ml = mode.toLowerCase();
     if (ml === 'locations' || ml === 'plants') mode = 'my-plants';
-    const t = HtmlService.createTemplateFromFile('client/App');
+    const t = HtmlService.createTemplateFromFile('App');
     t.baseUrl = baseUrl; t.mode = mode; t.uid = uid; t.loc = loc; t.openAdd = openAdd;
     return t.evaluate().setTitle('PlantOS').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   } catch (err) {
@@ -104,7 +104,7 @@ function doPost(e) {
       plantosCarlTrain: plantosCarlTrain,
       plantosCarlGetMisses: plantosCarlGetMisses,
       carlMigrateToKB: carlMigrateToKB,
-      carlGetConversationPatterns: carlGetConversationPatterns
+      carlGetConversationPatterns: carlGetConversationPatterns,
     };
 
     if (!dispatch[fn]) {
@@ -263,31 +263,51 @@ function plantosCreateProp(payload) {
   payload = payload || {};
   const props = plantosGetProps();
   const propId = 'PROP_' + Date.now();
+  var propType = plantosSafeStr_(payload.propType || payload.type || '').trim();
+  var parentUID = plantosSafeStr_(payload.parentUID || payload.uid || '').trim();
+  var startDate = plantosSafeStr_(payload.startDate || '').trim() || plantosFmtDate_(plantosNow_());
+  var hybridType = !!(payload.hybridType);
   const prop = {
-    propId, uid: plantosSafeStr_(payload.uid || '').trim(), genus: plantosSafeStr_(payload.genus || '').trim(),
-    species: plantosSafeStr_(payload.species || '').trim(), type: plantosSafeStr_(payload.type || '').trim(),
-    substrate: plantosSafeStr_(payload.substrate || '').trim(), status: 'Trying', createdAt: plantosFmtDate_(plantosNow_()),
+    propId, parentUID: parentUID, genus: plantosSafeStr_(payload.genus || '').trim(),
+    species: plantosSafeStr_(payload.species || '').trim(), propType: propType,
+    substrate: plantosSafeStr_(payload.substrate || '').trim(), status: 'Trying',
+    createdAt: plantosFmtDate_(plantosNow_()), startDate: startDate,
     siblingPropIds: Array.isArray(payload.siblingPropIds) ? payload.siblingPropIds : [],
-    parentPropId: plantosSafeStr_(payload.parentPropId || '').trim(), hybridType: plantosSafeStr_(payload.hybridType || '').trim(),
-    motherUid: plantosSafeStr_(payload.motherUid || '').trim(), fatherUid: plantosSafeStr_(payload.fatherUid || '').trim(),
-    nothospecies: plantosSafeStr_(payload.nothospecies || '').trim(), generation: plantosSafeStr_(payload.generation || '').trim(),
+    parentPropId: plantosSafeStr_(payload.parentPropId || '').trim(),
+    hybridType: hybridType,
+    motherUID: plantosSafeStr_(payload.motherUID || payload.motherUid || '').trim(),
+    fatherUID: plantosSafeStr_(payload.fatherUID || payload.fatherUid || '').trim(),
+    motherGenus: plantosSafeStr_(payload.motherGenus || '').trim(),
+    motherSpecies: plantosSafeStr_(payload.motherSpecies || '').trim(),
+    fatherGenus: plantosSafeStr_(payload.fatherGenus || '').trim(),
+    fatherSpecies: plantosSafeStr_(payload.fatherSpecies || '').trim(),
+    pollinationMethod: plantosSafeStr_(payload.pollinationMethod || '').trim(),
+    crossDate: plantosSafeStr_(payload.crossDate || '').trim(),
+    isIntrageneric: !!(payload.isIntrageneric),
+    nothogenus: plantosSafeStr_(payload.nothogenus || '').trim(),
+    nothospeciesEpithet: plantosSafeStr_(payload.nothospeciesEpithet || '').trim(),
+    generation: plantosSafeStr_(payload.generation || '').trim(),
+    generationConfirmed: !!(payload.generationConfirmed),
     notes: plantosSafeStr_(payload.notes || '').trim(),
   };
   props.unshift(prop);
   PropertiesService.getScriptProperties().setProperty(PLANTOS_PROPS_KEY, JSON.stringify(props));
-  plantosPropTimelineAppend_(propId, { action: 'CREATED', details: `${prop.type || 'Prop'} started` });
+  plantosPropTimelineAppend_(propId, { action: 'CREATED', details: `${propType || 'Prop'} started` });
   return { ok: true, propId };
 }
 
-function plantosUpdatePropStatus(propId, status, failCause) {
+function plantosUpdatePropStatus(propId, status, failCause, failCauseDetail) {
   const id = plantosSafeStr_(propId).trim();
   const props = plantosGetProps();
   const idx = props.findIndex(p => p.propId === id);
   if (idx < 0) return { ok: false, error: 'Prop not found' };
   props[idx].status = plantosSafeStr_(status).trim();
   if (failCause) props[idx].failCause = plantosSafeStr_(failCause).trim();
+  if (failCauseDetail) props[idx].failCauseDetail = plantosSafeStr_(failCauseDetail).trim();
   PropertiesService.getScriptProperties().setProperty(PLANTOS_PROPS_KEY, JSON.stringify(props));
-  plantosPropTimelineAppend_(id, { action: 'STATUS', details: failCause ? `${status} — ${failCause}` : status });
+  var details = failCause ? `${status} — ${failCause}` : status;
+  if (failCauseDetail) details += ': ' + failCauseDetail;
+  plantosPropTimelineAppend_(id, { action: 'STATUS', details: details });
   return { ok: true };
 }
 
@@ -309,7 +329,7 @@ function plantosGraduateProp(propId, plantPayload) {
   const result = plantosCreatePlant(Object.assign({ genus: prop.genus, taxon: prop.species, parentPropId: id }, plantPayload || {}));
   if (!result.ok) throw new Error('Failed to create plant from prop');
   props[idx].status = 'Graduated';
-  props[idx].graduatedUid = result.uid;
+  props[idx].graduatedUID = result.uid;
   PropertiesService.getScriptProperties().setProperty(PLANTOS_PROPS_KEY, JSON.stringify(props));
   plantosPropTimelineAppend_(id, { action: 'STATUS', details: 'Graduated → UID ' + result.uid });
   return { ok: true, uid: result.uid };
@@ -325,13 +345,16 @@ function plantosUpdateProp(propId, patch) {
   if (idx < 0) return { ok: false, error: 'Prop not found' };
 
   // Allowed writable fields for a prop
-  const allowed = ['genus','species','type','substrate','startDate','notes','parentUID','siblingPropIds',
-                   'nothospecies','generation','hybridType','motherUid','fatherUid','pollinationMethod',
-                   'crossDate','motherGenus','motherSpecies','motherUID','motherFreetext',
-                   'fatherGenus','fatherSpecies','fatherUID','fatherFreetext'];
+  const allowed = ['genus','species','propType','type','substrate','startDate','notes','parentUID','siblingPropIds',
+                   'nothospecies','nothospeciesEpithet','nothogenus','generation','hybridType',
+                   'isIntrageneric','generationConfirmed',
+                   'motherUid','motherUID','fatherUid','fatherUID','pollinationMethod',
+                   'crossDate','motherGenus','motherSpecies','motherFreetext',
+                   'fatherGenus','fatherSpecies','fatherFreetext'];
+  var boolFields = { hybridType: true, isIntrageneric: true, generationConfirmed: true };
   allowed.forEach(function(k) {
     if (k in patch && patch[k] !== null && patch[k] !== undefined) {
-      props[idx][k] = plantosSafeStr_(patch[k]).trim();
+      props[idx][k] = boolFields[k] ? !!(patch[k]) : plantosSafeStr_(patch[k]).trim();
     }
   });
   PropertiesService.getScriptProperties().setProperty(PLANTOS_PROPS_KEY, JSON.stringify(props));
@@ -347,3 +370,9 @@ function plantosPropTimelineAppend_(propId, entry) {
   items.unshift(Object.assign({ ts }, entry));
   PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(items.slice(0, 100)));
 }
+ 
+
+ function plantosValidateToken(token) {
+   var stored = PropertiesService.getScriptProperties().getProperty('PLANTOS_API_PASSWORD') || '';
+     return token === stored ? { ok: true } : { ok: false, error: 'Invalid password' };
+     }
