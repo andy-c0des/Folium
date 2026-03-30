@@ -5297,7 +5297,7 @@ function PlantDataProvider({ children }) {
         locations, homeData, refreshHome, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
         createPlant, updatePlant, quickLog, batchWater, batchFertilize, addLocation,
-        getRecentLog, getTimeline, search, getLatestPhoto, uploadPlantPhoto,
+        getRecentLog, getTimeline, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
         getProps: () => gasCall('plantosGetProps').then(parseGasProps).catch(() => []),
         getPropTimeline: (propId) => gasCall('plantosGetPropTimeline', propId).then(r => (r && r.items) ? r.items : (Array.isArray(r) ? r : [])).catch(() => []),
         createProp: (payload) => { var gp = Object.assign({}, payload); if (gp.generation && typeof gp.generation === 'object') gp.generation = gp.generation.str || ''; return gasCall('plantosCreateProp', gp); },
@@ -15602,7 +15602,7 @@ function BottomNav({ current, navigate, goBack }) {
 
 function GalleryScreen({ uid, name }) {
     var { goBack } = useNavigation();
-    var { getAllPhotos } = usePlantData();
+    var { getAllPhotos, uploadPlantPhoto } = usePlantData();
     var theme = useTheme();
     var { isSmall } = useScreenSize();
 
@@ -15611,8 +15611,10 @@ function GalleryScreen({ uid, name }) {
     var [error, setError] = React.useState(null);
     var [lightbox, setLightbox] = React.useState(null); // {url, name, idx}
     var [view, setView] = React.useState('grid'); // 'grid' | 'then-now'
+    var [uploadStatus, setUploadStatus] = React.useState(null); // null | 'uploading' | 'done' | 'error'
+    var fileRef = React.useRef(null);
 
-    React.useEffect(function() {
+    function loadPhotos() {
         if (!uid) { setLoading(false); return; }
         setLoading(true);
         getAllPhotos(uid).then(function(res) {
@@ -15623,7 +15625,31 @@ function GalleryScreen({ uid, name }) {
             setError(e && e.message ? e.message : 'Error loading photos');
             setLoading(false);
         });
-    }, [uid]);
+    }
+
+    React.useEffect(function() { loadPhotos(); }, [uid]);
+
+    async function onFilePicked(e) {
+        var file = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
+        e.target.value = '';
+        if (!file || !uid) return;
+        setUploadStatus('uploading');
+        try {
+            var dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
+            var res = await uploadPlantPhoto(uid, dataUrl, file.name || 'photo.jpg');
+            if (res && res.ok) {
+                setUploadStatus('done');
+                loadPhotos();
+                setTimeout(function() { setUploadStatus(null); }, 2500);
+            } else {
+                setUploadStatus('error');
+                setTimeout(function() { setUploadStatus(null); }, 3000);
+            }
+        } catch(err) {
+            setUploadStatus('error');
+            setTimeout(function() { setUploadStatus(null); }, 3000);
+        }
+    }
 
     var oldest = photos.length > 0 ? photos[photos.length - 1] : null;
     var newest = photos.length > 0 ? photos[0] : null;
@@ -15641,19 +15667,34 @@ function GalleryScreen({ uid, name }) {
         return function() { window.removeEventListener('keydown', onKey); };
     }, [lightbox, photos]);
 
-    function formatDate(name) {
-        // filename: 2026-03-09_HH-mm-ss_UIDxxx.jpg
-        var m = name && name.match(/^(\d{4}-\d{2}-\d{2})/);
-        return m ? m[1] : '';
+    function formatDate(name, updated) {
+        // Try filename first: 2026-03-09_HH-mm-ss_UIDxxx.jpg
+        var m = name && name.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) {
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return months[parseInt(m[2],10)-1] + ' ' + parseInt(m[3],10) + ', ' + m[1];
+        }
+        // Fall back to updated ISO timestamp
+        if (updated) {
+            var d = new Date(updated);
+            if (!isNaN(d.getTime())) {
+                var months2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                return months2[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+            }
+        }
+        return '';
     }
 
     return React.createElement('div', { style: {
         display: 'flex', flexDirection: 'column', height: '100vh', maxHeight: '100vh',
         background: theme.bg, overflow: 'hidden',
     }},
+        // Hidden file input for photo upload
+        React.createElement('input', { ref: fileRef, type: 'file', accept: 'image/*', style: { display: 'none' }, onChange: onFilePicked }),
+
         // Header
         React.createElement('div', { style: {
-            display: 'flex', alignItems: 'center', gap: 10,
+            display: 'flex', alignItems: 'center', gap: 8,
             padding: '10px 14px', flexShrink: 0,
             background: 'linear-gradient(90deg, #0E1A08, #1A2A10)',
             borderBottom: '3px solid ' + theme.cardBorder,
@@ -15663,10 +15704,22 @@ function GalleryScreen({ uid, name }) {
                 background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS,
             }) }, '← Back'),
             React.createElement('div', { style: Object.assign({}, px8, { fontSize: '13px', color: '#A8E89C', flex: 1 }) }, '📸 ' + (name || 'Gallery')),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, photos.length + ' photo' + (photos.length !== 1 ? 's' : '')),
+            !loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) }, photos.length + ' photo' + (photos.length !== 1 ? 's' : '')),
+            // Upload status
+            uploadStatus === 'uploading' && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#FACC15' }) }, '⏳ Uploading...'),
+            uploadStatus === 'done' && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#4ADE80' }) }, '✅ Added!'),
+            uploadStatus === 'error' && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#F87171' }) }, '❌ Upload failed'),
+            // Add Photo button
+            React.createElement('button', { type: 'button', onClick: function() { if (fileRef.current) fileRef.current.click(); }, disabled: uploadStatus === 'uploading', style: Object.assign({}, pxS, {
+                fontSize: '11px', padding: '5px 10px', cursor: 'pointer', marginLeft: 4,
+                border: '2px solid ' + theme.cardBorder,
+                background: uploadStatus === 'uploading' ? theme.rowBg : theme.btnP.bg,
+                color: uploadStatus === 'uploading' ? theme.txtS : theme.btnP.text,
+                opacity: uploadStatus === 'uploading' ? 0.6 : 1,
+            }) }, '📷 Add Photo'),
             // Toggle grid / then-now
             photos.length >= 2 && React.createElement('button', { type: 'button', onClick: function() { setView(function(v) { return v === 'grid' ? 'then-now' : 'grid'; }); }, style: Object.assign({}, pxS, {
-                fontSize: '12px', padding: '4px 10px', cursor: 'pointer', marginLeft: 8,
+                fontSize: '11px', padding: '5px 10px', cursor: 'pointer',
                 border: '2px solid ' + theme.cardBorder, background: view === 'then-now' ? theme.btnP.bg : theme.rowBg, color: view === 'then-now' ? '#fff' : theme.txtS,
             }) }, view === 'then-now' ? '🔲 Grid' : '⏱ Then / Now')
         ),
@@ -15679,7 +15732,11 @@ function GalleryScreen({ uid, name }) {
             !loading && !error && photos.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '40px 20px' } },
                 React.createElement('div', { style: { fontSize: 48, marginBottom: 12 } }, '📷'),
                 React.createElement('div', { style: Object.assign({}, px8, { fontSize: '12px', color: theme.txtS, lineHeight: 2 }) }, 'No photos yet'),
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, marginTop: 8 }) }, 'Tap Photo on the plant page to add one')
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, marginTop: 8, marginBottom: 20 }) }, 'Add your first photo to start the gallery'),
+                React.createElement('button', { type: 'button', onClick: function() { if (fileRef.current) fileRef.current.click(); }, style: Object.assign({}, pxS, {
+                    fontSize: '13px', padding: '10px 20px', cursor: 'pointer',
+                    border: '3px solid ' + theme.cardBorder, background: theme.btnP.bg, color: theme.btnP.text,
+                }) }, '📷 Add First Photo')
             ),
 
             // ── THEN / NOW view ──
@@ -15688,7 +15745,7 @@ function GalleryScreen({ uid, name }) {
                 React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 } },
                     // THEN
                     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#C87820', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, '⏮ THEN — ' + formatDate(oldest.name)),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#C87820', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, '⏮ THEN — ' + formatDate(oldest.name, oldest.updated)),
                         React.createElement('div', { onClick: function() { setLightbox({ url: oldest.viewUrl, name: oldest.name, idx: photos.length - 1 }); }, style: {
                             width: '100%', paddingTop: '125%', position: 'relative',
                             border: '3px solid #C87820', borderRadius: 4, overflow: 'hidden', cursor: 'pointer',
@@ -15699,7 +15756,7 @@ function GalleryScreen({ uid, name }) {
                     ),
                     // NOW
                     React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#5A9A60', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, '⏭ NOW — ' + formatDate(newest.name)),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#5A9A60', fontWeight: 900, textAlign: 'center', letterSpacing: '0.05em' }) }, '⏭ NOW — ' + formatDate(newest.name, newest.updated)),
                         React.createElement('div', { onClick: function() { setLightbox({ url: newest.viewUrl, name: newest.name, idx: 0 }); }, style: {
                             width: '100%', paddingTop: '125%', position: 'relative',
                             border: '3px solid #5A9A60', borderRadius: 4, overflow: 'hidden', cursor: 'pointer',
@@ -15721,7 +15778,7 @@ function GalleryScreen({ uid, name }) {
                 gap: 8,
             }},
                 photos.map(function(photo, idx) {
-                    var dateStr = formatDate(photo.name);
+                    var dateStr = formatDate(photo.name, photo.updated);
                     var isNewest = idx === 0;
                     var isOldest = idx === photos.length - 1;
                     return React.createElement('div', { key: photo.fileId || idx,
@@ -15766,7 +15823,7 @@ function GalleryScreen({ uid, name }) {
                 photos.length > 1 && React.createElement('button', { onClick: function(e) { e.stopPropagation(); setLightbox(function(lb) { var next = (lb.idx + 1) % photos.length; return { url: photos[next].viewUrl, name: photos[next].name, idx: next }; }); }, style: { position: 'absolute', right: -40, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '›')
             ),
             React.createElement('div', { style: Object.assign({}, pxS, { color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginTop: 10 }) },
-                (lightbox.idx + 1) + ' / ' + photos.length + (lightbox.name ? '  ·  ' + formatDate(lightbox.name) : '') + '  ·  tap outside to close'
+                (lightbox.idx + 1) + ' / ' + photos.length + (lightbox.name ? '  ·  ' + formatDate(lightbox.name, photos[lightbox.idx] && photos[lightbox.idx].updated) : '') + '  ·  tap outside to close'
             )
         )
     );
