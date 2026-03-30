@@ -3869,6 +3869,7 @@ const SUBSTRATE_PROPS = {
     'Sand': { wh: 1, aer: 8, wick: 3, decomp: 0 },
     'Pumice': { wh: 2, aer: 9, wick: 2, decomp: 0 },
     'Soil mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
+    'Fluval Stratum': { wh: 5, aer: 7, wick: 4, decomp: 3 },
     'Custom mix': { wh: 5, aer: 5, wick: 5, decomp: 2 },
 };
 const SUBSTRATE_DEFAULT = { wh: 5, aer: 5, wick: 5, decomp: 2 };
@@ -8870,7 +8871,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                         var healthLabel = isOverdue ? '\uD83D\uDCA7 OVERDUE' : isDueSoon ? '\uD83D\uDCA7 ' + daysDiff + 'd' : dueDate ? '\uD83D\uDCA7 ' + daysDiff + 'd' : '';
                         var cardClass = isOverdue ? 'overdue-card' : isDueSoon ? 'due-soon-card' : '';
                         return (React.createElement("div", { key: uid, className: cardClass,
-                            style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '2px solid ' + (showSchedWarning && !isOverdue && !isDueSoon ? '#C87820' : '#7A4A1A'), padding: 8, gap: 8, background: showSchedWarning && !isOverdue && !isDueSoon ? 'rgba(200,120,32,0.04)' : undefined, transition: 'background 0.2s ease' } },
+                            style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '2px solid ' + (showSchedWarning && !isOverdue && !isDueSoon ? '#C87820' : '#7A4A1A'), padding: 8, gap: 8, background: showSchedWarning && !isOverdue && !isDueSoon ? 'rgba(200,120,32,0.04)' : undefined, transition: 'background 0.2s ease', minWidth: 0, overflow: 'hidden' } },
                             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 } },
                                 React.createElement(MiniThumb, { url: thumbs[uid] }),
                                 React.createElement("div", { style: { flex: 1, minWidth: 0, cursor: 'pointer' }, onClick: () => openPlant(uid) },
@@ -10840,7 +10841,7 @@ async function compressImageToJpegDataUrl(file, maxDim = 1600, quality = 0.82) {
 }
 function PlantScreen({ uid }) {
     const { navigate, goBack } = useNavigation();
-    const { getPlant, getTimeline, quickLog, updatePlant, setNickname, getLatestPhoto, uploadPlantPhoto, getPlantEnv, getOffspring, locations: plantLocations, patchSharedPlant } = usePlantData();
+    const { getPlant, getTimeline, quickLog, updatePlant, setNickname, getLatestPhoto, uploadPlantPhoto, getPlantEnv, getOffspring, locations: plantLocations, patchSharedPlant, getSharedPatch } = usePlantData();
     const { w, isSmall, isDesktop } = useScreenSize();
     const isMobileStack = w < 500;
     const [plant, setPlant] = useState(null);
@@ -10968,7 +10969,9 @@ function PlantScreen({ uid }) {
                 setMsg({ type: 'error', text: 'Plant not found' });
                 return;
             }
-            setPlant(p);
+            // Apply any optimistic patch from MyPlants quick-edit
+            const sharedPatch = getSharedPatch ? getSharedPatch(safe) : null;
+            setPlant(sharedPatch ? Object.assign({}, p, sharedPatch) : p);
             setState('ready');
             const tl = await getTimeline(safe, 30);
             if (_loadTokenRef.current !== token) return; // stale
