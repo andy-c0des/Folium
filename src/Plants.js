@@ -147,6 +147,7 @@ function plantosGetPlantsByLocationLite(location) {
   const cultivarCol  = plantosCol_(hmap, H.CULTIVAR);
   const pidCol   = plantosCol_(hmap, H.PLANT_ID);
   const ppCol    = plantosCol_(hmap, H.PLANT_PAGE_URL);
+  const purchCol = plantosCol_(hmap, H.PURCHASE_PRICE);
 
   const out = [], errors = [];
   let matched = 0, skipped = 0;
@@ -197,9 +198,10 @@ function plantosGetPlantsByLocationLite(location) {
         fertilizeEveryDays: feCol >= 0 ? plantosSafeStr_(row[feCol]) : '',
         // Lite: heavy URL fields omitted
         folderId: '', folderUrl: '', careDocUrl: '',
-        potMaterial: potMatCol >= 0 ? plantosSafeStr_(row[potMatCol]).trim() : '',  // FIX #15
-        potShape:    potShpCol >= 0 ? plantosSafeStr_(row[potShpCol]).trim() : '',    // FIX #15
-        cultivar:    cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '', // FIX #15
+        potMaterial:   potMatCol >= 0  ? plantosSafeStr_(row[potMatCol]).trim()   : '',
+        potShape:      potShpCol >= 0  ? plantosSafeStr_(row[potShpCol]).trim()   : '',
+        cultivar:      cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '',
+        purchasePrice: purchCol >= 0   ? plantosSafeStr_(row[purchCol]).trim()    : '',
       });
     } catch(e) {
       let failUid = '';
@@ -283,8 +285,9 @@ function plantosGetAllPlantsLite() {
   const potMatCol = plantosCol_(hmap, H.POT_MATERIAL);
   const potShpCol = plantosCol_(hmap, H.POT_SHAPE);
   const cultivarCol = plantosCol_(hmap, H.CULTIVAR);
-  const pidCol = plantosCol_(hmap, H.PLANT_ID);
-  const ppCol = plantosCol_(hmap, H.PLANT_PAGE_URL);
+  const pidCol   = plantosCol_(hmap, H.PLANT_ID);
+  const ppCol    = plantosCol_(hmap, H.PLANT_PAGE_URL);
+  const purchCol = plantosCol_(hmap, H.PURCHASE_PRICE);
 
   const out = [], errors = [];
   let skipped = 0;
@@ -333,9 +336,10 @@ function plantosGetAllPlantsLite() {
         lastFertilized: lfCol >= 0 && plantosAsDate_(row[lfCol]) ? plantosFmtDate_(plantosAsDate_(row[lfCol])) : '',
         fertEveryDays: feCol >= 0 ? plantosSafeStr_(row[feCol]) : '',
         fertilizeEveryDays: feCol >= 0 ? plantosSafeStr_(row[feCol]) : '',
-        potMaterial: potMatCol >= 0 ? plantosSafeStr_(row[potMatCol]).trim() : '', // FIX #15
-        potShape:    potShpCol >= 0 ? plantosSafeStr_(row[potShpCol]).trim() : '', // FIX #15
-        cultivar:    cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '', // FIX #15
+        potMaterial:   potMatCol >= 0  ? plantosSafeStr_(row[potMatCol]).trim()   : '',
+        potShape:      potShpCol >= 0  ? plantosSafeStr_(row[potShpCol]).trim()   : '',
+        cultivar:      cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '',
+        purchasePrice: purchCol >= 0   ? plantosSafeStr_(row[purchCol]).trim()    : '',
       });
     } catch(e) {
       let failUid = '';
