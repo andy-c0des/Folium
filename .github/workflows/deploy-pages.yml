@@ -27,6 +27,7 @@ jobs:
         run: |
           mkdir -p dist
           cp src/client/App.html dist/index.html
+          cp src/client/config.js dist/config.js
 
       - uses: actions/configure-pages@v5
 
