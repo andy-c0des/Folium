@@ -72,6 +72,9 @@ const PLANTOS_BACKEND_CFG = {
     LATEST_PHOTO_THUMB: 'Latest Photo Thumb',
     LATEST_PHOTO_VIEW: 'Latest Photo View',
     LATEST_PHOTO_UPDATED: 'Latest Photo Updated',
+    PURCHASE_PRICE: 'Purchase Price',
+    LAST_PROGRESS_UPDATE: 'Last Progress Update',
+    PROGRESS_STATUS: 'Progress Status',
   }
 };
 
