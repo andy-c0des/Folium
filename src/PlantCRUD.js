@@ -180,6 +180,16 @@ function plantosQuickLog(uid, payload) {
     if (payload.progressUpdate === true) {
       const lastProgressCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
       if (lastProgressCol >= 0) sh.getRange(r + 1, lastProgressCol + 1).setValue(now);
+      if (payload.progressStatus) {
+        const progStatusCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.PROGRESS_STATUS);
+        if (progStatusCol >= 0) sh.getRange(r + 1, progStatusCol + 1).setValue(payload.progressStatus);
+      }
+      if (payload.heightCm) {
+        try {
+          const heightCol = plantosCol_(hmap, 'Height (cm)');
+          if (heightCol >= 0) sh.getRange(r + 1, heightCol + 1).setValue(payload.heightCm);
+        } catch(e) {}
+      }
     }
     plantosTimelineAppend_(needle, payload, now);
     return { ok: true };
@@ -542,8 +552,17 @@ function plantosTimelineAppend_(uid, payload, when) {
   const ts = Utilities.formatDate(when, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
   const action = payload.progressUpdate ? 'PROGRESS_UPDATE' : payload.repot ? 'REPOT' : payload.water && payload.fertilize ? 'WATERED+FERTILIZED' : payload.water ? 'WATERED' : payload.fertilize ? 'FERTILIZED' : 'UPDATE';
   let details = '';
-  if (payload.repot) details = `Pot: ${payload.potSize || ''} • Substrate: ${payload.substrate || ''}`;
-  if (payload.notes) details = (details ? details + ' • ' : '') + payload.notes;
+  if (payload.progressUpdate) {
+    details = JSON.stringify({
+      status: payload.progressStatus || '',
+      heightCm: payload.heightCm || '',
+      observations: payload.observationTags || '',
+      notes: payload.notes || ''
+    });
+  } else {
+    if (payload.repot) details = `Pot: ${payload.potSize || ''} • Substrate: ${payload.substrate || ''}`;
+    if (payload.notes) details = (details ? details + ' • ' : '') + payload.notes;
+  }
   items.unshift({ uid, ts, action, details });
   PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(items.slice(0, 120)));
 }
