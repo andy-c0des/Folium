@@ -8047,6 +8047,7 @@ function MyPlantsScreen({ openTab, prefill }) {
       setLocSoilType('Loam');setLocInGround(false);setLocNotes('');
       setNewLocName('');setLocModalStep(0);setSubEnvs([]);
       setAddingSubEnv(false);setSubEnvDraft({name:'',direction:null,obstruction:'open',notes:''});
+      window.scrollTo(0, 0);
       setLocModal(true);
     }
     async function saveLocModal() {
@@ -11171,6 +11172,7 @@ function PlantScreen({ uid }) {
         setAutofillStatus(null);
         setAutofillPreview(null);
         console.log('[PlantOS] openEdit: setting editOpen=true');
+        window.scrollTo(0, 0);
         setEditOpen(true);
     }
     async function submitNick() {
@@ -11656,7 +11658,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '11px', color: logFert ? '#FDE68A' : theme.txtS, marginTop: 3 } }, logFert ? '\u2713 DONE' : 'FERT')
                                     ),
                                     React.createElement("button", {
-                                        type: "button", onClick: () => { setLogProgress(true); },
+                                        type: "button", onClick: () => { window.scrollTo(0, 0); setLogProgress(true); },
                                         className: "btn-press" + (logProgress ? " fert-active" : ""),
                                         style: {
                                             padding: '7px 4px', textAlign: 'center',
@@ -11741,7 +11743,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             onPropagate: () => navigate('my-plants', { openTab: 'props', prefill: { genus: plant.genus || '', species: plant.species || plant.taxon || '', taxonDisplay: plant.taxonDisplay || '', cultivar: plant.cultivar || '', infraRank: plant.infraRank || '', infraEpithet: plant.infraEpithet || '', parentUID: plant.uid, parentGeneration: plant.generation || null } })
                         }),
                         React.createElement("div", { style: { marginTop: 10, paddingTop: 8, borderTop: `1px solid ${theme.rowBorder}`, display: 'flex', gap: 6 } },
-                            React.createElement(PlantButton, { block: false, variant: "ghost", className: "py-2 px-3", onClick: () => setCompostOpen(true), style: { color: 'var(--c-urgent)', borderColor: '#c0392b' } }, "\uD83E\uDEA6 Remove"))),
+                            React.createElement(PlantButton, { block: false, variant: "ghost", className: "py-2 px-3", onClick: () => { window.scrollTo(0, 0); setCompostOpen(true); }, style: { color: 'var(--c-urgent)', borderColor: '#c0392b' } }, "\uD83E\uDEA6 Remove"))),
                     isDesktop && (React.createElement("div", null,
                         React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '14px', color: theme.txtP, marginBottom: 8, letterSpacing: '0.08em' } }, "LOG"),
                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, background: theme.rowBg, border: '2px solid ' + theme.cardBorder, padding: '5px 8px' } },
@@ -11816,7 +11818,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
                             React.createElement("button", {
                                 type: "button",
-                                onClick: () => { setRepotOpen(v => !v); setRepotPot(plant.potSize || ''); setRepotSub(plant.substrate || plant.medium || ''); },
+                                onClick: () => { window.scrollTo(0, 0); setRepotOpen(v => !v); setRepotPot(plant.potSize || ''); setRepotSub(plant.substrate || plant.medium || ''); },
                                 className: "btn-press hover-lift",
                                 style: {
                                     fontFamily: "'Press Start 2P',cursive", fontSize: '14px',
@@ -11848,7 +11850,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         ),
                         React.createElement("button", {
                             type: "button",
-                            onClick: () => setLogProgress(true),
+                            onClick: () => { window.scrollTo(0, 0); setLogProgress(true); },
                             className: "btn-press w-full",
                             style: Object.assign({}, pxS, {
                                 fontWeight: 900, fontSize: '13px', padding: '10px 4px', marginTop: 6,
@@ -11868,7 +11870,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                     },
                     onClick: function(e) { if (e.target === e.currentTarget) setRepotOpen(false); }
                 },
-                    React.createElement("div", { style: {
+                    React.createElement("div", { ref: function(el) { if (el) el.scrollTop = 0; }, style: {
                         width: '100%', maxWidth: 560,
                         maxHeight: '80vh',
                         overflowY: 'auto', WebkitOverflowScrolling: 'touch',
@@ -11903,7 +11905,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                     },
                     onClick: function(e) { if (e.target === e.currentTarget) setEditOpen(false); }
                 },
-                    React.createElement("div", { style: {
+                    React.createElement("div", { ref: function(el) { if (el) el.scrollTop = 0; }, style: {
                         width: '100%', maxWidth: 560,
                         maxHeight: '92vh',
                         overflowY: 'auto', WebkitOverflowScrolling: 'touch',
@@ -12107,7 +12109,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
             style: { position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' },
             onClick: function(e) { if (e.target === e.currentTarget) setLogProgress(false); }
         },
-            React.createElement("div", { style: {
+            React.createElement("div", { ref: function(el) { if (el) el.scrollTop = 0; }, style: {
                 width: '100%', maxWidth: 560, maxHeight: '92vh',
                 overflowY: 'auto', WebkitOverflowScrolling: 'touch',
                 background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
@@ -14398,7 +14400,8 @@ function CompostModal({ plant, onClose, onDone }) {
     const { archivePlant } = usePlantData();
     const theme = useTheme();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '14px' };
-    const [step, setStep] = useState('type'); // type ΓåÆ cause_cat ΓåÆ cause_option ΓåÆ confirm
+    const [step, setStep] = useState('type');
+    useEffect(function() { window.scrollTo(0, 0); }, []); // type ΓåÆ cause_cat ΓåÆ cause_option ΓåÆ confirm
     const [type, setType] = useState(null); // 'deceased' | 'rehomed'
     const [causeCat, setCauseCat] = useState(null);
     const [cause, setCause] = useState(null);
@@ -16295,7 +16298,7 @@ function ProgressUpdatesScreen() {
                     }, 'View'),
                     React.createElement('button', {
                         type: 'button',
-                        onClick: function() { setModalUid(p.uid); },
+                        onClick: function() { window.scrollTo(0, 0); setModalUid(p.uid); },
                         style: Object.assign({}, pxS, { fontSize: '9px', padding: '4px 8px', background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8', cursor: 'pointer', flexShrink: 0 })
                     }, '\u2713 Log Update')));
         }),
@@ -16303,7 +16306,7 @@ function ProgressUpdatesScreen() {
             style: { position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' },
             onClick: function(e) { if (e.target === e.currentTarget) setModalUid(null); }
         },
-            React.createElement('div', { style: {
+            React.createElement('div', { ref: function(el) { if (el) el.scrollTop = 0; }, style: {
                 width: '100%', maxWidth: 560, maxHeight: '92vh',
                 overflowY: 'auto', WebkitOverflowScrolling: 'touch',
                 background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
