@@ -5313,7 +5313,7 @@ function PlantDataProvider({ children }) {
         locations, homeData, refreshHome, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
         createPlant, updatePlant, quickLog, batchWater, batchFertilize, addLocation,
-        getRecentLog, getTimeline, search, getLatestPhoto, uploadPlantPhoto,
+        getRecentLog, getTimeline, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
         getProps: () => gasCall('plantosGetProps').then(parseGasProps).catch(() => []),
         getPropTimeline: (propId) => gasCall('plantosGetPropTimeline', propId).then(r => (r && r.items) ? r.items : (Array.isArray(r) ? r : [])).catch(() => []),
         createProp: (payload) => { var gp = Object.assign({}, payload); if (gp.generation && typeof gp.generation === 'object') gp.generation = gp.generation.str || ''; return gasCall('plantosCreateProp', gp); },
@@ -10807,7 +10807,7 @@ async function compressImageToJpegDataUrl(file, maxDim = 1600, quality = 0.82) {
 }
 function PlantScreen({ uid }) {
     const { navigate, goBack } = useNavigation();
-    const { getPlant, getTimeline, quickLog, updatePlant, setNickname, getLatestPhoto, uploadPlantPhoto, getPlantEnv, getOffspring, locations: plantLocations, patchSharedPlant } = usePlantData();
+    const { getPlant, getTimeline, quickLog, updatePlant, setNickname, getLatestPhoto, uploadPlantPhoto, getPlantEnv, getOffspring, locations: plantLocations, patchSharedPlant, refreshHome } = usePlantData();
     const { w, isSmall, isDesktop } = useScreenSize();
     const isMobileStack = w < 500;
     const [plant, setPlant] = useState(null);
@@ -12131,6 +12131,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
                         setTimeout(() => setMsg(null), 2000);
                         await loadCurrent();
+                        if (refreshHome) refreshHome().catch(function(){});
                     },
                     onCancel: () => setLogProgress(false)
                 })
@@ -16109,24 +16110,24 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
     const photoRef = React.useRef(null);
 
     const statusOptions = [
-        { label: 'Bad',   color: '#c0392b' },
-        { label: 'Okay',  color: '#e67e22' },
-        { label: 'Good',  color: '#2980b9' },
-        { label: 'Great', color: '#27ae60' },
+        { label: 'Sick',      icon: '\uD83E\uDD12', color: '#c0392b', bg: '#fdecea' },
+        { label: 'Bad',       icon: '\uD83D\uDE1F', color: '#e67e22', bg: '#fef3e2' },
+        { label: 'Good',      icon: '\uD83D\uDE0A', color: '#27ae60', bg: '#e8f5e9' },
+        { label: 'Excellent', icon: '\uD83C\uDF1F', color: '#2980b9', bg: '#e3f2fd' },
     ];
-    const obsOptions = ['New leaf', 'Healthy roots', 'Flowering', 'Plantelet', 'Big Leaves', 'New Shoots', 'Done flowering', 'High variegation'];
+    const obsOptions = ['New leaf', 'Flowering', 'Plantlet', 'Big leaves', 'New shoots', 'Done flowering'];
 
     async function handlePhoto(e) {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
         setProgPhotoUploading(true);
-        setProgPhotoMsg('Uploading photo…');
+        setProgPhotoMsg('Uploading\u2026');
         try {
             const dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
             if (uploadPlantPhoto) await uploadPlantPhoto(uid, dataUrl, file.name);
-            setProgPhotoMsg('Photo uploaded ✓');
+            setProgPhotoMsg('Photo uploaded \u2713');
         } catch(err) {
-            setProgPhotoMsg('Photo failed: ' + (err && err.message ? err.message : 'error'));
+            setProgPhotoMsg('Failed: ' + (err && err.message ? err.message : 'error'));
         }
         setProgPhotoUploading(false);
     }
@@ -16145,111 +16146,144 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
         setProgSaving(false);
     }
 
-    return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
-        // Photo
-        React.createElement('div', null,
-            React.createElement('input', { type: 'file', accept: 'image/*', ref: photoRef, style: { display: 'none' }, onChange: handlePhoto }),
-            React.createElement('button', {
-                type: 'button',
-                onClick: function() { if (photoRef.current) photoRef.current.click(); },
-                disabled: progPhotoUploading,
-                style: Object.assign({}, pxS, { fontSize: '10px', padding: '7px 12px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS, cursor: 'pointer', opacity: progPhotoUploading ? 0.6 : 1 })
-            }, '\uD83D\uDCF8 Add Photo'),
-            progPhotoMsg && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: '#7AC868', marginTop: 3 }) }, progPhotoMsg)
-        ),
-        // Status
-        React.createElement('div', null,
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginBottom: 5 }) }, 'HOW IS YOUR PLANT DOING?'),
-            React.createElement('div', { style: { display: 'flex', gap: 5, flexWrap: 'wrap' } },
+    const card = { background: theme.rowBg, borderRadius: 10, padding: '12px 14px', marginBottom: 10, border: '1.5px solid ' + theme.cardBorder };
+    const lbl = Object.assign({}, pxS, { fontSize: '8px', color: theme.txtS, marginBottom: 8, letterSpacing: '0.06em' });
+    const photoOk = progPhotoMsg && progPhotoMsg.includes('\u2713');
+
+    return React.createElement('div', { style: { display: 'flex', flexDirection: 'column' } },
+
+        // Status — "How healthy is your plant?"
+        React.createElement('div', { style: card },
+            React.createElement('div', { style: lbl }, 'HOW HEALTHY IS YOUR PLANT?'),
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 } },
                 statusOptions.map(function(s) {
                     var sel = progStatus === s.label;
                     return React.createElement('button', {
                         key: s.label,
                         type: 'button',
                         onClick: function() { setProgStatus(sel ? '' : s.label); },
-                        style: Object.assign({}, pxS, {
-                            fontSize: '9px', padding: '5px 10px', cursor: 'pointer',
-                            background: sel ? s.color : theme.rowBg,
-                            border: '2px solid ' + s.color,
-                            color: sel ? '#fff' : s.color,
-                        })
-                    }, s.label);
+                        style: {
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                            padding: '10px 4px', borderRadius: 8, cursor: 'pointer',
+                            background: sel ? s.bg : 'transparent',
+                            border: '2px solid ' + (sel ? s.color : theme.cardBorder),
+                        }
+                    },
+                        React.createElement('span', { style: { fontSize: 22 } }, s.icon),
+                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '7px', color: sel ? s.color : theme.txtS }) }, s.label)
+                    );
                 })
             )
         ),
+
+        // Photo
+        React.createElement('div', { style: card },
+            React.createElement('div', { style: lbl }, 'ADD PHOTO'),
+            React.createElement('input', { type: 'file', accept: 'image/*', ref: photoRef, style: { display: 'none' }, onChange: handlePhoto }),
+            React.createElement('button', {
+                type: 'button',
+                onClick: function() { if (photoRef.current) photoRef.current.click(); },
+                disabled: progPhotoUploading,
+                style: {
+                    width: '100%', padding: '18px 12px', boxSizing: 'border-box',
+                    border: '2px dashed ' + (photoOk ? '#27ae60' : theme.cardBorder),
+                    borderRadius: 10, background: 'transparent',
+                    cursor: progPhotoUploading ? 'default' : 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    opacity: progPhotoUploading ? 0.6 : 1,
+                }
+            },
+                React.createElement('span', { style: { fontSize: 28 } }, photoOk ? '\u2705' : '\uD83D\uDCF7'),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '8px', color: theme.txtS }) },
+                    progPhotoUploading ? 'Uploading\u2026' : (progPhotoMsg || 'Tap to add a photo')
+                )
+            )
+        ),
+
         // Comment
-        React.createElement('div', null,
+        React.createElement('div', { style: card },
+            React.createElement('div', { style: lbl }, 'COMMENT'),
             React.createElement('textarea', {
                 value: progComment,
                 onChange: function(e) { setProgComment(e.target.value); },
-                placeholder: 'Add a short comment about this update\u2026',
-                rows: 2,
+                placeholder: 'Add comment...',
+                rows: 3,
                 style: Object.assign({}, pxS, {
                     fontSize: '10px', width: '100%', boxSizing: 'border-box',
-                    padding: '6px 8px', border: '2px solid ' + theme.cardBorder,
-                    background: theme.rowBg, color: theme.txtP,
-                    resize: 'none', display: 'block',
+                    padding: '8px 10px', border: '1.5px solid ' + theme.cardBorder, borderRadius: 6,
+                    background: theme.cardBg, color: theme.txtP,
+                    resize: 'none', display: 'block', outline: 'none',
                 })
             })
         ),
+
         // Height
-        React.createElement('div', null,
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginBottom: 4 }) }, 'WHAT SIZE IS YOUR PLANT?'),
-            React.createElement('input', {
-                type: 'number', min: '0',
-                value: progHeight,
-                onChange: function(e) { setProgHeight(e.target.value); },
-                placeholder: 'e.g. 15',
-                style: Object.assign({}, pxS, {
-                    fontSize: '11px', padding: '5px 8px', width: '100%', boxSizing: 'border-box',
-                    border: '2px solid ' + theme.cardBorder, background: theme.rowBg, color: theme.txtP, display: 'block',
-                })
-            }),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '8px', color: theme.txtS, marginTop: 2 }) }, 'Height (cm)')
+        React.createElement('div', { style: card },
+            React.createElement('div', { style: lbl }, 'WHAT SIZE IS YOUR PLANT? (OPTIONAL)'),
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                React.createElement('input', {
+                    type: 'text',
+                    value: progHeight,
+                    onChange: function(e) { setProgHeight(e.target.value); },
+                    placeholder: 'e.g. 15',
+                    style: Object.assign({}, pxS, {
+                        fontSize: '11px', padding: '8px 10px', flex: 1,
+                        border: '1.5px solid ' + theme.cardBorder, borderRadius: 6,
+                        background: theme.cardBg, color: theme.txtP,
+                        outline: 'none', boxSizing: 'border-box',
+                    })
+                }),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, flexShrink: 0 }) }, 'cm')
+            )
         ),
-        // Observations
-        React.createElement('div', null,
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginBottom: 5 }) }, 'WORTH NOTICING'),
-            React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+
+        // Worth noticing pills
+        React.createElement('div', { style: card },
+            React.createElement('div', { style: lbl }, 'WORTH NOTICING'),
+            React.createElement('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
                 obsOptions.map(function(o) {
                     var sel = progObs.indexOf(o) >= 0;
                     return React.createElement('button', {
                         key: o,
                         type: 'button',
                         onClick: function() { setProgObs(function(prev) { return sel ? prev.filter(function(x) { return x !== o; }) : prev.concat([o]); }); },
-                        style: Object.assign({}, pxS, {
-                            fontSize: '8px', padding: '3px 7px', cursor: 'pointer',
-                            background: sel ? '#27ae60' : theme.rowBg,
-                            border: '2px solid ' + (sel ? '#27ae60' : theme.cardBorder),
+                        style: {
+                            padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
+                            background: sel ? '#27ae60' : 'transparent',
+                            border: '1.5px solid ' + (sel ? '#27ae60' : theme.cardBorder),
                             color: sel ? '#fff' : theme.txtS,
-                        })
+                            fontSize: '12px',
+                            fontFamily: 'var(--font-body)',
+                        }
                     }, o);
                 })
             )
         ),
-        // Actions
-        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 5 } },
-            React.createElement('button', {
-                type: 'button',
-                onClick: handleSubmit,
-                disabled: progSaving,
-                style: Object.assign({}, pxS, {
-                    fontSize: '10px', padding: '8px', width: '100%',
-                    background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8',
-                    cursor: progSaving ? 'default' : 'pointer', opacity: progSaving ? 0.6 : 1,
-                    boxSizing: 'border-box',
-                })
-            }, progSaving ? 'Saving\u2026' : '\u2713 Complete Progress Update'),
-            onCancel && React.createElement('button', {
-                type: 'button',
-                onClick: onCancel,
-                style: Object.assign({}, pxS, {
-                    fontSize: '9px', padding: '5px 8px',
-                    background: 'transparent', border: '1px solid ' + theme.rowBorder, color: theme.txtS,
-                    cursor: 'pointer', width: '100%', boxSizing: 'border-box',
-                })
-            }, 'Cancel')
-        )
+
+        // Save button
+        React.createElement('button', {
+            type: 'button',
+            onClick: handleSubmit,
+            disabled: progSaving,
+            style: {
+                width: '100%', padding: '14px 16px', boxSizing: 'border-box',
+                background: progSaving ? '#4a8f3a' : '#2A6B1A', border: 'none', borderRadius: 10,
+                color: '#C8F0A8', cursor: progSaving ? 'default' : 'pointer',
+                fontFamily: "'Pixelify Sans', cursive", fontSize: '12px', fontWeight: 700,
+                letterSpacing: '0.05em', marginBottom: onCancel ? 8 : 0,
+            }
+        }, progSaving ? 'Saving\u2026' : 'Save'),
+
+        onCancel && React.createElement('button', {
+            type: 'button',
+            onClick: onCancel,
+            style: {
+                width: '100%', padding: '8px', boxSizing: 'border-box',
+                background: 'transparent', border: 'none', color: theme.txtS,
+                cursor: 'pointer', fontSize: '12px', fontFamily: 'var(--font-body)',
+                textDecoration: 'underline',
+            }
+        }, 'Cancel')
     );
 }
 
@@ -16337,6 +16371,7 @@ function ProgressUpdatesScreen() {
                     onDone: function() {
                         setDone(function(d) { return Object.assign({}, d, { [modalUid]: true }); });
                         setModalUid(null);
+                        refreshHome().catch(function(){});
                     },
                     onCancel: function() { setModalUid(null); }
                 })
