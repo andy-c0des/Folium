@@ -15992,6 +15992,42 @@ function CarlHomeScreen() {
     );
 }
 
+function ProgressUpdatesScreen() {
+    const { navigate } = useNavigation();
+    const { homeData, refreshHome } = usePlantData();
+    const theme = useTheme();
+    const pxS = { fontFamily: "'Press Start 2P', cursive" };
+    const [loading, setLoading] = React.useState(false);
+    React.useEffect(function() {
+        setLoading(true);
+        refreshHome().catch(function(){}).finally(function(){ setLoading(false); });
+    }, []);
+    const plants = (homeData && homeData.progressDueNow) ? homeData.progressDueNow : [];
+    return React.createElement('div', { className: 'screen-enter', style: { padding: '16px', maxWidth: 680, margin: '0 auto', width: '100%' } },
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '10px 14px', background: theme.cardBg, border: '3px solid ' + theme.cardBorder } },
+            React.createElement('span', { style: { fontSize: 22 } }, '📊'),
+            React.createElement('div', null,
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP }) }, 'Progress Updates'),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 3 }) }, plants.length + ' plant' + (plants.length !== 1 ? 's' : '') + ' overdue'))),
+        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, textAlign: 'center', padding: 24 }) }, 'Loading…'),
+        !loading && plants.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '40px 16px' } },
+            React.createElement('div', { style: { fontSize: 40, marginBottom: 12 } }, '🎉'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP }) }, 'All caught up!'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 8 }) }, 'No progress updates overdue.')),
+        !loading && plants.map(function(p, i) {
+            return React.createElement('div', {
+                key: p.uid || i,
+                onClick: function() { navigate('plant', { uid: p.uid }); },
+                style: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', marginBottom: 8, background: theme.cardBg, border: '2px solid ' + theme.cardBorder, cursor: 'pointer' }
+            },
+                React.createElement('span', { style: { fontSize: 22, flexShrink: 0 } }, '📊'),
+                React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: theme.txtP, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.nickname || p.primary || p.uid),
+                    p.primary && p.nickname && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginTop: 2 }) }, p.primary)),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: 'var(--c-urgent)', fontWeight: 900, background: 'rgba(192,48,30,0.08)', padding: '3px 7px', flexShrink: 0 }) }, 'Update due'));
+        }));
+}
+
 function AppContent() {
     React.useEffect(() => { if (!DEMO_MODE && typeof kbCacheLoad === 'function') kbCacheLoad(); }, []);
     const { route, navigate, goBack, canGoBack } = useNavigation();
@@ -16015,6 +16051,7 @@ function AppContent() {
             case 'gallery': return React.createElement(GalleryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
             case 'spec': return React.createElement(DevScreen, null);
             case 'phylo': { navigate('my-plants', { openTab: 'phylo' }); return null; }
+            case 'progress-updates': return React.createElement(ProgressUpdatesScreen, null);
             case 'batch-water': return React.createElement(BatchWaterScreen, null);
             case 'batch-fertilize': return React.createElement(BatchFertilizeScreen, null);
             case 'settings': return React.createElement(SettingsScreen, null);
