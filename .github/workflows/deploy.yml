@@ -26,3 +26,6 @@ jobs:
 
       - name: Push to Apps Script
         run: clasp push --force
+
+      - name: Deploy Apps Script (update pinned deployment)
+        run: clasp deploy --deploymentId AKfycbw1EMhF1Mhqxtq6pQnM-K-1JkHw5rTesHwsBpaz6FFoNzc5vyzDMLwa8aIJsyjP5_cbyA --description "CI deploy"
