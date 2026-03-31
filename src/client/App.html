@@ -11656,7 +11656,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '11px', color: logFert ? '#FDE68A' : theme.txtS, marginTop: 3 } }, logFert ? '\u2713 DONE' : 'FERT')
                                     ),
                                     React.createElement("button", {
-                                        type: "button", onClick: () => { setLogProgress(v => !v); },
+                                        type: "button", onClick: () => { setLogProgress(true); },
                                         className: "btn-press" + (logProgress ? " fert-active" : ""),
                                         style: {
                                             padding: '7px 4px', textAlign: 'center',
@@ -11672,21 +11672,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 (logWater || logFert) && React.createElement(React.Fragment, null,
                                     React.createElement("button", { type: "button", onClick: doCommit, className: "btn-press commit-ready w-full", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, fontSize: '13px', padding: '7px', marginBottom: 4, border: '3px solid ' + theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text, boxShadow: '0 3px 0 ' + theme.btnP.shadow }) }, logWater && logFert ? '\uD83D\uDCA7\uD83C\uDF3E Log Both' : logWater ? '\uD83D\uDCA7 Log Water' : '\uD83C\uDF3E Log Fert')
                                 ),
-                                logProgress && React.createElement("div", { style: { marginTop: 4, marginBottom: 4, padding: '10px', background: 'rgba(42,107,26,0.12)', border: '2px solid #1A5A0A' } },
-                                    React.createElement(ProgressUpdateForm, {
-                                        uid: plant.uid, plant: plant, quickLog: quickLog, updatePlant: updatePlant,
-                                        uploadPlantPhoto: uploadPlantPhoto, logDate: logDate, todayStr: todayStr,
-                                        theme: theme, pxS: pxS, isSmall: isSmall,
-                                        onDone: async function() {
-                                            setLogProgress(false);
-                                            setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
-                                            setTimeout(() => setMsg(null), 2000);
-                                            await loadCurrent();
-                                        },
-                                        onCancel: () => setLogProgress(false)
-                                    })
-                                ),
-                                !logProgress && React.createElement("div", { style: { marginTop: 4 } },
+                                React.createElement("div", { style: { marginTop: 4 } },
                                     React.createElement("textarea", {
                                         value: logNotes,
                                         onChange: e => setLogNotes(e.target.value),
@@ -11862,31 +11848,17 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         ),
                         React.createElement("button", {
                             type: "button",
-                            onClick: () => { setLogProgress(v => !v); setLogProgressStatus(''); setLogProgressNotes(''); },
+                            onClick: () => setLogProgress(true),
                             className: "btn-press w-full",
                             style: Object.assign({}, pxS, {
                                 fontWeight: 900, fontSize: '13px', padding: '10px 4px', marginTop: 6,
-                                border: `3px solid ${logProgress ? '#2A6B1A' : theme.rowBorder}`,
-                                background: logProgress ? 'linear-gradient(180deg,#1E5A10,#0A2000)' : theme.rowBg,
-                                color: logProgress ? '#C8F0A8' : theme.txtP,
-                                boxShadow: logProgress ? '0 3px 0 #0A1800' : `0 3px 0 ${theme.rowBorder}`,
+                                border: '3px solid #2A6B1A',
+                                background: theme.rowBg,
+                                color: theme.txtP,
+                                boxShadow: '0 3px 0 #0A1800',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                             })
-                        }, '\uD83D\uDCCA ' + (logProgress ? 'Cancel Progress Update' : 'Log Progress Update')),
-                        logProgress && React.createElement("div", { style: { marginTop: 6, padding: '12px', background: 'rgba(42,107,26,0.12)', border: '2px solid #1A5A0A' } },
-                            React.createElement(ProgressUpdateForm, {
-                                uid: plant.uid, plant: plant, quickLog: quickLog, updatePlant: updatePlant,
-                                uploadPlantPhoto: uploadPlantPhoto, logDate: logDate, todayStr: todayStr,
-                                theme: theme, pxS: pxS, isSmall: false,
-                                onDone: async function() {
-                                    setLogProgress(false);
-                                    setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
-                                    setTimeout(() => setMsg(null), 2000);
-                                    await loadCurrent();
-                                },
-                                onCancel: () => setLogProgress(false)
-                            })
-                        )
+                        }, '\uD83D\uDCCA Log Progress Update')
                     )), repotOpen && (React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
@@ -12130,7 +12102,35 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => setEditOpen(false) }, "Cancel"))))),
         plant && React.createElement("div", { id: 'carl-section-' + plant.uid },
             React.createElement(ProblemsSection, { plant: plant, autoOpenAI: autoOpenAI, onAutoOpenDone: function() { setAutoOpenAI(false); } })),
-        compostOpen && plant && (React.createElement(CompostModal, { plant: plant, onClose: () => setCompostOpen(false), onDone: () => { setCompostOpen(false); goBack(); } }))))))));
+        compostOpen && plant && (React.createElement(CompostModal, { plant: plant, onClose: () => setCompostOpen(false), onDone: () => { setCompostOpen(false); goBack(); } })),
+        logProgress && plant && React.createElement("div", {
+            style: { position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' },
+            onClick: function(e) { if (e.target === e.currentTarget) setLogProgress(false); }
+        },
+            React.createElement("div", { style: {
+                width: '100%', maxWidth: 560, maxHeight: '92vh',
+                overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+                background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
+                borderBottom: 'none', padding: 16, boxShadow: '0 -4px 0 ' + theme.cardBorder,
+            }},
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
+                    React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '13px', color: theme.txtP } }, '\uD83D\uDCCA PROGRESS UPDATE'),
+                    React.createElement("button", { type: "button", onClick: () => setLogProgress(false), style: { fontFamily: "'Press Start 2P',cursive", fontSize: '12px', background: 'none', border: 'none', color: theme.txtS, cursor: 'pointer', padding: '4px 8px' } }, '\u2715')
+                ),
+                React.createElement(ProgressUpdateForm, {
+                    uid: plant.uid, plant: plant, quickLog: quickLog, updatePlant: updatePlant,
+                    uploadPlantPhoto: uploadPlantPhoto, logDate: logDate, todayStr: todayStr,
+                    theme: theme, pxS: pxS, isSmall: isSmall,
+                    onDone: async function() {
+                        setLogProgress(false);
+                        setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
+                        setTimeout(() => setMsg(null), 2000);
+                        await loadCurrent();
+                    },
+                    onCancel: () => setLogProgress(false)
+                })
+            )
+        )))))))));
 }
 function StatBar({ label, icon, value, max, color, bgColor, pxS, theme, sublabel }) {
     const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -16251,9 +16251,7 @@ function ProgressUpdatesScreen() {
     const { isSmall } = useScreenSize();
     const pxS = { fontFamily: "'Press Start 2P', cursive" };
     const [loading, setLoading] = React.useState(false);
-    const [expanded, setExpanded] = React.useState({}); // uid -> bool
-    const [notes, setNotes] = React.useState({}); // uid -> string
-    const [saving, setSaving] = React.useState({}); // uid -> bool
+    const [modalUid, setModalUid] = React.useState(null); // uid of plant whose modal is open
     const [done, setDone] = React.useState({}); // uid -> bool (just submitted)
 
     React.useEffect(function() {
@@ -16264,19 +16262,10 @@ function ProgressUpdatesScreen() {
     const plants = (homeData && homeData.progressDueNow) ? homeData.progressDueNow : [];
     const visible = plants.filter(function(p) { return !done[p.uid]; });
 
-    async function submitUpdate(uid) {
-        setSaving(function(s) { return Object.assign({}, s, { [uid]: true }); });
-        try {
-            await quickLog(uid, { progressUpdate: true, notes: (notes[uid] || '').trim() });
-            setDone(function(d) { return Object.assign({}, d, { [uid]: true }); });
-            setExpanded(function(e) { return Object.assign({}, e, { [uid]: false }); });
-        } catch(e) {}
-        setSaving(function(s) { return Object.assign({}, s, { [uid]: false }); });
-    }
-
     const headingSize = isSmall ? '11px' : '13px';
     const subSize = isSmall ? '9px' : '10px';
     const nameSize = isSmall ? '10px' : '12px';
+    const modalPlant = modalUid ? visible.find(function(p) { return p.uid === modalUid; }) : null;
 
     return React.createElement('div', { className: 'screen-enter', style: { padding: isSmall ? '10px' : '16px', maxWidth: 680, margin: '0 auto', width: '100%' } },
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '8px 12px', background: theme.cardBg, border: '3px solid ' + theme.cardBorder } },
@@ -16284,14 +16273,12 @@ function ProgressUpdatesScreen() {
             React.createElement('div', null,
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: headingSize, fontWeight: 900, color: theme.txtP }) }, 'Progress Updates'),
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: subSize, color: theme.txtS, marginTop: 3 }) }, visible.length + ' plant' + (visible.length !== 1 ? 's' : '') + ' overdue'))),
-        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, textAlign: 'center', padding: 24 }) }, 'Loading…'),
+        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, textAlign: 'center', padding: 24 }) }, 'Loading\u2026'),
         !loading && visible.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '40px 16px' } },
             React.createElement('div', { style: { fontSize: 36, marginBottom: 12 } }, '🎉'),
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isSmall ? '10px' : '12px', color: theme.txtP }) }, 'All caught up!'),
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: subSize, color: theme.txtS, marginTop: 8 }) }, 'No progress updates overdue.')),
         !loading && visible.map(function(p) {
-            var isOpen = expanded[p.uid];
-            var isSaving = saving[p.uid];
             return React.createElement('div', {
                 key: p.uid,
                 style: { marginBottom: 8, background: theme.cardBg, border: '2px solid ' + theme.cardBorder }
@@ -16308,25 +16295,39 @@ function ProgressUpdatesScreen() {
                     }, 'View'),
                     React.createElement('button', {
                         type: 'button',
-                        onClick: function() { setExpanded(function(e) { return Object.assign({}, e, { [p.uid]: !e[p.uid] }); }); },
-                        style: Object.assign({}, pxS, { fontSize: '9px', padding: '4px 8px', background: isOpen ? theme.btnP.bg : '#2A6B1A', border: '2px solid ' + (isOpen ? theme.btnP.border : '#1A5A0A'), color: isOpen ? theme.btnP.text : '#C8F0A8', cursor: 'pointer', flexShrink: 0 })
-                    }, isOpen ? 'Cancel' : '✓ Log Update')),
-                isOpen && React.createElement('div', { style: { borderTop: '2px solid ' + theme.cardBorder, padding: '10px 12px' } },
-                    React.createElement(ProgressUpdateForm, {
-                        uid: p.uid,
-                        plant: p,
-                        quickLog: quickLog,
-                        updatePlant: updatePlant,
-                        uploadPlantPhoto: uploadPlantPhoto,
-                        logDate: null,
-                        todayStr: function() { return new Date().toISOString().slice(0,10); },
-                        theme: theme,
-                        pxS: pxS,
-                        isSmall: isSmall,
-                        onDone: function() { submitUpdate(p.uid); },
-                        onCancel: function() { setExpanded(function(e) { return Object.assign({}, e, { [p.uid]: false }); }); }
-                    })));
-        }));
+                        onClick: function() { setModalUid(p.uid); },
+                        style: Object.assign({}, pxS, { fontSize: '9px', padding: '4px 8px', background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8', cursor: 'pointer', flexShrink: 0 })
+                    }, '\u2713 Log Update')));
+        }),
+        modalUid && modalPlant && React.createElement('div', {
+            style: { position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' },
+            onClick: function(e) { if (e.target === e.currentTarget) setModalUid(null); }
+        },
+            React.createElement('div', { style: {
+                width: '100%', maxWidth: 560, maxHeight: '92vh',
+                overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+                background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
+                borderBottom: 'none', padding: 16, boxShadow: '0 -4px 0 ' + theme.cardBorder,
+            }},
+                React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
+                    React.createElement('div', null,
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP }) }, '\uD83D\uDCCA PROGRESS UPDATE'),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginTop: 4 }) }, modalPlant.nickname || modalPlant.primary || modalPlant.uid)),
+                    React.createElement('button', { type: 'button', onClick: function() { setModalUid(null); }, style: { fontFamily: "'Press Start 2P',cursive", fontSize: '12px', background: 'none', border: 'none', color: theme.txtS, cursor: 'pointer', padding: '4px 8px' } }, '\u2715')
+                ),
+                React.createElement(ProgressUpdateForm, {
+                    uid: modalPlant.uid, plant: modalPlant,
+                    quickLog: quickLog, updatePlant: updatePlant, uploadPlantPhoto: uploadPlantPhoto,
+                    logDate: null, todayStr: function() { return new Date().toISOString().slice(0, 10); },
+                    theme: theme, pxS: pxS, isSmall: isSmall,
+                    onDone: function() {
+                        setDone(function(d) { return Object.assign({}, d, { [modalUid]: true }); });
+                        setModalUid(null);
+                    },
+                    onCancel: function() { setModalUid(null); }
+                })
+            )
+        ));
 }
 
 function AppContent() {
