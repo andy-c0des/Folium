@@ -178,15 +178,19 @@ function plantosQuickLog(uid, payload) {
       if (lastFertCol >= 0) sh.getRange(r + 1, lastFertCol + 1).setValue(now);
     }
     if (payload.progressUpdate === true) {
-      let lastProgressCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
+      const _lpuHeader = PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE;
+      let lastProgressCol = plantosCol_(hmap, _lpuHeader);
+      Logger.log('[PlantOS] progressUpdate: header="' + _lpuHeader + '" col=' + lastProgressCol + ' row=' + (r+1) + ' uid=' + needle);
       if (lastProgressCol < 0) {
         // Column missing — create it now so the write is never silently skipped
         const newColIdx = sh.getLastColumn();
-        sh.getRange(1, newColIdx + 1).setValue(PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
+        Logger.log('[PlantOS] LPU col missing, creating at 1-indexed col ' + (newColIdx + 1));
+        sh.getRange(1, newColIdx + 1).setValue(_lpuHeader);
         SpreadsheetApp.flush();
         lastProgressCol = newColIdx; // 0-indexed: sheet col is newColIdx+1
       }
       sh.getRange(r + 1, lastProgressCol + 1).setValue(now);
+      Logger.log('[PlantOS] LPU written to sheet col ' + (lastProgressCol + 1) + ' row ' + (r + 1));
       if (payload.progressStatus) {
         const progStatusCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.PROGRESS_STATUS);
         if (progStatusCol >= 0) sh.getRange(r + 1, progStatusCol + 1).setValue(payload.progressStatus);
