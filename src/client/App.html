@@ -4792,6 +4792,7 @@ function PlantDataProvider({ children }) {
             return;
         setDemoHomeData(demoRebuildHome_(demoPlants));
     }, [demoPlants]);
+    const removedProgressUidsRef = React.useRef(new Set());
     const refreshHome = async () => {
         if (DEMO_MODE) {
             const d = demoRebuildHome_(demoPlants);
@@ -4799,11 +4800,15 @@ function PlantDataProvider({ children }) {
             return d;
         }
         const d = await gasCall('plantosHome');
+        if (removedProgressUidsRef.current.size > 0 && d && d.progressDueNow) {
+            d.progressDueNow = d.progressDueNow.filter(p => !removedProgressUidsRef.current.has(String(p.uid)));
+        }
         setHomeData(d);
         return d;
     };
     const removeProgressDue = (uid) => {
-        const filter = (arr) => (arr || []).filter(p => String(p.uid) !== String(uid));
+        removedProgressUidsRef.current.add(String(uid));
+        const filter = (arr) => (arr || []).filter(p => !removedProgressUidsRef.current.has(String(p.uid)));
         setHomeData(prev => prev ? Object.assign({}, prev, { progressDueNow: filter(prev.progressDueNow) }) : prev);
         setDemoHomeData(prev => prev ? Object.assign({}, prev, { progressDueNow: filter(prev.progressDueNow) }) : prev);
     };
