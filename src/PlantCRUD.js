@@ -177,6 +177,10 @@ function plantosQuickLog(uid, payload) {
       if (fertilizedCol >= 0) sh.getRange(r + 1, fertilizedCol + 1).setValue(true);
       if (lastFertCol >= 0) sh.getRange(r + 1, lastFertCol + 1).setValue(now);
     }
+    if (payload.progressUpdate === true) {
+      const lastProgressCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
+      if (lastProgressCol >= 0) sh.getRange(r + 1, lastProgressCol + 1).setValue(now);
+    }
     plantosTimelineAppend_(needle, payload, now);
     return { ok: true };
   }
