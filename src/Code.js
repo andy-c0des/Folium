@@ -670,9 +670,10 @@ function plantosHome() {
   const lastWateredCol = plantosCol_(hmap, H.LAST_WATERED), everyDaysCol = plantosColMulti_(hmap, H.WATER_EVERY_DAYS, H.WATER_EVERY_DAYS_ALT); // FIX #14
   const birthdayCol = plantosCol_(hmap, H.BIRTHDAY), lastFertCol = plantosCol_(hmap, H.LAST_FERTILIZED);
   const fertEveryCol = plantosCol_(hmap, H.FERT_EVERY_DAYS);
+  const lpuCol = plantosCol_(hmap, H.LAST_PROGRESS_UPDATE);
   const now = plantosNow_(), tz = Session.getScriptTimeZone();
   const today = Utilities.formatDate(now, tz, 'MM/dd');
-  const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [];
+  const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [], progressDueNow = [];
   let totalCount = 0;
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
@@ -714,10 +715,17 @@ function plantosHome() {
     if (fertBucket === 'upcoming') fertUpcoming.push({ uid, primary, due: fertDue });
     if (waterBucket === 'now' && fertBucket === 'now') bothDueNow.push({ uid, primary, due: waterDue, fertDue });
     else if ((waterBucket === 'now' || waterBucket === 'upcoming') && (fertBucket === 'now' || fertBucket === 'upcoming')) bothUpcoming.push({ uid, primary, due: waterDue, fertDue });
+    const lpu = lpuCol >= 0 ? plantosAsDate_(row[lpuCol]) : null;
+    const bd2 = birthdayCol >= 0 ? plantosAsDate_(row[birthdayCol]) : null;
+    const progBaseline = lpu || bd2;
+    if (progBaseline) {
+      const progDue = plantosAddDays_(progBaseline, 14);
+      if (progDue <= now) progressDueNow.push({ uid, primary, lastUpdate: lpu ? plantosFmtDate_(lpu) : '' });
+    }
   }
   const byDue = (a, b) => String(a.due || '').localeCompare(String(b.due || ''));
   [dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming].forEach(a => a.sort(byDue));
-  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount };
+  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow };
 }
 
 /* ===================== FIX #5: Case-insensitive location matching ===================== */
@@ -1174,6 +1182,20 @@ function plantosQuickLog(uid, payload) {
     if (payload.fertilize === true) {
       if (fertilizedCol >= 0) sh.getRange(r + 1, fertilizedCol + 1).setValue(true);
       if (lastFertCol >= 0) sh.getRange(r + 1, lastFertCol + 1).setValue(now);
+    }
+    if (payload.progressUpdate === true) {
+      let lastProgressCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
+      if (lastProgressCol < 0) {
+        const newColIdx = sh.getLastColumn();
+        sh.getRange(1, newColIdx + 1).setValue(PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
+        SpreadsheetApp.flush();
+        lastProgressCol = newColIdx;
+      }
+      sh.getRange(r + 1, lastProgressCol + 1).setValue(now);
+      if (payload.progressStatus) {
+        const progStatusCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.PROGRESS_STATUS);
+        if (progStatusCol >= 0) sh.getRange(r + 1, progStatusCol + 1).setValue(payload.progressStatus);
+      }
     }
     plantosTimelineAppend_(needle, payload, now);
     return { ok: true };
