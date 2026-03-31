@@ -5673,7 +5673,17 @@ function HomeScreen() {
 
     const { isMobile: _headerIsMobile } = useScreenSize();
     const Header = () => {
-        if (_headerIsMobile) return null;
+        if (_headerIsMobile) return React.createElement("div", {
+            style: {
+                position: 'sticky', top: 0, zIndex: 50,
+                background: '#C8D8A8', borderBottom: '3px solid #8AA868', borderTop: '3px solid #8AA868',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '6px 16px', marginBottom: 10
+            }
+        }, React.createElement('img', {
+            src: LOGO_PNG, alt: 'Folium', onClick: () => navigate('home'),
+            style: { width: '48%', height: 'auto', cursor: 'pointer' }
+        }));
         return React.createElement("div", {
             className: "sticky-header",
             style: { background: '#C8D8A8', borderColor: '#8AA868' }
@@ -5723,6 +5733,7 @@ function HomeScreen() {
                 React.createElement(WeeklySchedule, null)));
     }
     return React.createElement("div", { className: 'flex flex-col ' + pad + ' w-full pb-4 screen-enter', style: { maxWidth: maxW, margin: '0 auto' } },
+        React.createElement(Header, null),
         React.createElement(GreetingBar, null),
         React.createElement(BirthdayBanner, null),
         React.createElement(HappyBanner, null),
