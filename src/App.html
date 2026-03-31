@@ -10897,6 +10897,8 @@ function PlantScreen({ uid }) {
     const [logWater, setLogWater] = useState(false);
     const [logFert, setLogFert] = useState(false);
     const [logProgress, setLogProgress] = useState(false);
+    const [logProgressStatus, setLogProgressStatus] = useState('');
+    const [logProgressNotes, setLogProgressNotes] = useState('');
     const [logDate, setLogDate] = useState(todayStr());
     const [compostOpen, setCompostOpen] = useState(false);
     const [relatedPlants, setRelatedPlants] = useState({});
@@ -11318,10 +11320,12 @@ function PlantScreen({ uid }) {
             setMsg({ type: 'success', text: 'Saved Γ£à' });
         }
         catch (e) {
-            setMsg({ type: 'error', text: e && e.message ? e.message : 'Save failed — check console' });
+            const msg = e && e.message ? e.message : 'Save failed';
+            const friendly = msg.includes('timed out') ? 'GAS cold-starting — please try saving again.' : msg.includes('Unauthorized') ? 'Session expired — reload the page and try again.' : msg;
+            setMsg({ type: 'error', text: friendly });
             console.error('[PlantOS] submitEdit failed:', e);
         }
-        setTimeout(() => setMsg(null), 12000);
+        setTimeout(() => setMsg(null), 15000);
     }
     function dueColor(due) {
         if (!due)
@@ -11634,11 +11638,31 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     React.createElement("button", { type: "button", onClick: doCommit, className: "btn-press commit-ready w-full", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, fontSize: '13px', padding: '7px', marginBottom: 4, border: '3px solid ' + theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text, boxShadow: '0 3px 0 ' + theme.btnP.shadow }) }, logWater && logFert ? '\uD83D\uDCA7\uD83C\uDF3E Log Both' : logWater ? '\uD83D\uDCA7 Log Water' : '\uD83C\uDF3E Log Fert')
                                 ),
                                 logProgress && React.createElement("div", { style: { marginTop: 4, marginBottom: 4, padding: '10px', background: 'rgba(42,107,26,0.12)', border: '2px solid #1A5A0A' } },
-                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: '#C8F0A8', marginBottom: 6, fontWeight: 700 }) }, '\uD83D\uDCCA Progress Update'),
+                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: '#C8F0A8', marginBottom: 8, fontWeight: 700 }) }, '\uD83D\uDCCA Progress Update'),
+                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginBottom: 4 }) }, 'PLANT STATUS'),
+                                    React.createElement("select", {
+                                        value: logProgressStatus,
+                                        onChange: e => setLogProgressStatus(e.target.value),
+                                        style: Object.assign({}, pxS, {
+                                            fontSize: '11px', width: '100%', boxSizing: 'border-box',
+                                            padding: '6px 8px', marginBottom: 8,
+                                            border: '2px solid ' + theme.cardBorder,
+                                            background: theme.rowBg, color: theme.txtP,
+                                            display: 'block',
+                                        })
+                                    },
+                                        React.createElement("option", { value: '' }, '\u2014 Select status \u2014'),
+                                        React.createElement("option", { value: 'Thriving' }, '\uD83C\uDF1F Thriving'),
+                                        React.createElement("option", { value: 'Growing steadily' }, '\uD83C\uDF31 Growing steadily'),
+                                        React.createElement("option", { value: 'Stable' }, '\u2705 Stable'),
+                                        React.createElement("option", { value: 'Needs attention' }, '\u26A0\uFE0F Needs attention'),
+                                        React.createElement("option", { value: 'Struggling' }, '\uD83D\uDEA8 Struggling')
+                                    ),
+                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginBottom: 4 }) }, 'NOTES / OBSERVATIONS'),
                                     React.createElement("textarea", {
-                                        value: logNotes,
-                                        onChange: e => setLogNotes(e.target.value),
-                                        placeholder: "Notes on growth, health, observations\u2026",
+                                        value: logProgressNotes,
+                                        onChange: e => setLogProgressNotes(e.target.value),
+                                        placeholder: "Growth, leaf count, health changes, measurements\u2026",
                                         rows: 3,
                                         className: "w-full resize-none input-depth",
                                         style: Object.assign({}, pxS, {
@@ -11652,12 +11676,18 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     React.createElement("button", {
                                         type: "button",
                                         onClick: async function() {
-                                            const note = logNotes.trim();
-                                            setLogNotes('');
+                                            const note = logProgressNotes.trim();
+                                            const status = logProgressStatus;
+                                            setLogProgressNotes('');
+                                            setLogProgressStatus('');
                                             setLogProgress(false);
                                             setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
-                                            setTimeout(() => setMsg(null), 1500);
-                                            try { await quickLog(plant.uid, { progressUpdate: true, notes: note, date: logDate || todayStr() }); await loadCurrent(); } catch(e) {}
+                                            setTimeout(() => setMsg(null), 2000);
+                                            try {
+                                                await quickLog(plant.uid, { progressUpdate: true, notes: note, date: logDate || todayStr() });
+                                                if (status) await updatePlant(plant.uid, { progressStatus: status });
+                                                await loadCurrent();
+                                            } catch(e) {}
                                         },
                                         style: Object.assign({}, pxS, { fontSize: '10px', padding: '8px', width: '100%', background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8', cursor: 'pointer', boxSizing: 'border-box' })
                                     }, '\u2713 Complete Progress Update')
@@ -11835,6 +11865,76 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 React.createElement('span', { style: { fontSize: '18px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '\u270F\uFE0F'),
                                 'EDIT'
                             )
+                        ),
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => { setLogProgress(v => !v); setLogProgressStatus(''); setLogProgressNotes(''); },
+                            className: "btn-press w-full",
+                            style: Object.assign({}, pxS, {
+                                fontWeight: 900, fontSize: '13px', padding: '10px 4px', marginTop: 6,
+                                border: `3px solid ${logProgress ? '#2A6B1A' : theme.rowBorder}`,
+                                background: logProgress ? 'linear-gradient(180deg,#1E5A10,#0A2000)' : theme.rowBg,
+                                color: logProgress ? '#C8F0A8' : theme.txtP,
+                                boxShadow: logProgress ? '0 3px 0 #0A1800' : `0 3px 0 ${theme.rowBorder}`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            })
+                        }, '\uD83D\uDCCA ' + (logProgress ? 'Cancel Progress Update' : 'Log Progress Update')),
+                        logProgress && React.createElement("div", { style: { marginTop: 6, padding: '12px', background: 'rgba(42,107,26,0.12)', border: '2px solid #1A5A0A' } },
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, 'PLANT STATUS'),
+                            React.createElement("select", {
+                                value: logProgressStatus,
+                                onChange: e => setLogProgressStatus(e.target.value),
+                                style: Object.assign({}, pxS, {
+                                    fontSize: '12px', width: '100%', boxSizing: 'border-box',
+                                    padding: '7px 8px', marginBottom: 10,
+                                    border: `3px solid ${theme.cardBorder}`,
+                                    background: theme.rowBg, color: theme.txtP, display: 'block',
+                                })
+                            },
+                                React.createElement("option", { value: '' }, '\u2014 Select status \u2014'),
+                                React.createElement("option", { value: 'Thriving' }, '\uD83C\uDF1F Thriving'),
+                                React.createElement("option", { value: 'Growing steadily' }, '\uD83C\uDF31 Growing steadily'),
+                                React.createElement("option", { value: 'Stable' }, '\u2705 Stable'),
+                                React.createElement("option", { value: 'Needs attention' }, '\u26A0\uFE0F Needs attention'),
+                                React.createElement("option", { value: 'Struggling' }, '\uD83D\uDEA8 Struggling')
+                            ),
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, 'NOTES / OBSERVATIONS'),
+                            React.createElement("textarea", {
+                                value: logProgressNotes,
+                                onChange: e => setLogProgressNotes(e.target.value),
+                                placeholder: "Growth, leaf count, health changes, measurements\u2026",
+                                rows: 3,
+                                className: "w-full resize-none input-depth",
+                                style: Object.assign({}, pxS, {
+                                    fontSize: '12px', color: theme.txtP,
+                                    border: `3px solid ${theme.cardBorder}`,
+                                    padding: '7px', marginBottom: 8,
+                                    background: theme.rowBg, display: 'block', boxSizing: 'border-box',
+                                })
+                            }),
+                            React.createElement("button", {
+                                type: "button",
+                                onClick: async function() {
+                                    const note = logProgressNotes.trim();
+                                    const status = logProgressStatus;
+                                    setLogProgressNotes('');
+                                    setLogProgressStatus('');
+                                    setLogProgress(false);
+                                    setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
+                                    setTimeout(() => setMsg(null), 2000);
+                                    try {
+                                        await quickLog(plant.uid, { progressUpdate: true, notes: note, date: logDate || todayStr() });
+                                        if (status) await updatePlant(plant.uid, { progressStatus: status });
+                                        await loadCurrent();
+                                    } catch(e) {}
+                                },
+                                className: "btn-press w-full",
+                                style: Object.assign({}, pxS, {
+                                    fontWeight: 900, fontSize: '14px', padding: '10px',
+                                    border: '3px solid #1A5A0A', background: '#2A6B1A', color: '#C8F0A8',
+                                    boxShadow: '0 3px 0 #0A1800',
+                                })
+                            }, '\u2713 Complete Progress Update')
                         )
                     )), repotOpen && (React.createElement("div", {
                     style: {
