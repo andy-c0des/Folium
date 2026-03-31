@@ -9419,11 +9419,11 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                 ? React.createElement('div', { style: { textAlign: 'center', padding: '20px 10px' } },
                     React.createElement('div', { style: { fontSize: 32, marginBottom: 8 } }, '🌿'),
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, 'Nothing in the database matched.'),
-                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, marginBottom: 16, lineHeight: 1.6 }) }, 'Want to ask Carl? He knows a lot more — named after the man who named everything.'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, marginBottom: 16, lineHeight: 1.6 }) }, 'Nothing matched the local database. Try the AI — it knows a lot more.'),
                     React.createElement(PlantButton, {
                         onClick: () => { setSelected([]); setStep('ai'); },
                         className: 'py-2 px-4'
-                    }, '🌿 Ask Carl'))
+                    }, '🌿 Ask AI'))
                 : results.map(({ id, entry, isPest, confidence }) =>
                     React.createElement('div', { key: id, style: { border: `2px solid ${theme.rowBorder}`, marginBottom: 8, background: theme.rowBg } },
                         React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: isPest ? 'pointer' : 'default' },
@@ -9440,7 +9440,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                             entry.treatment.slice(0, 2).map((t, i) =>
                                 React.createElement('div', { key: i, style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtP, padding: '2px 0', paddingLeft: 8, borderLeft: `3px solid ${theme.btnP.bg}` }) }, `• ${t}`))))),
             React.createElement('div', { style: { marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 } },
-                React.createElement(PlantButton, { variant: 'secondary', onClick: () => { setSelected([]); setStep('ai'); }, className: 'py-1 px-3' }, "🌿 Ask Carl instead"),
+                React.createElement(PlantButton, { variant: 'secondary', onClick: () => { setSelected([]); setStep('ai'); }, className: 'py-1 px-3' }, "🌿 Ask AI instead"),
                 React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS }) }, 'AI — knows beyond the database'))),
 
         step === 'pest_detail' && activePest && PESTS_DB[activePest] && React.createElement(React.Fragment, null,
@@ -9543,7 +9543,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                                 fontFamily: "'Pixelify Sans', cursive",
                                 fontSize: '13px', fontWeight: 600,
                                 color: theme.txtP, lineHeight: 1.55, marginBottom: 4,
-                            }}, "\u201cHello! I'm Carl. Describe what you see and I'll diagnose your plant.\u201d"),
+                            }}, "\u201cDescribe what you see and I\u2019ll diagnose your plant.\u201d"),
                         ),
                         React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
                             React.createElement('div', { style: {
@@ -9583,7 +9583,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                     React.createElement('div', { style: Object.assign({}, pxS, {
                         fontSize: '12px', color: theme.txtP, lineHeight: 1.8,
                     })},
-                        "Hi! I'm Carl. Ask me anything about this plant — diagnosis, care, propagation, pests, soil, toxicityΓÇª I know more than the database." 
+                        "Ask me anything about this plant — diagnosis, care, propagation, pests, soil, toxicity\u2026 I know more than the database."
                     )
                 ),
 
@@ -9687,7 +9687,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                         }
                     },
                     placeholder: chatHistory.length > 0 && chatHistory.some(m => m.role === 'kb' && m.result && m.result.source !== 'kb-error' && m.result.topDiagnosis !== 'No match found')
-                        ? 'Ask Carl anything about this plant...'
+                        ? 'Ask anything about this plant...'
                         : 'Describe what you see — e.g. "tiny flies", "smells bad", "leaves going limp"...',
                     rows: 2,
                     style: Object.assign({}, pxS, {
@@ -10085,7 +10085,7 @@ function PropsSection({ locations, prefill }) {
                         }
                         return Object.assign(Object.assign({}, p), update);
                     }), style: Object.assign(Object.assign({}, pxS), { flex: 1, padding: '8px', fontSize: '12px', fontWeight: 900, cursor: 'pointer', border: `3px solid ${theme.cardBorder}`, borderBottom: form.hybridType === isHybrid ? `3px solid ${theme.btnP.bg}` : `3px solid ${theme.cardBorder}`, background: form.hybridType === isHybrid ? theme.btnP.bg : theme.cardBg, color: form.hybridType === isHybrid ? theme.btnP.text : theme.txtS }) }, label)))),
-            React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: theme.txtP, marginBottom: 10 }) }, form.hybridType ? 'NEW HYBRID CROSS' : 'NEW PROP'),
+            React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '14px', color: theme.txtP, marginBottom: 10 }) }, form.hybridType ? 'NEW HYBRID CROSS' : 'NEW PROP'),
             form.hybridType && prefill && prefill.parentUID && (
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.btnP.bg, background: 'rgba(80,160,80,0.12)', border: `2px solid ${theme.btnP.border}`, padding: '6px 10px', marginBottom: 8 }) },
                     "\uD83C\uDF31 ",
@@ -10383,7 +10383,7 @@ function PropsSection({ locations, prefill }) {
                         React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "\uD83C\uDF3F Child of: "),
                         React.createElement("button", { type: "button", onClick: () => navigate('plant', { uid: prop.parentUID }), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.btnP.bg, fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, parentPlantName || prop.parentUID))),
                     prop.hybridType && (React.createElement("div", { style: { marginBottom: 10, padding: '8px 10px', border: `2px solid ${theme.rowBorder}` } },
-                        React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: theme.txtP, marginBottom: 6 }) }, "PARENTAGE"),
+                        React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '14px', color: theme.txtP, marginBottom: 6 }) }, "PARENTAGE"),
                         React.createElement("div", { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
                             React.createElement("div", { style: { flex: 1, minWidth: '45%', padding: '6px 8px', border: `2px solid #c0392b`, borderLeft: `4px solid #c0392b` } },
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: 'var(--c-urgent)', marginBottom: 2 }) }, "\u2640 Mother"),
@@ -13223,7 +13223,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
             React.createElement(TabBtn, { id: 'status',   icon: '\uD83D\uDCCA', label: 'STATUS' }),
             React.createElement(TabBtn, { id: 'schedule', icon: '\uD83D\uDCC5', label: 'SCHED' }),
             React.createElement(TabBtn, { id: 'info',     icon: '\uD83D\uDCD6', label: 'INFO' }),
-            React.createElement(TabBtn, { id: 'carl',     icon: '\uD83C\uDF3F', label: 'CARL' })
+            React.createElement(TabBtn, { id: 'carl',     icon: '\uD83C\uDF3F', label: 'AI' })
         ),
         React.createElement('div', { key: activeTab, style: {
             border: '3px solid ' + theme.cardBorder,
@@ -13278,6 +13278,7 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
     const [tab, setTab] = React.useState('status');
     const [activeChar, setActiveChar] = React.useState('carl');
     const [kbEnabled, setKbEnabled] = React.useState(true);
+    const { isSmall } = useScreenSize();
     if (!plant) return null;
     const today = new Date();
 
@@ -13326,7 +13327,7 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
         { id: 'status',   emoji: '\u2764\uFE0F', short: 'STATUS'   },
         { id: 'schedule', emoji: '\uD83D\uDCC5',  short: 'SCHEDULE' },
         { id: 'species',  emoji: '\uD83C\uDF3F',  short: 'SPECIES'  },
-        { id: 'carl',     emoji: '\uD83C\uDF93',  short: 'CARL'     },
+        { id: 'carl',     emoji: '\uD83C\uDF93',  short: 'AI'       },
     ];
 
     const tabBar = React.createElement('div', { style: { display: 'flex', borderBottom: '2px solid ' + theme.cardBorder, background: 'rgba(0,0,0,0.12)' } },
@@ -13386,7 +13387,7 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
                 )
             ),
             React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 } },
-                React.createElement('span', { style: { fontSize: '26px', fontFamily: "'Press Start 2P', cursive", color: recColor, lineHeight: 1 } }, suggested + 'd'),
+                React.createElement('span', { style: { fontSize: isSmall ? '18px' : '26px', fontFamily: "'Press Start 2P', cursive", color: recColor, lineHeight: 1 } }, suggested + 'd'),
                 React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#888' }) }, 'suggested interval'),
                 everyD > 0 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '14px', color: '#555', marginLeft: 'auto' }) }, 'yours: ' + everyD + 'd')
             ),
@@ -13764,6 +13765,7 @@ function AlgoCompletionFlags({ plant, physics, onEditOpen }) {
 }
 
 function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, navigate, onPropagate }) {
+    const { isSmall } = useScreenSize();
     if (!plant) return null;
 
     const hasParent = !!(plant.parentUID || plant.motherUID || plant.fatherUID);
@@ -13810,7 +13812,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
                 background: theme.rowBg,
             }
         },
-            React.createElement('div', { style: Object.assign({}, px8S, { color: theme.txtP, marginBottom: 8, fontSize: '14px' }) }, '🌳 FAMILY TREE'),
+            React.createElement('div', { style: Object.assign({}, px8S, { color: theme.txtP, marginBottom: 8, fontSize: isSmall ? '11px' : '14px' }) }, '🌳 FAMILY TREE'),
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, marginBottom: 10, lineHeight: 1.6 }) },
                 'No family members yet. Ready to start a lineage?'
             ),
@@ -13837,7 +13839,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             marginBottom: 10, paddingBottom: 6, borderBottom: '2px solid ' + theme.sep,
         }},
-            React.createElement('div', { style: Object.assign({}, px8S, { color: theme.txtP, fontSize: '14px' }) },
+            React.createElement('div', { style: Object.assign({}, px8S, { color: theme.txtP, fontSize: isSmall ? '11px' : '14px' }) },
                 isHybrid ? '🧬 HYBRID LINEAGE' : '🌳 FAMILY TREE'
             ),
             React.createElement('button', {
@@ -13926,6 +13928,7 @@ function FamilyTreePanel({ plant, relatedPlants, offspring, pxS, px8S, theme, na
 
 function PhysicsStrip({ physics, plant, env, timeline, pxS, theme, onEditOpen, onSaveInterval }) {
     const [expanded, setExpanded] = React.useState(false);
+    const { isSmall } = useScreenSize();
     if (!physics) return null;
 
     const today = new Date();
@@ -14025,7 +14028,7 @@ function PhysicsStrip({ physics, plant, env, timeline, pxS, theme, onEditOpen, o
                 ),
 
                 React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 } },
-                    React.createElement('span', { style: { fontSize: '28px', fontFamily: "'Press Start 2P', cursive", color: recColor, lineHeight: 1 } }, suggested + 'd'),
+                    React.createElement('span', { style: { fontSize: isSmall ? '18px' : '28px', fontFamily: "'Press Start 2P', cursive", color: recColor, lineHeight: 1 } }, suggested + 'd'),
                     React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#888' }) }, 'suggested interval'),
                     everyD > 0 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '14px', color: '#555', marginLeft: 'auto' }) }, 'yours: ' + everyD + 'd')
                 ),
