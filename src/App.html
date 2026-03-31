@@ -4802,6 +4802,11 @@ function PlantDataProvider({ children }) {
         setHomeData(d);
         return d;
     };
+    const removeProgressDue = (uid) => {
+        const filter = (arr) => (arr || []).filter(p => String(p.uid) !== String(uid));
+        setHomeData(prev => prev ? Object.assign({}, prev, { progressDueNow: filter(prev.progressDueNow) }) : prev);
+        setDemoHomeData(prev => prev ? Object.assign({}, prev, { progressDueNow: filter(prev.progressDueNow) }) : prev);
+    };
     const demoFind_ = (uid) => (demoPlants || []).find(p => String(p.uid) === String(uid));
     const demoSetPlant_ = (uid, patch) => {
         setDemoPlants(prev => (prev || []).map(p => {
@@ -5308,9 +5313,9 @@ function PlantDataProvider({ children }) {
         demoEnvironments, demoLocationEnvMap,
         getArchive, archivePlant, updateArchiveNote, demoArchive, demoProps,
         createBatch, demoPlants, getOffspring, getAllPlants,
-        patchSharedPlant, getSharedPatch, clearSharedPatch,
+        patchSharedPlant, getSharedPatch, clearSharedPatch, removeProgressDue,
     } : {
-        locations, homeData, refreshHome, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
+        locations, homeData, refreshHome, removeProgressDue, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
         createPlant, updatePlant, quickLog, batchWater, batchFertilize, addLocation,
         getRecentLog, getTimeline, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
@@ -10807,7 +10812,7 @@ async function compressImageToJpegDataUrl(file, maxDim = 1600, quality = 0.82) {
 }
 function PlantScreen({ uid }) {
     const { navigate, goBack } = useNavigation();
-    const { getPlant, getTimeline, quickLog, updatePlant, setNickname, getLatestPhoto, uploadPlantPhoto, getPlantEnv, getOffspring, locations: plantLocations, patchSharedPlant, refreshHome } = usePlantData();
+    const { getPlant, getTimeline, quickLog, updatePlant, setNickname, getLatestPhoto, uploadPlantPhoto, getPlantEnv, getOffspring, locations: plantLocations, patchSharedPlant, refreshHome, removeProgressDue } = usePlantData();
     const { w, isSmall, isDesktop } = useScreenSize();
     const isMobileStack = w < 500;
     const [plant, setPlant] = useState(null);
@@ -12109,6 +12114,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                     uploadPlantPhoto: uploadPlantPhoto, logDate: logDate, todayStr: todayStr,
                     theme: theme, pxS: pxS, isSmall: isSmall,
                     onDone: async function() {
+                        if (removeProgressDue) removeProgressDue(plant.uid);
                         setLogProgress(false);
                         setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
                         setTimeout(() => setMsg(null), 2000);
@@ -16255,7 +16261,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
 
 function ProgressUpdatesScreen() {
     const { navigate } = useNavigation();
-    const { homeData, refreshHome, quickLog, updatePlant, uploadPlantPhoto } = usePlantData();
+    const { homeData, refreshHome, removeProgressDue, quickLog, updatePlant, uploadPlantPhoto } = usePlantData();
     const theme = useTheme();
     const { isSmall } = useScreenSize();
     const [loading, setLoading] = React.useState(false);
@@ -16335,6 +16341,7 @@ function ProgressUpdatesScreen() {
                     logDate: null, todayStr: function() { return new Date().toISOString().slice(0, 10); },
                     theme: theme, pxS: pxS, isSmall: isSmall,
                     onDone: function() {
+                        removeProgressDue(modalUid);
                         setDone(function(d) { return Object.assign({}, d, { [modalUid]: true }); });
                         setModalUid(null);
                         refreshHome().catch(function(){});
@@ -16377,12 +16384,13 @@ function AppContent() {
         }
     };
     const showTopLeftNav = currentScreen !== 'home';
-    return (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', width: '100%', flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' } },
+    return (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', width: '100%', flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative', paddingTop: 'env(safe-area-inset-top)' } },
         React.createElement(SceneBackground, null),
         showTopLeftNav && (React.createElement("div", { style: {
                 position: 'relative', zIndex: 30, display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 10px', borderBottom: '2px solid ' + (isDesktop ? '#8AA868' : '#2A4010'),
+                padding: '8px 10px', borderBottom: '2px solid ' + (isDesktop ? '#8AA868' : '#2A4010'),
                 background: isDesktop ? '#C8D8A8' : '#0A1208',
+                minHeight: 44, flexShrink: 0,
             } },
             canGoBack && React.createElement("button", { onClick: goBack, style: { fontFamily: "'Press Start 2P',monospace", fontSize: 9, padding: '7px 12px', background: 'transparent', border: '2px solid ' + (isDesktop ? '#5A8A38' : '#3A5A18'), color: isDesktop ? '#2A5808' : '#8AC868', cursor: 'pointer' } }, "< Back"),
             React.createElement("button", { onClick: () => navigate('home'), style: { fontFamily: "'Press Start 2P',monospace", fontSize: 9, padding: '7px 10px', background: 'transparent', border: '2px solid ' + (isDesktop ? '#5A8A38' : '#3A5A18'), color: isDesktop ? '#2A5808' : '#8AC868', cursor: 'pointer' } }, "\uD83C\uDFE0"),
