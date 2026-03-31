@@ -560,7 +560,7 @@
     /* Sticky header */
     .sticky-header {
       position: sticky; top: 0; z-index: 50;
-      padding: 8px 14px;
+      padding: 4px 14px;
       border-bottom: 3px solid;
       border-top: 3px solid;
       display: flex; align-items: center; gap: 14px;
@@ -571,12 +571,12 @@
       display: flex; gap: 8px; overflow-x: auto; overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none; flex: 1;
-      padding: 4px 0;
+      padding: 2px 0;
     }
     .header-nav-scroll::-webkit-scrollbar { display: none; }
     .header-nav-btn {
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 7px 14px; border: 2px solid;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 5px 12px; border: 2px solid;
       font-family: var(--font-body);
       font-weight: 900; font-size: var(--fs-ui);
       cursor: pointer; white-space: nowrap; position: relative;
@@ -584,7 +584,7 @@
       flex: 1 1 0; min-width: 0;
     }
     .header-nav-btn:active { transform: translateY(1px); }
-    .header-nav-btn .nav-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+    .header-nav-btn .nav-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
     .header-nav-btn .nav-badge {
       padding: 2px 6px; font-family: var(--font-pixel);
       font-size: 10px; border: 2px solid; font-weight: 900;
@@ -5669,7 +5669,7 @@ function HomeScreen() {
         src: LOGO_PNG,
         alt: 'Folium',
         onClick: () => navigate('home'),
-        style: { width: 220, height: 'auto', cursor: 'pointer', flexShrink: 0, imageRendering: 'pixelated' }
+        style: { width: 250, height: 'auto', cursor: 'pointer', flexShrink: 0, imageRendering: 'pixelated' }
     });
 
     const { isMobile: _headerIsMobile } = useScreenSize();
