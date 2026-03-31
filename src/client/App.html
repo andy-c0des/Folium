@@ -560,13 +560,13 @@
     /* Sticky header */
     .sticky-header {
       position: sticky; top: 0; z-index: 50;
-      padding: 0 14px;
+      padding: 0 16px;
       border-bottom: 3px solid;
       border-top: 3px solid;
-      display: flex; align-items: center; gap: 14px;
+      display: flex; align-items: center; gap: 16px;
       margin-bottom: 12px;
-      overflow: visible;
-      min-height: 0;
+      height: 72px;
+      overflow: hidden;
     }
     .header-nav-scroll {
       display: flex; gap: 8px; overflow-x: auto; overflow-y: visible;
@@ -5670,7 +5670,7 @@ function HomeScreen() {
         src: LOGO_PNG,
         alt: 'Folium',
         onClick: () => navigate('home'),
-        style: { width: 250, height: 62, objectFit: 'contain', objectPosition: 'left center', cursor: 'pointer', flexShrink: 0, imageRendering: 'pixelated' }
+        style: { height: 56, width: 'auto', cursor: 'pointer', flexShrink: 0 }
     });
 
     const { isMobile: _headerIsMobile } = useScreenSize();
