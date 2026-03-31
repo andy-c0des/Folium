@@ -10972,7 +10972,12 @@ function PlantScreen({ uid }) {
             fetchWikiBlurb(plant);
         }
     }, [plant && plant.uid]);
-    useEffect(() => { if (editOpen || repotOpen || logProgress || compostOpen) window.scrollTo(0, 0); }, [editOpen, repotOpen, logProgress, compostOpen]);
+    useEffect(() => {
+        const anyOpen = editOpen || repotOpen || logProgress || compostOpen;
+        if (anyOpen) { document.body.style.overflow = 'hidden'; window.scrollTo(0, 0); }
+        else { document.body.style.overflow = ''; }
+        return () => { document.body.style.overflow = ''; };
+    }, [editOpen, repotOpen, logProgress, compostOpen]);
     function todayStr() {
         var d = new Date();
         var mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -14399,7 +14404,10 @@ function CompostModal({ plant, onClose, onDone }) {
     const theme = useTheme();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '14px' };
     const [step, setStep] = useState('type');
-    useEffect(function() { window.scrollTo(0, 0); }, []); // type ΓåÆ cause_cat ΓåÆ cause_option ΓåÆ confirm
+    useEffect(function() {
+        document.body.style.overflow = 'hidden'; window.scrollTo(0, 0);
+        return function() { document.body.style.overflow = ''; };
+    }, []);
     const [type, setType] = useState(null); // 'deceased' | 'rehomed'
     const [causeCat, setCauseCat] = useState(null);
     const [cause, setCause] = useState(null);
@@ -16258,7 +16266,11 @@ function ProgressUpdatesScreen() {
         setLoading(true);
         refreshHome().catch(function(){}).finally(function(){ setLoading(false); });
     }, []);
-    React.useEffect(function() { if (modalUid) window.scrollTo(0, 0); }, [modalUid]);
+    React.useEffect(function() {
+        if (modalUid) { document.body.style.overflow = 'hidden'; window.scrollTo(0, 0); }
+        else { document.body.style.overflow = ''; }
+        return function() { document.body.style.overflow = ''; };
+    }, [modalUid]);
 
     const plants = (homeData && homeData.progressDueNow) ? homeData.progressDueNow : [];
     const visible = plants.filter(function(p) { return !done[p.uid]; });
