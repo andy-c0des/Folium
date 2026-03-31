@@ -162,7 +162,11 @@ function plantosQuickLog(uid, payload) {
   const lastFertCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
   if (payload.water === true && lastWateredCol < 0) Logger.log('[PlantOS] WARNING: "Last Watered" column not found.');
   if (payload.fertilize === true && lastFertCol < 0) { Logger.log('[PlantOS] WARNING: "Last Fertilized" column not found.'); Logger.log('[PlantOS] Headers: ' + Object.keys(hmap).join(', ')); }
-  const now = plantosNow_();
+  var now = plantosNow_();
+  if (payload.date && typeof payload.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(payload.date)) {
+    var parts = payload.date.split('-');
+    now = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]), 12, 0, 0);
+  }
   for (let r = 1; r < values.length; r++) {
     if (plantosSafeStr_(values[r][uidCol]).trim() !== needle) continue;
     if (payload.water === true) {
@@ -179,7 +183,7 @@ function plantosQuickLog(uid, payload) {
   throw new Error('Plant not found');
 }
 
-function plantosBatchWater(uids, actionLabel) {
+function plantosBatchWater(uids, actionLabel, dateStr) {
   uids = uids || [];
   if (!Array.isArray(uids) || !uids.length) return { ok: true, count: 0 };
   const { sh, values, hmap } = plantosReadInventory_();
@@ -189,7 +193,11 @@ function plantosBatchWater(uids, actionLabel) {
   if (uidCol < 0) throw new Error('Missing Plant UID');
   const set = {};
   uids.forEach(u => { const k = plantosSafeStr_(u).trim(); if (k) set[k] = true; });
-  const now = plantosNow_();
+  var now = plantosNow_();
+  if (dateStr && typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    var parts = dateStr.split('-');
+    now = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]), 12, 0, 0);
+  }
   let count = 0;
   const label = plantosSafeStr_(actionLabel).trim();
   for (let r = 1; r < values.length; r++) {
@@ -203,7 +211,7 @@ function plantosBatchWater(uids, actionLabel) {
   return { ok: true, count };
 }
 
-function plantosBatchFertilize(uids, actionLabel) {
+function plantosBatchFertilize(uids, actionLabel, dateStr) {
   uids = uids || [];
   if (!Array.isArray(uids) || !uids.length) return { ok: true, count: 0 };
   const { sh, values, hmap } = plantosReadInventory_();
@@ -215,7 +223,11 @@ function plantosBatchFertilize(uids, actionLabel) {
   if (uidCol < 0) throw new Error('Missing Plant UID');
   const set = {};
   uids.forEach(u => { const k = plantosSafeStr_(u).trim(); if (k) set[k] = true; });
-  const now = plantosNow_();
+  var now = plantosNow_();
+  if (dateStr && typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    var parts = dateStr.split('-');
+    now = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]), 12, 0, 0);
+  }
   let count = 0;
   const label = plantosSafeStr_(actionLabel).trim();
   for (let r = 1; r < values.length; r++) {

@@ -5119,21 +5119,21 @@ function PlantDataProvider({ children }) {
             return r;
         });
     };
-    const batchWater = (uids, actionLabel) => {
+    const batchWater = (uids, actionLabel, dateStr) => {
         if (DEMO_MODE) {
             const label = String(actionLabel || 'Watered');
             (uids || []).forEach(uid => quickLog(uid, { water: true, fertilize: false, repot: false, notes: label }));
             return Promise.resolve({ ok: true });
         }
-        return gasCall('plantosBatchWater', uids || [], actionLabel || '');
+        return gasCall('plantosBatchWater', uids || [], actionLabel || '', dateStr || '');
     };
-    const batchFertilize = (uids, actionLabel) => {
+    const batchFertilize = (uids, actionLabel, dateStr) => {
         if (DEMO_MODE) {
             const label = String(actionLabel || 'Fertilized');
             (uids || []).forEach(uid => quickLog(uid, { water: true, fertilize: true, repot: false, notes: label }));
             return Promise.resolve({ ok: true });
         }
-        return gasCall('plantosBatchFertilize', uids || [], actionLabel || '');
+        return gasCall('plantosBatchFertilize', uids || [], actionLabel || '', dateStr || '');
     };
     const getRecentLog = (limit) => {
         if (DEMO_MODE) {
@@ -5665,12 +5665,16 @@ function HomeScreen() {
     const maxW = isDesktop ? '1200px' : '680px';
     var LOGO_PNG = 'data:image/png;base64,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';
 
-    const HeaderLogo = () => React.createElement('img', {
-        src: LOGO_PNG,
-        alt: 'Folium',
+    const HeaderLogo = () => React.createElement('div', {
         onClick: () => navigate('home'),
-        style: { width: '30%', maxWidth: 280, height: 'auto', cursor: 'pointer', flexShrink: 0, mixBlendMode: 'multiply' }
-    });
+        style: { cursor: 'pointer', flexShrink: 0, background: 'white', padding: '4px 10px', display: 'inline-flex', alignItems: 'center' }
+    },
+        React.createElement('img', {
+            src: LOGO_PNG,
+            alt: 'Folium',
+            style: { width: 220, height: 'auto', display: 'block', imageRendering: 'pixelated' }
+        })
+    );
 
     const { isMobile: _headerIsMobile } = useScreenSize();
     const Header = () => {
@@ -6055,6 +6059,7 @@ function WateringScreen() {
     const [subContains, setSubContains] = useState(''); // free-text contains
     const [metaByUid, setMetaByUid] = useState({}); // uid -> { location, subText }
     const [metaLoading, setMetaLoading] = useState(false);
+    const [logDate, setLogDate] = useState(new Date().toISOString().slice(0,10));
     // Dynamic substrate buttons built from actual plant substrates in collection
     const SUB_PRESETS = useMemo(() => {
         const seen = new Set();
@@ -6288,8 +6293,8 @@ function WateringScreen() {
     async function manualLog(uid, kind) {
         setManualStatus({ type: 'loading', message: 'Saving...' });
         try {
-            if (kind === 'water') await quickLog(uid, { water: true, fertilize: false, repot: false, notes: '' });
-            if (kind === 'fert') await quickLog(uid, { water: false, fertilize: true, repot: false, notes: '' });
+            if (kind === 'water') await quickLog(uid, { water: true, fertilize: false, repot: false, notes: '', date: logDate });
+            if (kind === 'fert') await quickLog(uid, { water: false, fertilize: true, repot: false, notes: '', date: logDate });
             setManualStatus({ type: 'success', message: 'Saved Γ£à' });
         } catch(e) { setManualStatus({ type: 'error', message: 'Failed' }); }
         setTimeout(() => setManualStatus(null), 1000);
@@ -6302,12 +6307,12 @@ function WateringScreen() {
         setStatus({ type: 'loading', message: `Logging ${what}...` });
         try {
             if (tab === 'water')
-                await batchWater(selectedUids, label);
+                await batchWater(selectedUids, label, logDate);
             else if (tab === 'fert')
-                await batchFertilize(selectedUids, label);
+                await batchFertilize(selectedUids, label, logDate);
             else {
-                await batchWater(selectedUids, 'Watered');
-                await batchFertilize(selectedUids, 'Fertilized');
+                await batchWater(selectedUids, 'Watered', logDate);
+                await batchFertilize(selectedUids, 'Fertilized', logDate);
             }
             await refreshHome().catch(() => { });
             setSelected({});
@@ -6371,6 +6376,22 @@ function WateringScreen() {
                 React.createElement(TabButton, { id: "water", label: "Water", icon: "\uD83D\uDCA7" }),
                 React.createElement(TabButton, { id: "both", label: "Both", icon: "\uD83D\uDCA7\uD83C\uDF3E" }),
                 React.createElement(TabButton, { id: "manual", label: "Manual", icon: "\u270F" })),
+            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(26,122,160,0.08)', border: '2px solid rgba(26,122,160,0.2)', marginBottom: 8 } },
+                React.createElement("span", { style: { fontSize: 15 } }, "\uD83D\uDCC5"),
+                React.createElement("span", { style: Object.assign({}, px8S, { fontSize: '10px', color: '#1A6A9A' }) }, "Logging date:"),
+                React.createElement("input", {
+                    type: "date",
+                    value: logDate,
+                    max: new Date().toISOString().slice(0,10),
+                    onChange: function(e) { setLogDate(e.target.value); },
+                    style: Object.assign({}, px8S, { fontSize: '11px', flex: 1, border: '2px solid rgba(26,122,160,0.3)', padding: '3px 6px', background: '#EFF8FF', color: '#1A3A5A' })
+                }),
+                logDate !== new Date().toISOString().slice(0,10) && React.createElement("button", {
+                    type: "button",
+                    onClick: function() { setLogDate(new Date().toISOString().slice(0,10)); },
+                    style: { fontSize: '10px', border: '2px solid #1A7AA0', background: '#1E6A8A', color: '#A0D8F4', padding: '3px 7px', cursor: 'pointer' }
+                }, "Today")
+            ),
             React.createElement("div", { className: "  border-2 border-[#7A4A1A] shadow-sm p-3 mb-3" },
                 React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: '#2C1000', marginBottom: '8px' }) }, "FILTERS"),
                 React.createElement("div", { className: "flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-between" },
@@ -10868,6 +10889,7 @@ function PlantScreen({ uid }) {
     const [logNotes, setLogNotes] = useState('');
     const [logWater, setLogWater] = useState(false);
     const [logFert, setLogFert] = useState(false);
+    const [logDate, setLogDate] = useState(todayStr());
     const [compostOpen, setCompostOpen] = useState(false);
     const [relatedPlants, setRelatedPlants] = useState({});
     const [offspring, setOffspring] = useState([]);
@@ -10964,7 +10986,7 @@ function PlantScreen({ uid }) {
         setLogWater(false);
         setLogFert(false);
 
-        var today = todayStr();
+        var today = logDate || todayStr();
         setPlant(function(prev) {
             if (!prev) return prev;
             var patch = {};
@@ -10996,7 +11018,7 @@ function PlantScreen({ uid }) {
         setTimeout(() => setMsg(null), 1500);
 
         try {
-            await quickLog(plant.uid, { water: didWater, fertilize: didFert, repot: false, notes: note });
+            await quickLog(plant.uid, { water: didWater, fertilize: didFert, repot: false, notes: note, date: logDate || todayStr() });
             await new Promise(r => setTimeout(r, 600));
             await loadCurrent();
             setPlant(prev => {
@@ -11550,6 +11572,21 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     React.createElement("div", { className: "empty-title", style: { color: theme.txtS } }, "No entries yet"),
                                     React.createElement("div", { className: "empty-sub", style: { color: theme.txtS } }, "Log water, fert, or notes to see history"))),
                             !isDesktop && React.createElement("div", { style: { marginTop: 6, borderTop: '2px solid ' + theme.sep, paddingTop: 6 } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, background: theme.rowBg, border: '2px solid ' + theme.cardBorder, padding: '5px 8px' } },
+                                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, "DATE"),
+                                    React.createElement("input", {
+                                        type: "date",
+                                        value: logDate,
+                                        max: todayStr(),
+                                        onChange: function(e) { setLogDate(e.target.value); },
+                                        style: Object.assign({}, pxS, { fontSize: '11px', flex: 1, border: 'none', background: 'transparent', color: theme.txtP, outline: 'none' })
+                                    }),
+                                    logDate !== todayStr() && React.createElement("button", {
+                                        type: "button",
+                                        onClick: function() { setLogDate(todayStr()); },
+                                        style: { fontSize: '10px', border: '1px solid ' + theme.cardBorder, background: theme.rowBg, color: theme.txtS, padding: '2px 5px', cursor: 'pointer' }
+                                    }, "Today")
+                                ),
                                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 4 } },
                                     React.createElement("button", {
                                         type: "button", onClick: () => setLogWater(v => !v),
@@ -11647,6 +11684,21 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             React.createElement(PlantButton, { block: false, variant: "ghost", className: "py-2 px-3", onClick: () => setCompostOpen(true), style: { color: 'var(--c-urgent)', borderColor: '#c0392b' } }, "\uD83E\uDEA6 Remove"))),
                     isDesktop && (React.createElement("div", null,
                         React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '14px', color: theme.txtP, marginBottom: 8, letterSpacing: '0.08em' } }, "LOG"),
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, background: theme.rowBg, border: '2px solid ' + theme.cardBorder, padding: '5px 8px' } },
+                            React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, "DATE"),
+                            React.createElement("input", {
+                                type: "date",
+                                value: logDate,
+                                max: todayStr(),
+                                onChange: function(e) { setLogDate(e.target.value); },
+                                style: Object.assign({}, pxS, { fontSize: '11px', flex: 1, border: 'none', background: 'transparent', color: theme.txtP, outline: 'none' })
+                            }),
+                            logDate !== todayStr() && React.createElement("button", {
+                                type: "button",
+                                onClick: function() { setLogDate(todayStr()); },
+                                style: { fontSize: '10px', border: '1px solid ' + theme.cardBorder, background: theme.rowBg, color: theme.txtS, padding: '2px 5px', cursor: 'pointer' }
+                            }, "Today")
+                        ),
                         React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 } },
                             React.createElement("button", {
                                 type: "button", onClick: () => setLogWater(v => !v),
