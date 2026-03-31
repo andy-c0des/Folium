@@ -16250,7 +16250,6 @@ function ProgressUpdatesScreen() {
     const { homeData, refreshHome, quickLog, updatePlant, uploadPlantPhoto } = usePlantData();
     const theme = useTheme();
     const { isSmall } = useScreenSize();
-    const pxS = { fontFamily: "'Press Start 2P', cursive" };
     const [loading, setLoading] = React.useState(false);
     const [modalUid, setModalUid] = React.useState(null); // uid of plant whose modal is open
     const [done, setDone] = React.useState({}); // uid -> bool (just submitted)
@@ -16268,6 +16267,7 @@ function ProgressUpdatesScreen() {
     const subSize = isSmall ? '9px' : '10px';
     const nameSize = isSmall ? '10px' : '12px';
     const modalPlant = modalUid ? visible.find(function(p) { return p.uid === modalUid; }) : null;
+    // pxS intentionally not redefined here — uses global pxS (Pixelify Sans)
 
     return React.createElement('div', { className: 'screen-enter', style: { padding: isSmall ? '10px' : '16px', maxWidth: 680, margin: '0 auto', width: '100%' } },
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '8px 12px', background: theme.cardBg, border: '3px solid ' + theme.cardBorder } },
