@@ -10896,6 +10896,7 @@ function PlantScreen({ uid }) {
     const [logNotes, setLogNotes] = useState('');
     const [logWater, setLogWater] = useState(false);
     const [logFert, setLogFert] = useState(false);
+    const [logProgress, setLogProgress] = useState(false);
     const [logDate, setLogDate] = useState(todayStr());
     const [compostOpen, setCompostOpen] = useState(false);
     const [relatedPlants, setRelatedPlants] = useState({});
@@ -11312,14 +11313,8 @@ function PlantScreen({ uid }) {
             setPlant(prev => prev ? Object.assign({}, prev, editPatchUI) : prev);
             patchSharedPlant(plant.uid, editPatch);
             await loadCurrent();
-            setPlant(prev => {
-                if (!prev) return prev;
-                var protected_ = {};
-                if (editGenus) protected_.genus = editGenus;
-                if (editTaxon) protected_.taxon = editTaxon;
-                if (editCls)   protected_.classification = editCls;
-                return Object.assign({}, prev, protected_);
-            });
+            // Re-apply all edited values in case GAS returned stale/cached data
+            setPlant(prev => prev ? Object.assign({}, prev, editPatchUI) : prev);
             setMsg({ type: 'success', text: 'Saved Γ£à' });
         }
         catch (e) {
@@ -11594,7 +11589,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         style: { fontSize: '10px', border: '1px solid ' + theme.cardBorder, background: theme.rowBg, color: theme.txtS, padding: '2px 5px', cursor: 'pointer' }
                                     }, "Today")
                                 ),
-                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 4 } },
+                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 4 } },
                                     React.createElement("button", {
                                         type: "button", onClick: () => setLogWater(v => !v),
                                         className: "btn-press" + (logWater ? " water-active" : ""),
@@ -11606,7 +11601,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         }
                                     },
                                         React.createElement('div', { style: { fontSize: 18, lineHeight: 1, filter: logWater ? 'drop-shadow(0 0 5px rgba(79,195,247,0.8))' : 'none' } }, '\uD83D\uDCA7'),
-                                        React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '13px', color: logWater ? '#A0D8F4' : theme.txtS, marginTop: 3 } }, logWater ? '\u2713 DONE' : 'WATER')
+                                        React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '11px', color: logWater ? '#A0D8F4' : theme.txtS, marginTop: 3 } }, logWater ? '\u2713 DONE' : 'WATER')
                                     ),
                                     React.createElement("button", {
                                         type: "button", onClick: () => setLogFert(v => !v),
@@ -11619,31 +11614,55 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         }
                                     },
                                         React.createElement('div', { style: { fontSize: 18, lineHeight: 1, filter: logFert ? 'drop-shadow(0 0 5px rgba(251,191,36,0.8))' : 'none' } }, '\uD83C\uDF3E'),
-                                        React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '13px', color: logFert ? '#FDE68A' : theme.txtS, marginTop: 3 } }, logFert ? '\u2713 DONE' : 'FERT')
+                                        React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '11px', color: logFert ? '#FDE68A' : theme.txtS, marginTop: 3 } }, logFert ? '\u2713 DONE' : 'FERT')
+                                    ),
+                                    React.createElement("button", {
+                                        type: "button", onClick: () => { setLogProgress(v => !v); },
+                                        className: "btn-press" + (logProgress ? " fert-active" : ""),
+                                        style: {
+                                            padding: '7px 4px', textAlign: 'center',
+                                            border: '3px solid ' + (logProgress ? '#2A6B1A' : theme.rowBorder),
+                                            background: logProgress ? 'linear-gradient(180deg,#1E5A10,#0A2000)' : theme.rowBg,
+                                            boxShadow: logProgress ? '0 2px 0 #0A1800' : '0 2px 0 ' + theme.rowBorder,
+                                        }
+                                    },
+                                        React.createElement('div', { style: { fontSize: 18, lineHeight: 1, filter: logProgress ? 'drop-shadow(0 0 5px rgba(80,200,80,0.8))' : 'none' } }, '\uD83D\uDCCA'),
+                                        React.createElement('div', { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '9px', color: logProgress ? '#C8F0A8' : theme.txtS, marginTop: 3 } }, logProgress ? '\u2713 OPEN' : 'PROGRESS')
                                     )
                                 ),
                                 (logWater || logFert) && React.createElement(React.Fragment, null,
-                                    React.createElement("button", { type: "button", onClick: doCommit, className: "btn-press commit-ready w-full", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, fontSize: '13px', padding: '7px', border: '3px solid ' + theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text, boxShadow: '0 3px 0 ' + theme.btnP.shadow }) }, logWater && logFert ? '\uD83D\uDCA7\uD83C\uDF3E Log Both' : logWater ? '\uD83D\uDCA7 Log Water' : '\uD83C\uDF3E Log Fert')
+                                    React.createElement("button", { type: "button", onClick: doCommit, className: "btn-press commit-ready w-full", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, fontSize: '13px', padding: '7px', marginBottom: 4, border: '3px solid ' + theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text, boxShadow: '0 3px 0 ' + theme.btnP.shadow }) }, logWater && logFert ? '\uD83D\uDCA7\uD83C\uDF3E Log Both' : logWater ? '\uD83D\uDCA7 Log Water' : '\uD83C\uDF3E Log Fert')
                                 ),
-                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, marginTop: (logWater || logFert) ? 4 : 0 } },
-                                    React.createElement(PlantButton, { onClick: doNote, disabled: !logNotes.trim(), className: "py-1", style: { fontSize: '14px' } }, "\uD83D\uDCDD"),
-                                    React.createElement(PlantButton, { onClick: () => { setRepotOpen(v => !v); setRepotPot(plant.potSize || ''); setRepotSub(plant.substrate || plant.medium || ''); }, className: "py-1", style: { fontSize: '14px' } }, "\uD83E\uDEB4"),
-                                    React.createElement(PlantButton, { variant: "secondary", onClick: () => openEdit(plant), className: "py-1", style: { fontSize: '14px' } }, "\u270F\uFE0F")
+                                logProgress && React.createElement("div", { style: { marginTop: 4, marginBottom: 4, padding: '10px', background: 'rgba(42,107,26,0.12)', border: '2px solid #1A5A0A' } },
+                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: '#C8F0A8', marginBottom: 6, fontWeight: 700 }) }, '\uD83D\uDCCA Progress Update'),
+                                    React.createElement("textarea", {
+                                        value: logNotes,
+                                        onChange: e => setLogNotes(e.target.value),
+                                        placeholder: "Notes on growth, health, observations\u2026",
+                                        rows: 3,
+                                        className: "w-full resize-none input-depth",
+                                        style: Object.assign({}, pxS, {
+                                            fontSize: '12px', color: theme.txtP,
+                                            border: '2px solid ' + theme.cardBorder,
+                                            padding: '6px 8px', background: theme.rowBg,
+                                            display: 'block', width: '100%', boxSizing: 'border-box',
+                                            marginBottom: 8,
+                                        })
+                                    }),
+                                    React.createElement("button", {
+                                        type: "button",
+                                        onClick: async function() {
+                                            const note = logNotes.trim();
+                                            setLogNotes('');
+                                            setLogProgress(false);
+                                            setMsg({ type: 'success', text: 'Progress update logged! \u2705' });
+                                            setTimeout(() => setMsg(null), 1500);
+                                            try { await quickLog(plant.uid, { progressUpdate: true, notes: note, date: logDate || todayStr() }); await loadCurrent(); } catch(e) {}
+                                        },
+                                        style: Object.assign({}, pxS, { fontSize: '10px', padding: '8px', width: '100%', background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8', cursor: 'pointer', boxSizing: 'border-box' })
+                                    }, '\u2713 Complete Progress Update')
                                 ),
-                                React.createElement("button", {
-                                    type: "button",
-                                    onClick: async function() {
-                                        const note = logNotes.trim();
-                                        setLogNotes('');
-                                        setMsg({ type: 'success', text: 'Progress update logged! ✅' });
-                                        setTimeout(() => setMsg(null), 1500);
-                                        try { await quickLog(plant.uid, { progressUpdate: true, notes: note, date: logDate || todayStr() }); await loadCurrent(); } catch(e) {}
-                                    },
-                                    style: Object.assign({}, pxS, { fontSize: '10px', padding: '7px', marginTop: 4, width: '100%', background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 })
-                                },
-                                    React.createElement('span', null, '📊'),
-                                    React.createElement('span', null, 'Complete Progress Update')),
-                                React.createElement("div", { style: { marginTop: 6 } },
+                                !logProgress && React.createElement("div", { style: { marginTop: 4 } },
                                     React.createElement("textarea", {
                                         value: logNotes,
                                         onChange: e => setLogNotes(e.target.value),
@@ -11667,7 +11686,18 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                             boxShadow: '0 2px 0 #1A3008', width: '100%',
                                         })
                                     }, "\uD83D\uDCDD Save Note")
-                                )
+                                ),
+                                React.createElement("button", {
+                                    type: "button",
+                                    onClick: function() { openEdit(plant); },
+                                    style: Object.assign({}, pxS, {
+                                        fontSize: '10px', padding: '8px', marginTop: 6, width: '100%',
+                                        background: 'linear-gradient(180deg,#5A3010,#2C1000)',
+                                        border: '3px solid #8A5030', color: '#D4A86A',
+                                        boxShadow: '0 3px 0 #1E0800', cursor: 'pointer',
+                                        boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                    })
+                                }, '\u270F\uFE0F Edit Plant')
                             )
 
                         ));
