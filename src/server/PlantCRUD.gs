@@ -199,7 +199,7 @@ function plantosQuickLog(uid, payload) {
       }
     }
     plantosTimelineAppend_(needle, payload, now);
-    return { ok: true };
+    return { ok: true, _src: 'server_plantcrud' };
   }
   throw new Error('Plant not found');
 }
