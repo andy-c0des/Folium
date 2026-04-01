@@ -37,19 +37,67 @@ jobs:
           const keepCount = 5;
           const claspRc = JSON.parse(fs.readFileSync(`${process.env.HOME}/.clasprc.json`, 'utf8'));
 
-          const accessToken =
-            claspRc?.token?.access_token ||
-            claspRc?.tokens?.default?.access_token ||
-            claspRc?.access_token;
-
-          if (!accessToken) {
-            throw new Error('Could not find access_token in ~/.clasprc.json');
+          function firstObject(value) {
+            if (!value) return null;
+            if (Array.isArray(value)) return value.find((v) => v && typeof v === 'object') || null;
+            return typeof value === 'object' ? value : null;
           }
 
-          const headers = { Authorization: `Bearer ${accessToken}` };
-          const baseUrl = `https://script.googleapis.com/v1/projects/${scriptId}/versions`;
+          function resolveTokenData(rc) {
+            const tokenContainer = firstObject(rc?.token) || firstObject(rc?.tokens) || rc;
+            const oauthContainer = firstObject(rc?.oauth2ClientSettings) || firstObject(rc?.oauth2Client) || rc;
+
+            return {
+              accessToken: tokenContainer?.access_token || rc?.access_token,
+              refreshToken: tokenContainer?.refresh_token,
+              clientId: oauthContainer?.clientId,
+              clientSecret: oauthContainer?.clientSecret,
+            };
+          }
+
+          async function refreshAccessToken({ refreshToken, clientId, clientSecret }) {
+            if (!refreshToken || !clientId || !clientSecret) return null;
+
+            const body = new URLSearchParams({
+              client_id: clientId,
+              client_secret: clientSecret,
+              refresh_token: refreshToken,
+              grant_type: 'refresh_token',
+            });
+
+            const res = await fetch('https://oauth2.googleapis.com/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body,
+            });
+
+            if (!res.ok) {
+              console.warn(`Failed to refresh access token: ${res.status} ${await res.text()}`);
+              return null;
+            }
+
+            const json = await res.json();
+            return json?.access_token || null;
+          }
 
           async function main() {
+            const tokenData = resolveTokenData(claspRc);
+
+            let accessToken = await refreshAccessToken(tokenData);
+            if (accessToken) {
+              console.log('Using refreshed access token for Apps Script API calls.');
+            } else {
+              accessToken = tokenData.accessToken;
+              console.log('Using existing access token from ~/.clasprc.json.');
+            }
+
+            if (!accessToken) {
+              throw new Error('Could not resolve an access token from ~/.clasprc.json');
+            }
+
+            const headers = { Authorization: `Bearer ${accessToken}` };
+            const baseUrl = `https://script.googleapis.com/v1/projects/${scriptId}/versions`;
+
             const listRes = await fetch(baseUrl, { headers });
             if (!listRes.ok) {
               throw new Error(`Failed to list versions: ${listRes.status} ${await listRes.text()}`);
