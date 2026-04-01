@@ -12298,6 +12298,10 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
     const [quickSaved, setQuickSaved] = React.useState(false);
     const [quickVals, setQuickVals] = React.useState({});
 
+    // AI tab state (Carl disabled — archived for future re-enable)
+    // const [activeChar, setActiveChar] = React.useState('carl');
+    // const [kbEnabled, setKbEnabled] = React.useState(true);
+
     if (!plant) return null;
 
     const today = new Date();
@@ -13286,9 +13290,10 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
         }
     }
 
-    if (activeTab === 'carl') {
-        tabContent = React.createElement(CarlNPCPanel, { plant: plant, pxS: pxS, theme: theme, activeChar: activeChar, setActiveChar: setActiveChar, kbEnabled: kbEnabled, setKbEnabled: setKbEnabled });
-    }
+    // Carl tab disabled — archived for future re-enable:
+    // if (activeTab === 'carl') {
+    //     tabContent = React.createElement(CarlNPCPanel, { plant: plant, pxS: pxS, theme: theme, activeChar: activeChar, setActiveChar: setActiveChar, kbEnabled: kbEnabled, setKbEnabled: setKbEnabled });
+    // }
 
     return React.createElement('div', { style: { marginTop: 10 } },
         React.createElement('div', { style: {
@@ -13299,8 +13304,8 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
         }},
             React.createElement(TabBtn, { id: 'status',   icon: '\uD83D\uDCCA', label: 'STATUS' }),
             React.createElement(TabBtn, { id: 'schedule', icon: '\uD83D\uDCC5', label: 'SCHED' }),
-            React.createElement(TabBtn, { id: 'info',     icon: '\uD83D\uDCD6', label: 'INFO' }),
-            React.createElement(TabBtn, { id: 'carl',     icon: '\uD83C\uDF3F', label: 'AI' })
+            React.createElement(TabBtn, { id: 'info',     icon: '\uD83D\uDCD6', label: 'INFO' })
+            // Carl tab archived: React.createElement(TabBtn, { id: 'carl', icon: '\uD83C\uDF3F', label: 'AI' })
         ),
         React.createElement('div', { key: activeTab, style: {
             border: '3px solid ' + theme.cardBorder,
