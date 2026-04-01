@@ -7962,6 +7962,7 @@ function MyPlantsScreen({ openTab, prefill }) {
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const [activeTab, setActiveTab] = useState(openTab || 'plants'); // 'plants' | 'props' | 'phylo'
+    const [propFormOpen, setPropFormOpen] = useState(!!(prefill)); // lifted from PropsSection — drives bottom New Prop btn
     const [selectedLocs, setSelectedLocs] = useState(['__any__']); // default to 'Any' so plants load on open
     const [plants, setPlants] = useState([]);
     const [plantPage, setPlantPage] = useState(0);
@@ -8904,10 +8905,12 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 }, '+ Schedule')
                             )));
                     })))))))),
-            activeTab === 'props' && React.createElement(PropsSection, { locations: locations, prefill: prefill }),
+            activeTab === 'props' && React.createElement(PropsSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen }),
             activeTab === 'phylo' && React.createElement(PhyloScreen, { inline: true }),
             React.createElement("div", { className: "mt-4 flex gap-2" },
-                React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back"),
+                activeTab === 'props'
+                    ? React.createElement(PlantButton, { onClick: () => setPropFormOpen(v => !v) }, propFormOpen ? '\u2715 Cancel' : '\uD83C\uDF31 New Prop')
+                    : React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back"),
                 React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3", onClick: () => navigate('archive') }, "\uD83E\uDEA6 Archive")))));
 }
 
@@ -9820,7 +9823,7 @@ function GenusAutocompleteInput({ genusValue, speciesValue, onGenusChange, onSpe
                     style: Object.assign({ color: theme.txtP }, item) }, sp)))));
 }
 
-function PropsSection({ locations, prefill }) {
+function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowForm }) {
     const { getProps, getPropTimeline, createProp, updatePropStatus, updateProp, addPropNote, graduateProp, getPlant } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
@@ -9834,7 +9837,9 @@ function PropsSection({ locations, prefill }) {
     const [editPropForm, setEditPropForm] = useState({});
     const [editPropSaving, setEditPropSaving] = useState(false);
     const [editPropStatus, setEditPropStatus] = useState(null);
-    const [showForm, setShowForm] = useState(!!prefill);
+    const [showFormLocal, setShowFormLocal] = useState(!!(prefill || showFormProp));
+    const showForm = showFormProp !== undefined ? showFormProp : showFormLocal;
+    const setShowForm = (v) => { const nv = typeof v === 'function' ? v(showForm) : v; if (onSetShowForm) { onSetShowForm(nv); } else { setShowFormLocal(nv); } };
     const [form, setForm] = useState({
         genus: (prefill && prefill.genus) || '',
         species: (prefill && prefill.species) || '',
@@ -10098,23 +10103,21 @@ function PropsSection({ locations, prefill }) {
     const STEPS = ['Trying', 'Rooted', 'Potted Up'];
     function stepIdx(status) { const i = STEPS.indexOf(status); return i >= 0 ? i : (status === 'Graduated' ? 3 : (status === 'Failed' ? -1 : 0)); }
     return (React.createElement("div", null,
-        React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 } },
-            React.createElement("div", null,
-                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP }) }, "\uD83C\uDF31 Propagation Lab"),
-                successRate !== null && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
-                    succeededCount,
-                    "/",
-                    resolvedCount,
-                    " props succeeded \u00B7 ",
-                    React.createElement("span", { style: { fontWeight: 900, color: theme.btnP.bg } },
-                        successRate,
-                        "%"))),
-                resolvedCount === 0 && (props || []).length > 0 && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
-                    (props || []).length,
-                    " prop",
-                    (props || []).length !== 1 ? 's' : '',
-                    " in progress"))),
-            React.createElement(PlantButton, { onClick: () => { setShowForm(v => !v); setOpenPropId(null); }, className: "px-3 py-1" }, showForm ? 'Γ£ò Cancel' : '∩╝ï New Prop')),
+        React.createElement("div", { style: { marginBottom: 12 } },
+            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP }) }, "\uD83C\uDF31 Propagation Lab"),
+            successRate !== null && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
+                succeededCount,
+                "/",
+                resolvedCount,
+                " props succeeded \u00B7 ",
+                React.createElement("span", { style: { fontWeight: 900, color: theme.btnP.bg } },
+                    successRate,
+                    "%"))),
+            resolvedCount === 0 && (props || []).length > 0 && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
+                (props || []).length,
+                " prop",
+                (props || []).length !== 1 ? 's' : '',
+                " in progress"))),
         showForm && (React.createElement("div", { style: { border: `3px solid ${theme.cardBorder}`, padding: 12, marginBottom: 12, background: theme.rowBg } },
             React.createElement("div", { style: { display: 'flex', gap: 0, marginBottom: 10 } }, [[false, '🌱 Cutting / Division'], [true, '🧬 Hybrid Cross']].map(([isHybrid, label]) => (React.createElement("button", { key: String(isHybrid), type: "button", onClick: () => setForm(p => {
                         const update = { hybridType: isHybrid };
@@ -10283,7 +10286,7 @@ function PropsSection({ locations, prefill }) {
         React.createElement('div', { style: { display: 'flex', gap: 4, marginBottom: 10, flexWrap: 'wrap' } },
             [
                 { id: 'all', label: '🌱 All' },
-                { id: 'cutting', label: 'Γ£é∩╕Å Cuttings' },
+                { id: 'cutting', label: '\u2702 Cuttings' },
                 { id: 'seed', label: '🫘 Seeds' },
                 { id: 'hybrid', label: '🔬 Hybrids' }
             ].map(function(t) {
