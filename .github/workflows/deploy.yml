@@ -27,5 +27,59 @@ jobs:
       - name: Push to Apps Script
         run: clasp push --force
 
+      - name: Prune old Apps Script versions
+        continue-on-error: true
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+
+          const scriptId = '1pkUc3XrQP8119xlGttdkdxgwwiefm1JsQaVcJr0sK97zhem5hvbHXbsn';
+          const keepCount = 5;
+          const claspRc = JSON.parse(fs.readFileSync(`${process.env.HOME}/.clasprc.json`, 'utf8'));
+
+          const accessToken =
+            claspRc?.token?.access_token ||
+            claspRc?.tokens?.default?.access_token ||
+            claspRc?.access_token;
+
+          if (!accessToken) {
+            throw new Error('Could not find access_token in ~/.clasprc.json');
+          }
+
+          const headers = { Authorization: `Bearer ${accessToken}` };
+          const baseUrl = `https://script.googleapis.com/v1/projects/${scriptId}/versions`;
+
+          async function main() {
+            const listRes = await fetch(baseUrl, { headers });
+            if (!listRes.ok) {
+              throw new Error(`Failed to list versions: ${listRes.status} ${await listRes.text()}`);
+            }
+
+            const listBody = await listRes.json();
+            const versions = (listBody.versions || [])
+              .map((v) => Number(v.versionNumber))
+              .filter((n) => Number.isFinite(n) && n > 0)
+              .sort((a, b) => b - a);
+
+            const versionsToDelete = versions.slice(keepCount);
+            console.log(`Found ${versions.length} numbered versions; keeping ${Math.min(versions.length, keepCount)} and deleting ${versionsToDelete.length}.`);
+
+            for (const versionNumber of versionsToDelete) {
+              const delUrl = `${baseUrl}/${versionNumber}`;
+              const delRes = await fetch(delUrl, { method: 'DELETE', headers });
+              if (!delRes.ok) {
+                console.warn(`Failed to delete version ${versionNumber}: ${delRes.status} ${await delRes.text()}`);
+                continue;
+              }
+              console.log(`Deleted version ${versionNumber}`);
+            }
+          }
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
+
       - name: Deploy Apps Script (update pinned deployment)
         run: clasp deploy --deploymentId AKfycbw1EMhF1Mhqxtq6pQnM-K-1JkHw5rTesHwsBpaz6FFoNzc5vyzDMLwa8aIJsyjP5_cbyA --description "CI deploy"
