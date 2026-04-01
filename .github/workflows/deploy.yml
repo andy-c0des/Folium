@@ -27,6 +27,10 @@ jobs:
       - name: Push to Apps Script
         run: clasp push --force
 
+      - name: Debug ~/.clasprc.json structure
+        continue-on-error: true
+        run: node -e "const d=require(process.env.HOME+'/.clasprc.json'); const keys=JSON.stringify(Object.keys(d)); const tokenKeys=d.token?JSON.stringify(Object.keys(d.token)):'none'; console.log('Top keys:',keys,'Token keys:',tokenKeys);"
+
       - name: Prune old Apps Script versions
         continue-on-error: true
         run: |
