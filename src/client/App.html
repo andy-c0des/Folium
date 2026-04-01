@@ -2205,6 +2205,21 @@ function taxonCommonNames(genus) {
   return (TAXON_DB[genus] && TAXON_DB[genus].common) || [];
 }
 
+// ── LocalStorage stale-while-revalidate cache helpers ───────────────────────
+function lsGet_(key, maxAgeMs) {
+    try {
+        var raw = localStorage.getItem(key);
+        if (!raw) return null;
+        var obj = JSON.parse(raw);
+        if (maxAgeMs && (Date.now() - obj.ts) > maxAgeMs) return null;
+        return obj.data != null ? obj.data : null;
+    } catch(e) { return null; }
+}
+function lsSet_(key, data) {
+    try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {}
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 function gasCall(fn, ...args) {
     return new Promise(function(resolve, reject) {
         var token = localStorage.getItem('plantos_auth_token') || '';
@@ -4677,10 +4692,10 @@ function useNavigation() {
 }
 const PlantDataContext = createContext(undefined);
 function PlantDataProvider({ children }) {
-    const [locations, setLocations] = useState([]);
-    const [homeData, setHomeData] = useState(null);
-    const [allPlantsCache, setAllPlantsCache] = useState([]);
-    const [allPlantsCacheReady, setAllPlantsCacheReady] = useState(false);
+    const [locations, setLocations] = useState(() => lsGet_('plantos_locs_cache', 10 * 60 * 1000) || []);
+    const [homeData, setHomeData] = useState(() => lsGet_('plantos_home_cache', 5 * 60 * 1000));
+    const [allPlantsCache, setAllPlantsCache] = useState(() => lsGet_('plantos_plants_cache', 5 * 60 * 1000) || []);
+    const [allPlantsCacheReady, setAllPlantsCacheReady] = useState(() => !!lsGet_('plantos_plants_cache', 5 * 60 * 1000));
     const [demoPlants, setDemoPlants] = useState(() => {
         return (DEMO_SEED.plants || []).map(p => {
             const gs = cleanDisplayName(`${p.genus || ''} ${p.species || p.taxon || ''}`.trim());
@@ -4775,12 +4790,19 @@ function PlantDataProvider({ children }) {
             setDemoHomeData(demoRebuildHome_(demoPlants));
             return;
         }
-        gasCall('plantosListLocations').then(setLocations).catch(() => setLocations([]));
-        gasCall('plantosHome').then(setHomeData).catch(() => setHomeData(null));
+        gasCall('plantosListLocations').then(function(locs) {
+            setLocations(locs);
+            lsSet_('plantos_locs_cache', locs);
+        }).catch(() => setLocations([]));
+        gasCall('plantosHome').then(function(d) {
+            setHomeData(d);
+            lsSet_('plantos_home_cache', d);
+        }).catch(() => setHomeData(null));
         gasCall('plantosGetAllPlantsLite').then(function(res) {
             var ps = unwrapPlantEnvelope_(res, 'plantosGetAllPlantsLite (startup)');
             setAllPlantsCache(ps);
             setAllPlantsCacheReady(true);
+            lsSet_('plantos_plants_cache', ps);
         }).catch(function(err) {
             console.error('[PlantOS] plantosGetAllPlantsLite failed:', err && err.message ? err.message : String(err));
             setAllPlantsCache([]);
@@ -4804,6 +4826,7 @@ function PlantDataProvider({ children }) {
             d.progressDueNow = d.progressDueNow.filter(p => !removedProgressUidsRef.current.has(String(p.uid)));
         }
         setHomeData(d);
+        lsSet_('plantos_home_cache', d);
         return d;
     };
     const removeProgressDue = (uid) => {
@@ -5445,10 +5468,16 @@ function HomeScreen() {
     const { homeData, refreshHome } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
-    const [loading, setLoading] = useState(true);
+    // If homeData is already in context (from cache), start with loading=false
+    const [loading, setLoading] = useState(!homeData);
     useEffect(() => {
-        setLoading(true);
-        refreshHome().catch(() => { }).finally(() => setLoading(false));
+        if (homeData) {
+            // Cached data already showing — refresh silently in background
+            refreshHome().catch(() => {});
+        } else {
+            // No cache — show loading until first fetch completes
+            refreshHome().catch(() => {}).finally(() => setLoading(false));
+        }
     }, []);
     const dueNow = (homeData && homeData.dueNow) ? homeData.dueNow : [];
     const upcoming = (homeData && homeData.upcoming) ? homeData.upcoming : [];
