@@ -68,6 +68,8 @@ const PLANTOS_BACKEND_CFG = {
     INFRA_RANK: 'Infra Rank',       // FIX #15
     INFRA_EPITHET: 'Infra Epithet', // FIX #15
     PURCHASE_PRICE: 'Purchase Price',
+    LAST_PROGRESS_UPDATE: 'Last Progress Update',
+    PROGRESS_STATUS: 'Progress Status',
 
     LATEST_PHOTO_ID: 'Latest Photo ID',
     LATEST_PHOTO_THUMB: 'Latest Photo Thumb',

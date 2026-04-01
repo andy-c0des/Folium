@@ -161,7 +161,11 @@ function plantosQuickLog(uid, payload) {
   const lastFertCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
   if (payload.water === true && lastWateredCol < 0) Logger.log('[PlantOS] WARNING: "Last Watered" column not found.');
   if (payload.fertilize === true && lastFertCol < 0) { Logger.log('[PlantOS] WARNING: "Last Fertilized" column not found.'); Logger.log('[PlantOS] Headers: ' + Object.keys(hmap).join(', ')); }
-  const now = plantosNow_();
+  var now = plantosNow_();
+  if (payload.date && typeof payload.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(payload.date)) {
+    var _dp = payload.date.split('-');
+    now = new Date(Number(_dp[0]), Number(_dp[1])-1, Number(_dp[2]), 12, 0, 0);
+  }
   for (let r = 1; r < values.length; r++) {
     if (plantosSafeStr_(values[r][uidCol]).trim() !== needle) continue;
     if (payload.water === true) {
@@ -171,6 +175,28 @@ function plantosQuickLog(uid, payload) {
     if (payload.fertilize === true) {
       if (fertilizedCol >= 0) sh.getRange(r + 1, fertilizedCol + 1).setValue(true);
       if (lastFertCol >= 0) sh.getRange(r + 1, lastFertCol + 1).setValue(now);
+    }
+    if (payload.progressUpdate === true) {
+      const _lpuHeader = PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE;
+      let lastProgressCol = plantosCol_(hmap, _lpuHeader);
+      if (lastProgressCol < 0) {
+        const newColIdx = sh.getLastColumn();
+        sh.getRange(1, newColIdx + 1).setValue(_lpuHeader);
+        SpreadsheetApp.flush();
+        lastProgressCol = newColIdx;
+      }
+      sh.getRange(r + 1, lastProgressCol + 1).setValue(now);
+      SpreadsheetApp.flush();
+      if (payload.progressStatus) {
+        const progStatusCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.PROGRESS_STATUS);
+        if (progStatusCol >= 0) sh.getRange(r + 1, progStatusCol + 1).setValue(payload.progressStatus);
+      }
+      if (payload.heightCm) {
+        try {
+          const heightCol = plantosCol_(hmap, 'Height (cm)');
+          if (heightCol >= 0) sh.getRange(r + 1, heightCol + 1).setValue(payload.heightCm);
+        } catch(e) {}
+      }
     }
     plantosTimelineAppend_(needle, payload, now);
     return { ok: true };
