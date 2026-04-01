@@ -1175,7 +1175,11 @@ function plantosQuickLog(uid, payload) {
   const lastFertCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
   if (payload.water === true && lastWateredCol < 0) Logger.log('[PlantOS] WARNING: "Last Watered" column not found.');
   if (payload.fertilize === true && lastFertCol < 0) { Logger.log('[PlantOS] WARNING: "Last Fertilized" column not found.'); Logger.log('[PlantOS] Headers: ' + Object.keys(hmap).join(', ')); }
-  const now = plantosNow_();
+  var now = plantosNow_();
+  if (payload.date && typeof payload.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(payload.date)) {
+    var parts = payload.date.split('-');
+    now = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]), 12, 0, 0);
+  }
   for (let r = 1; r < values.length; r++) {
     if (plantosSafeStr_(values[r][uidCol]).trim() !== needle) continue;
     if (payload.water === true) {
@@ -1186,22 +1190,30 @@ function plantosQuickLog(uid, payload) {
       if (fertilizedCol >= 0) sh.getRange(r + 1, fertilizedCol + 1).setValue(true);
       if (lastFertCol >= 0) sh.getRange(r + 1, lastFertCol + 1).setValue(now);
     }
+    var _diagInfo = null;
     if (payload.progressUpdate === true) {
-      let lastProgressCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
+      const _lpuHeader = PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE;
+      let lastProgressCol = plantosCol_(hmap, _lpuHeader);
+      _diagInfo = { lpuHeader: _lpuHeader, lastProgressCol: lastProgressCol, row: r+1, uid: needle, hmapSample: Object.keys(hmap).slice(40,60).join(',') };
+      Logger.log('[PlantOS][Code.js] progressUpdate: header="' + _lpuHeader + '" col=' + lastProgressCol + ' row=' + (r+1));
       if (lastProgressCol < 0) {
         const newColIdx = sh.getLastColumn();
-        sh.getRange(1, newColIdx + 1).setValue(PLANTOS_BACKEND_CFG.HEADERS.LAST_PROGRESS_UPDATE);
+        _diagInfo.autoCreateCol = newColIdx + 1;
+        Logger.log('[PlantOS][Code.js] LPU col missing, creating at 1-indexed col ' + (newColIdx + 1));
+        sh.getRange(1, newColIdx + 1).setValue(_lpuHeader);
         SpreadsheetApp.flush();
         lastProgressCol = newColIdx;
       }
       sh.getRange(r + 1, lastProgressCol + 1).setValue(now);
+      _diagInfo.wroteToCol = lastProgressCol + 1;
+      SpreadsheetApp.flush();
       if (payload.progressStatus) {
         const progStatusCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.PROGRESS_STATUS);
         if (progStatusCol >= 0) sh.getRange(r + 1, progStatusCol + 1).setValue(payload.progressStatus);
       }
     }
     plantosTimelineAppend_(needle, payload, now);
-    return { ok: true };
+    return { ok: true, _diag: _diagInfo };
   }
   throw new Error('Plant not found');
 }
