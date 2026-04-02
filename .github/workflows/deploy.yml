@@ -22,7 +22,7 @@ jobs:
 
       - name: Write .clasp.json
         run: |
-          echo '{"scriptId":"1pkUc3XrQP8119xlGttdkdxgwwiefm1JsQaVcJr0sK97zhem5hvbHXbsn","rootDir":"src"}' > .clasp.json
+          echo '{"scriptId":"1Y-FD0gguTdRMtzACZ9O7g2TGNkm8qjuARn_extochw7HEI2xpUPRYJZ7","rootDir":"src"}' > .clasp.json
 
       - name: Push to Apps Script
         run: clasp push --force
@@ -32,7 +32,7 @@ jobs:
         run: |
           node <<'EOF'
           const fs = require('fs');
-          const scriptId = '1pkUc3XrQP8119xlGttdkdxgwwiefm1JsQaVcJr0sK97zhem5hvbHXbsn';
+          const scriptId = '1Y-FD0gguTdRMtzACZ9O7g2TGNkm8qjuARn_extochw7HEI2xpUPRYJZ7';
           const keepCount = 5;
 
           async function main() {
@@ -86,5 +86,4 @@ jobs:
           EOF
 
       - name: Deploy Apps Script (update pinned deployment)
-        continue-on-error: true
-        run: clasp deploy --deploymentId AKfycbxAfeDSY5pIgubiH0ecKTl_SjIB5kNszSzU7DwwALru1HP_w1VJypzMeRuwZPFYNAMPJA --description "CI deploy"
+        run: clasp deploy --deploymentId AKfycbxIoMarP6xQS6LCW9HVEDEJf0YfARIYLSTSA-3leipU42wMYiZjMQWxctmoSL2oMa5gYg --description "CI deploy"
