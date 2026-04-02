@@ -27,5 +27,111 @@ jobs:
       - name: Push to Apps Script
         run: clasp push --force
 
+      - name: Debug ~/.clasprc.json structure
+        continue-on-error: true
+        run: node -e "const d=require(process.env.HOME+'/.clasprc.json'); const keys=JSON.stringify(Object.keys(d)); const tokenKeys=d.token?JSON.stringify(Object.keys(d.token)):'none'; console.log('Top keys:',keys,'Token keys:',tokenKeys);"
+
+      - name: Prune old Apps Script versions
+        continue-on-error: true
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+
+          const scriptId = '1pkUc3XrQP8119xlGttdkdxgwwiefm1JsQaVcJr0sK97zhem5hvbHXbsn';
+          const keepCount = 5;
+          const claspRc = JSON.parse(fs.readFileSync(`${process.env.HOME}/.clasprc.json`, 'utf8'));
+
+          function firstObject(value) {
+            if (!value) return null;
+            if (Array.isArray(value)) return value.find((v) => v && typeof v === 'object') || null;
+            return typeof value === 'object' ? value : null;
+          }
+
+          function resolveTokenData(rc) {
+            const tokenContainer = firstObject(rc?.token) || firstObject(rc?.tokens) || rc;
+            const oauthContainer = firstObject(rc?.oauth2ClientSettings) || firstObject(rc?.oauth2Client) || rc;
+
+            return {
+              accessToken: tokenContainer?.access_token || rc?.access_token,
+              refreshToken: tokenContainer?.refresh_token,
+              clientId: oauthContainer?.clientId,
+              clientSecret: oauthContainer?.clientSecret,
+            };
+          }
+
+          async function refreshAccessToken({ refreshToken, clientId, clientSecret }) {
+            if (!refreshToken || !clientId || !clientSecret) return null;
+
+            const body = new URLSearchParams({
+              client_id: clientId,
+              client_secret: clientSecret,
+              refresh_token: refreshToken,
+              grant_type: 'refresh_token',
+            });
+
+            const res = await fetch('https://oauth2.googleapis.com/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body,
+            });
+
+            if (!res.ok) {
+              console.warn(`Failed to refresh access token: ${res.status} ${await res.text()}`);
+              return null;
+            }
+
+            const json = await res.json();
+            return json?.access_token || null;
+          }
+
+          async function main() {
+            const tokenData = resolveTokenData(claspRc);
+
+            let accessToken = await refreshAccessToken(tokenData);
+            if (accessToken) {
+              console.log('Using refreshed access token for Apps Script API calls.');
+            } else {
+              accessToken = tokenData.accessToken;
+              console.log('Using existing access token from ~/.clasprc.json.');
+            }
+
+            if (!accessToken) {
+              throw new Error('Could not resolve an access token from ~/.clasprc.json');
+            }
+
+            const headers = { Authorization: `Bearer ${accessToken}` };
+            const baseUrl = `https://script.googleapis.com/v1/projects/${scriptId}/versions`;
+
+            const listRes = await fetch(baseUrl, { headers });
+            if (!listRes.ok) {
+              throw new Error(`Failed to list versions: ${listRes.status} ${await listRes.text()}`);
+            }
+
+            const listBody = await listRes.json();
+            const versions = (listBody.versions || [])
+              .map((v) => Number(v.versionNumber))
+              .filter((n) => Number.isFinite(n) && n > 0)
+              .sort((a, b) => b - a);
+
+            const versionsToDelete = versions.slice(keepCount);
+            console.log(`Found ${versions.length} numbered versions; keeping ${Math.min(versions.length, keepCount)} and deleting ${versionsToDelete.length}.`);
+
+            for (const versionNumber of versionsToDelete) {
+              const delUrl = `${baseUrl}/${versionNumber}`;
+              const delRes = await fetch(delUrl, { method: 'DELETE', headers });
+              if (!delRes.ok) {
+                console.warn(`Failed to delete version ${versionNumber}: ${delRes.status} ${await delRes.text()}`);
+                continue;
+              }
+              console.log(`Deleted version ${versionNumber}`);
+            }
+          }
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
+
       - name: Deploy Apps Script (update pinned deployment)
         run: clasp deploy --deploymentId AKfycbw1EMhF1Mhqxtq6pQnM-K-1JkHw5rTesHwsBpaz6FFoNzc5vyzDMLwa8aIJsyjP5_cbyA --description "CI deploy"

@@ -729,6 +729,13 @@
 
 <script type="text/javascript">
 const { useState, useEffect, useRef, createContext, useContext, useMemo } = React;
+const _createElement = React.createElement.bind(React);
+React.createElement = function(type, props) {
+    if (type === 'img') {
+        props = Object.assign({ loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' }, props || {});
+    }
+    return _createElement.apply(null, [type, props].concat(Array.prototype.slice.call(arguments, 2)));
+};
 const BOOT = window.PLANTOS_BOOT || {};
 const HAS_GAS = !!(window.google && google.script && google.script.run);
 const PLANTOS_API_URL = 'https://script.google.com/macros/s/AKfycbw1EMhF1Mhqxtq6pQnM-K-1JkHw5rTesHwsBpaz6FFoNzc5vyzDMLwa8aIJsyjP5_cbyA/exec';
@@ -738,6 +745,31 @@ const px8 = { fontFamily: "'Press Start 2P', cursive" };
 
 
 function normStr(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+const PLANTOS_CACHE_PREFIX = 'plantos_cache_v1:';
+const inMemoryCache = Object.create(null);
+function cacheRead(key, maxAgeMs) {
+    try {
+        const mem = inMemoryCache[key];
+        if (mem && (Date.now() - mem.ts) < maxAgeMs)
+            return mem.value;
+        const raw = localStorage.getItem(PLANTOS_CACHE_PREFIX + key);
+        if (!raw)
+            return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object' || !parsed.ts)
+            return null;
+        if ((Date.now() - parsed.ts) > maxAgeMs)
+            return null;
+        inMemoryCache[key] = parsed;
+        return parsed.value;
+    }
+    catch (_a) { return null; }
+}
+function cacheWrite(key, value) {
+    const entry = { ts: Date.now(), value: value };
+    inMemoryCache[key] = entry;
+    try { localStorage.setItem(PLANTOS_CACHE_PREFIX + key, JSON.stringify(entry)); } catch (_a) {}
+}
 
 function relativeDate(isoStr) {
     if (!isoStr) return 'Overdue';
@@ -5056,6 +5088,10 @@ function PlantDataProvider({ children }) {
     const getPlantsByLocation = (loc) => {
         const locN = String(loc || '').trim().toLowerCase();
         if (DEMO_MODE) return Promise.resolve((demoPlants || []).filter(p => String(p.location || '').trim().toLowerCase() === locN));
+        const cacheKey = 'plantsByLocation:' + locN;
+        const cached = cacheRead(cacheKey, 1000 * 60 * 5);
+        if (Array.isArray(cached) && cached.length)
+            return Promise.resolve(cached);
         return gasCall('plantosGetPlantsByLocationLite', loc)
             .then(function(res) {
                 var ps = unwrapPlantEnvelope_(res, 'getPlantsByLocation(' + loc + ')');
@@ -5065,6 +5101,7 @@ function PlantDataProvider({ children }) {
                     ps._envelopeErrors = errSummary;
                 }
                 if (res && res.meta) console.log('[PlantOS] getByLocation(' + loc + ') meta:', JSON.stringify(res.meta));
+                cacheWrite(cacheKey, ps);
                 return ps;
             });
     };;
@@ -5073,7 +5110,16 @@ function PlantDataProvider({ children }) {
             const p = demoFind_(uid);
             return Promise.resolve(p ? Object.assign({}, p) : null);
         }
-        return gasCall('plantosGetPlant', uid).then(res => (res && res.ok ? res.plant : null));
+        const cacheKey = 'plant:' + String(uid);
+        const cached = cacheRead(cacheKey, 1000 * 60 * 2);
+        if (cached)
+            return Promise.resolve(cached);
+        return gasCall('plantosGetPlant', uid).then(res => {
+            const plant = (res && res.ok ? res.plant : null);
+            if (plant)
+                cacheWrite(cacheKey, plant);
+            return plant;
+        });
     };
     const setNickname = (uid, nickname) => {
         if (DEMO_MODE) {
@@ -5280,8 +5326,15 @@ function PlantDataProvider({ children }) {
     };
     const getAllPlants = () => {
         if (DEMO_MODE) return Promise.resolve((demoPlants || []).slice());
+        const cached = cacheRead('allPlantsLite', 1000 * 60 * 5);
+        if (Array.isArray(cached) && cached.length)
+            return Promise.resolve(cached);
         return gasCall('plantosGetAllPlantsLite')
-            .then(function(res) { return unwrapPlantEnvelope_(res, 'getAllPlants'); });
+            .then(function(res) {
+                var out = unwrapPlantEnvelope_(res, 'getAllPlants');
+                cacheWrite('allPlantsLite', out);
+                return out;
+            });
     };
 
     const refreshAllPlantsCache = () => {
@@ -5289,6 +5342,7 @@ function PlantDataProvider({ children }) {
             var ps = unwrapPlantEnvelope_(res, 'refreshAllPlantsCache');
             setAllPlantsCache(ps);
             setAllPlantsCacheReady(true);
+            cacheWrite('allPlantsLite', ps);
         }).catch(() => {});
     };;
 
@@ -8205,21 +8259,11 @@ function MyPlantsScreen({ openTab, prefill }) {
                 let combined = [];
                 let envelopeWarnings = [];
                 if (isAny) {
-                    // FIX #14: call Lite directly for full inventory, handle envelope
-                    var rawRes = await gasCall('plantosGetAllPlantsLite');
-                    combined = unwrapPlantEnvelope_(rawRes, 'inventory:Any');
-                    var errS = envelopeErrorSummary_(rawRes);
-                    if (errS) envelopeWarnings.push(errS);
-                    if (rawRes && rawRes.meta) console.log('[PlantOS] inventory:Any meta:', JSON.stringify(rawRes.meta));
+                    combined = await getAllPlants();
                 } else {
                     const results = await Promise.all(
                         selectedLocs.map(async function(loc) {
-                            var rawRes = await gasCall('plantosGetPlantsByLocationLite', loc);
-                            var ps = unwrapPlantEnvelope_(rawRes, 'inventory:' + loc);
-                            var errS = envelopeErrorSummary_(rawRes);
-                            if (errS) envelopeWarnings.push(loc + ': ' + errS);
-                            if (rawRes && rawRes.meta) console.log('[PlantOS] inventory:' + loc + ' meta:', JSON.stringify(rawRes.meta));
-                            return ps;
+                            return getPlantsByLocation(loc);
                         })
                     );
                     combined = results.flat();
@@ -11178,6 +11222,7 @@ function PlantScreen({ uid }) {
         setPhotoMsg({ type: 'loading', text: 'Uploading photo...' });
         try {
             const dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
+            setPhoto({ thumbUrl: dataUrl, viewUrl: dataUrl, name: file.name || 'photo.jpg' }); // optimistic preview
             const res = await uploadPlantPhoto(plant.uid, dataUrl, file.name || 'photo.jpg');
             if (res && res.ok) {
                 setPhotoMsg({ type: 'success', text: 'Photo added ✓' });
@@ -11227,12 +11272,12 @@ function PlantScreen({ uid }) {
         if (!plant || !nickVal.trim())
             return;
         setMsg({ type: 'loading', text: 'Saving...' });
-        setNickOpen(false);
         try {
             const nextNick = nickVal.trim();
-            await setNickname(plant.uid, nextNick);
-            setNickVal('');
             setPlant(prev => prev ? Object.assign(Object.assign({}, prev), { nickname: nextNick }) : prev);
+            await setNickname(plant.uid, nextNick);
+            setNickOpen(false);
+            setNickVal('');
             patchSharedPlant(plant.uid, { nickname: nextNick });
             await loadCurrent();
             setPlant(prev => prev ? Object.assign(Object.assign({}, prev), { nickname: nextNick }) : prev);
@@ -11250,10 +11295,12 @@ function PlantScreen({ uid }) {
         setMsg({ type: 'loading', text: 'Saving...' });
         const note = logNotes.trim();
         setLogNotes('');
-        setRepotOpen(false);
         try {
+            const optimisticPatch = { potSize: repotPot, substrate: repotSub, lastRepotted: todayStr() };
+            setPlant(prev => prev ? Object.assign(Object.assign({}, prev), optimisticPatch) : prev);
             await quickLog(plant.uid, { repot: true, potSize: repotPot, substrate: repotSub, notes: note });
             await updatePlant(plant.uid, { potSize: repotPot, substrate: repotSub, lastRepotted: todayStr() });
+            setRepotOpen(false);
             patchSharedPlant(plant.uid, { potSize: repotPot, substrate: repotSub, lastRepotted: todayStr() });
             await loadCurrent();
             setMsg({ type: 'success', text: 'Saved ✓' });
@@ -11340,7 +11387,6 @@ function PlantScreen({ uid }) {
         if (!plant)
             return;
         setMsg({ type: 'loading', text: 'Saving...' });
-        setEditOpen(false);
         try {
             const editPatch = {
                 genus: editGenus, taxon: editTaxon, classification: editCls,
@@ -11356,6 +11402,7 @@ function PlantScreen({ uid }) {
             if (editNickname !== (plant.nickname || '')) {
                 await setNickname(plant.uid, editNickname);
             }
+            setEditOpen(false);
             // Expose aliases so UI reads correctly after optimistic update
             var editPatchUI = Object.assign({}, editPatch, {
                 everyDays: editPatch.waterEveryDays,
