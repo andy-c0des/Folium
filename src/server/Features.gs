@@ -207,6 +207,7 @@ function plantosArchivePlant(uid, type, cause, causeDetail, extraFields) {
   const entry = { id: 'ARC_' + Date.now(), uid: plant.uid, primary: plant.primary, genus: plant.genus || '', type: plantosSafeStr_(type).trim() || 'deceased', cause: plantosSafeStr_(cause).trim(), causeDetail: plantosSafeStr_(causeDetail).trim(), archivedAt: plantosFmtDate_(plantosNow_()), note: plantosSafeStr_(extraFields.note || '').trim() };
   if (extraFields.deathDate) entry.deathDate = extraFields.deathDate;
   if (extraFields.rehomeDate) entry.rehomeDate = extraFields.rehomeDate;
+  if (extraFields.salePrice) entry.salePrice = extraFields.salePrice;
   archive.unshift(entry);
   PropertiesService.getScriptProperties().setProperty(PLANTOS_ARCHIVE_KEY, JSON.stringify(archive));
   if (rowIdx >= 0) sh.deleteRow(rowIdx + 1);

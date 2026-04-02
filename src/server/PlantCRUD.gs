@@ -158,9 +158,15 @@ function plantosQuickLog(uid, payload) {
   const wateredCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.WATERED);
   const lastWateredCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_WATERED);
   const fertilizedCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.FERTILIZED);
-  const lastFertCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
+  let lastFertCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
   if (payload.water === true && lastWateredCol < 0) Logger.log('[PlantOS] WARNING: "Last Watered" column not found.');
-  if (payload.fertilize === true && lastFertCol < 0) { Logger.log('[PlantOS] WARNING: "Last Fertilized" column not found.'); Logger.log('[PlantOS] Headers: ' + Object.keys(hmap).join(', ')); }
+  if (payload.fertilize === true && lastFertCol < 0) {
+    Logger.log('[PlantOS] "Last Fertilized" column not found — auto-creating. Headers: ' + Object.keys(hmap).join(', '));
+    const newColIdx = sh.getLastColumn();
+    sh.getRange(1, newColIdx + 1).setValue(PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
+    SpreadsheetApp.flush();
+    lastFertCol = newColIdx;
+  }
   var now = plantosNow_();
   if (payload.date && typeof payload.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(payload.date)) {
     var _dp = payload.date.split('-');
@@ -234,10 +240,17 @@ function plantosBatchFertilize(uids, actionLabel) {
   const { sh, values, hmap } = plantosReadInventory_();
   const uidCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.UID);
   const fertilizedCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.FERTILIZED);
-  const lastFertilizedCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
+  let lastFertilizedCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
   const wateredCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.WATERED);
   const lastWateredCol = plantosCol_(hmap, PLANTOS_BACKEND_CFG.HEADERS.LAST_WATERED);
   if (uidCol < 0) throw new Error('Missing Plant UID');
+  if (lastFertilizedCol < 0) {
+    Logger.log('[PlantOS] "Last Fertilized" column not found in batchFertilize — auto-creating.');
+    const newColIdx = sh.getLastColumn();
+    sh.getRange(1, newColIdx + 1).setValue(PLANTOS_BACKEND_CFG.HEADERS.LAST_FERTILIZED);
+    SpreadsheetApp.flush();
+    lastFertilizedCol = newColIdx;
+  }
   const set = {};
   uids.forEach(u => { const k = plantosSafeStr_(u).trim(); if (k) set[k] = true; });
   const now = plantosNow_();

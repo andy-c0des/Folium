@@ -774,6 +774,7 @@ function cacheWrite(key, value) {
 
 function relativeDate(isoStr) {
     if (!isoStr) return 'Overdue';
+    if (isoStr === 'unknown') return 'Never logged';
     const d = new Date(isoStr + 'T00:00:00');
     if (isNaN(d)) return isoStr;
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -5077,7 +5078,7 @@ function PlantDataProvider({ children }) {
             demoPushLog_(uid, type === 'deceased' ? 'DECEASED' : 'REHOMED', logMsg);
             return Promise.resolve({ ok: true });
         }
-        return gasCall('plantosArchivePlant', uid, type, cause, causeDetail);
+        return gasCall('plantosArchivePlant', uid, type, cause, causeDetail, extraFields || {});
     };
     const updateArchiveNote = (uid, notes) => {
         if (DEMO_MODE) {
@@ -5427,7 +5428,7 @@ function PlantDataProvider({ children }) {
         getPlantEnv: (uid) => null, // loaded per-plant via getPlant
         demoEnvironments: [], demoLocationEnvMap: {},
         getArchive: () => gasCall('plantosGetArchive').then(r => Array.isArray(r) ? r : []).catch(() => []),
-        archivePlant: (uid, type, cause, causeDetail) => gasCall('plantosArchivePlant', uid, type, cause, causeDetail),
+        archivePlant: (uid, type, cause, causeDetail, extraFields) => gasCall('plantosArchivePlant', uid, type, cause, causeDetail, extraFields || {}),
         updateArchiveNote: (uid, notes) => gasCall('plantosUpdateArchiveNote', uid, notes),
         demoArchive: [], demoProps: [],
         createBatch, demoPlants: [], getOffspring, getAllPlants,
@@ -7563,6 +7564,7 @@ function AddScreen() {
     const [potSize, setPotSize] = useState('');
     const [waterEveryDays, setWaterEveryDays] = useState('');
     const [fertilizeEveryDays, setFertilizeEveryDays] = useState('');
+    const [pricePurchased, setPricePurchased] = useState('');
     const [showOptional, setShowOptional] = useState(false);
     const [status, setStatus] = useState(null);
     const [nickname, setNickname] = useState('');
@@ -7618,6 +7620,7 @@ function AddScreen() {
                 potSize: String(potSize || '').trim(),
                 everyDays: String(waterEveryDays || '').trim(),
                 fertilizeEveryDays: String(fertilizeEveryDays || '').trim(),
+                purchasePrice: String(pricePurchased || '').trim(),
             };
             let res; try { res = await createPlant(payload); } catch(e) { setStatus({ type: 'error', msg: 'GAS error: ' + (e&&e.message||String(e)) }); return; }
             const uid = res && res.uid ? String(res.uid) : '';
@@ -7653,6 +7656,7 @@ function AddScreen() {
                 potSize: String(potSize || '').trim(),
                 everyDays: String(waterEveryDays || '').trim(),
                 fertilizeEveryDays: String(fertilizeEveryDays || '').trim(),
+                purchasePrice: String(pricePurchased || '').trim(),
                 sourceType,
                 sourceUID: sourceType === 'division' ? String(sourceUID || '').trim() : '',
             };
@@ -7984,6 +7988,10 @@ function AddScreen() {
     );
 })(waterEveryDays, fertilizeEveryDays, e => setFertilizeEveryDays(e.target.value), pxS, theme)))
             ),
+            React.createElement("div", { className: "mb-3" },
+                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "\uD83D\uDCB0 Price Purchased"),
+                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 2 }) }, "optional \u2014 e.g. 12.99"),
+                React.createElement("input", { value: pricePurchased, onChange: e => setPricePurchased(e.target.value.replace(/[^0-9.]/g,'')), placeholder: "0.00", className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
             React.createElement("button", { type: "button", onClick: () => setShowOptional(v => !v), style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginBottom: 8, opacity: 0.7 }) },
                 showOptional ? '\u25B2 Hide taxonomy details' : '\u25BC Taxonomy details (cultivar, infrarank...)'),
             showOptional && React.createElement("div", { style: { border: '2px solid ' + theme.rowBorder, padding: '10px 12px', marginBottom: 12 }, className: "space-y-3" },
@@ -8386,7 +8394,8 @@ function MyPlantsScreen({ openTab, prefill }) {
             classification: derivedFamily,
             everyDays: String(p.waterEveryDays || p.everyDays || p.every || ''),
             fertilizeEveryDays: String(p.fertEveryDays || p.fertilizeEveryDays || ''),
-            birthday: p.birthday || ''
+            birthday: p.birthday || '',
+            purchasePrice: p.purchasePrice || ''
         });
         setEditStatus(null);
     }
@@ -8417,6 +8426,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                 potSize:        String(edit.potSize || '').trim(),
                 substrate:      String(edit.substrate || '').trim(),
                 birthday:       String(edit.birthday || '').trim(),
+                purchasePrice:  String(edit.purchasePrice || '').trim(),
                 waterEveryDays: String(edit.everyDays || '').trim(),
                 fertEveryDays:  (function() {
                     var wD = parseInt(edit.everyDays || '', 10);
@@ -8737,6 +8747,9 @@ function MyPlantsScreen({ openTab, prefill }) {
                                         })
                                     );
                                 })())),
+                        React.createElement("div", { className: "mb-2 mt-2" },
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "\uD83D\uDCB0 Price Purchased"),
+                            React.createElement("input", { value: edit.purchasePrice || '', onChange: e => setEdit(prev => Object.assign({}, prev, { purchasePrice: e.target.value.replace(/[^0-9.]/g,'') })), placeholder: "0.00", className: "w-full border-4 px-2 py-1.5 input-depth mt-1", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
                         React.createElement("div", { className: "flex gap-2 mt-3" },
                             React.createElement(PlantButton, { onClick: saveEdit }, "\u2705 Save"),
                             React.createElement(PlantButton, { variant: "ghost", onClick: closeEdit }, "Cancel")
@@ -11133,6 +11146,7 @@ function PlantScreen({ uid }) {
                 if (didFert)  { guard.lastFertilized = today; }
                 return Object.assign({}, prev, guard);
             });
+            if (refreshHome) refreshHome().catch(() => {});
         }
         catch (_a) {
             setMsg({ type: 'error', text: 'Sync failed — check connection' });
@@ -14475,10 +14489,12 @@ function CompostModal({ plant, onClose, onDone }) {
     const [causeCat, setCauseCat] = useState(null);
     const [cause, setCause] = useState(null);
     const [detail, setDetail] = useState('');
+    const [salePrice, setSalePrice] = useState('');
     const [saving, setSaving] = useState(false);
     async function handleConfirm() {
         setSaving(true);
-        await archivePlant(plant.uid, type, cause, detail);
+        const extraFields = type === 'rehomed' && salePrice ? { salePrice: salePrice.trim() } : {};
+        await archivePlant(plant.uid, type, cause, detail, extraFields);
         setSaving(false);
         onDone();
     }
@@ -14523,6 +14539,9 @@ function CompostModal({ plant, onClose, onDone }) {
                 React.createElement("div", { style: { marginBottom: 12 } },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 4 }) }, type === 'deceased' ? 'What happened? (optional)' : 'Notes for the new owner (optional)'),
                     React.createElement("textarea", { value: detail, onChange: e => setDetail(e.target.value), rows: 3, placeholder: type === 'deceased' ? 'e.g. Kept too wet over winter...' : 'e.g. Loves bright indirect light, water weekly...', style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', width: '100%', border: `3px solid ${theme.cardBorder}`, padding: '8px', resize: 'none', background: theme.rowBg, color: theme.txtP }) })),
+                type === 'rehomed' && React.createElement("div", { style: { marginBottom: 12 } },
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 4 }) }, "\uD83D\uDCB0 Price Sold (optional)"),
+                    React.createElement("input", { value: salePrice, onChange: e => setSalePrice(e.target.value.replace(/[^0-9.]/g,'')), placeholder: "0.00", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', width: '100%', border: `3px solid ${theme.cardBorder}`, padding: '8px', background: theme.rowBg, color: theme.txtP }) })),
                 React.createElement("div", { style: { display: 'flex', gap: 8 } },
                     React.createElement("button", { type: "button", onClick: handleConfirm, disabled: saving, style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, flex: 1, padding: '12px', border: `3px solid ${type === 'deceased' ? '#c0392b' : '#27ae60'}`, background: type === 'deceased' ? '#c0392b' : '#27ae60', color: '#fff', cursor: 'pointer', boxShadow: `0 3px 0 ${type === 'deceased' ? '#922b21' : '#1e8449'}` }) }, saving ? '...' : type === 'deceased' ? '🪦 Confirm' : '🏠 Confirm Rehome'),
                     React.createElement("button", { type: "button", onClick: () => setStep(type === 'deceased' ? 'cause_option' : 'type'), style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, background: 'none', border: `2px solid ${theme.rowBorder}`, padding: '12px 16px', cursor: 'pointer' }) }, "\< Back")))))));
@@ -16113,8 +16132,8 @@ function SettingsScreen() {
                 React.createElement(Row, { label: "Batch Fertilize", sublabel: "Fertilize multiple plants at once" },
                     React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('batch-fertilize') }, "Open \>"))),
             React.createElement(Section, { title: "\u2139\uFE0F ABOUT" },
-                React.createElement(Row, { label: "Version", sublabel: "Folium v5.5" },
-                    React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "v5.5")),
+                React.createElement(Row, { label: "Version", sublabel: "Folium v5.6" },
+                    React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "v5.6")),
                 React.createElement(Row, { label: "Mode", sublabel: HAS_GAS ? 'Live — connected to sheet' : 'Demo — no persistence' },
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: HAS_GAS ? '#4CAF50' : '#FF9800' }) }, HAS_GAS ? 'LIVE' : 'DEMO')),
                 React.createElement(Row, { label: "Locations", sublabel: `${(locations || []).length} defined` },
@@ -16508,7 +16527,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '5.5';
+const PLANTOS_VERSION = '5.6';
 
 function PlantOSApp() {
   return (React.createElement(ThemeProvider, null,
