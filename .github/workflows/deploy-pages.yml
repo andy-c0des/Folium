@@ -1,4 +1,4 @@
-name: Deploy PlantOS to GitHub Pages
+name: Deploy Folium to GitHub Pages
 
 on:
   push:
