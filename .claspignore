@@ -1,13 +1,19 @@
-# Ignore everything except src/
-**
-!src/**
-!src/
-# Keep .claspignore itself out
-.claspignore
-# Ignore node_modules
-node_modules/
-# Ignore git files
-.git/
-.github/
-# Ignore README
-README.md
+# Ignore flat src/ JS files — these are duplicated by src/server/*.gs
+Code.js
+Config.js
+Core.js
+Features.js
+Plants.js
+PlantCRUD.js
+AI.js
+Chat.js
+Drive.js
+Import.js
+
+# Ignore client-side files (frontend — not for GAS)
+client/**
+
+# Ignore stray HTML at src root
+Carl.html
+App.html
+PlantOS-Data-Engine.html
