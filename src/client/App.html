@@ -7796,7 +7796,7 @@ function AddScreen() {
                     )
                 ),
 
-                React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
+                !propIsGraft && React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Type"),
                         React.createElement("select", { value: propType, onChange: e => setPropType(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
