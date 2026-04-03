@@ -1954,7 +1954,15 @@ const TAXON_DB = {
   "Tephrocactus": { common: ["Paper Spine Cactus"], species: ["articulatus","geometricus","molinensis"], water: 21, light: "full sun", humidity: "low", substrate: "cactus mix, coarse grit" },
   "Pereskia": { common: ["Leafy Cactus","Barbados Gooseberry"], species: ["aculeata","godseffiana","grandifolia","bleo","lychnidiflora"], water: 10, light: "bright indirect to full sun", humidity: "medium" },
   "Pereskiopsis": { common: ["Pereskiopsis"], species: ["spathulata","diguetii"], water: 10, light: "bright indirect", humidity: "medium", notes: "Used as grafting stock for seedlings." },
-  "Echinopsis": { common: ["Sea Urchin Cactus","Easter Lily Cactus","San Pedro"], species: ["pachanoi","peruvianus","bridgesii","grandiflorus","oxygona","subdenudata","chamaecereus","huascha"], water: 14, light: "full sun to bright indirect", humidity: "low", substrate: "cactus mix" },
+  "Echinopsis": { common: ["Sea Urchin Cactus","Easter Lily Cactus","San Pedro"], species: ["pachanoi","peruvianus","bridgesii","grandiflorus","oxygona","subdenudata","chamaecereus","huascha","terscheckii","spachianus","macrogonus","scopulicola"], water: 14, light: "full sun to bright indirect", humidity: "low", substrate: "cactus mix" },
+  "Trichocereus": { common: ["San Pedro","Bolivian Torch","Peruvian Torch","Argentine Saguaro"], species: ["pachanoi","peruvianus","bridgesii","terscheckii","spachianus","macrogonus","grandiflorus","scopulicola","validus","cuzcoensis"], water: 14, light: "full sun", humidity: "low", substrate: "cactus mix, perlite", notes: "Formerly separate genus, now mostly synonymised with Echinopsis. Columnar species widely used as grafting rootstock. Fast-growing in warm climates." },
+  "Rebutia": { common: ["Crown Cactus","Red Crown Cactus"], species: ["minuscula","heliosa","pygmaea","fiebrigii","muscula","senilis","marsoneri","steinmannii","spegazziniana"], water: 14, light: "full sun to bright indirect", humidity: "low", substrate: "cactus mix, coarse grit", notes: "Free-flowering small cacti. Blooms readily even as young plants. Clusters with age." },
+  "Sulcorebutia": { common: ["Sulcorebutia"], species: ["arenacea","swobodae","steinbachii","tiraquensis","langeri","tarabucoensis","mentosa"], water: 14, light: "full sun to bright indirect", humidity: "low", substrate: "cactus mix, fine grit", notes: "Small clustering cacti from Bolivian highlands. Closely related to Rebutia. Prefers cool winters." },
+  "Copiapoa": { common: ["Copiapoa","Chilean Cactus"], species: ["cinerea","hypogaea","humilis","montana","tenuissima","coquimbana","haseltoniana","grandiflora","echinoides","laui"], water: 21, light: "full sun to bright indirect", humidity: "low", substrate: "cactus mix, coarse grit, pumice", notes: "From the Atacama desert — one of the driest places on Earth. Many get moisture from coastal fog. Prone to rot if overwatered." },
+  "Cleistocactus": { common: ["Silver Torch Cactus","Scarlet Clematis Cactus"], species: ["strausii","winteri","smaragdiflorus","hystrix","baumannii","candelilla","morawetzianus"], water: 14, light: "full sun", humidity: "low", substrate: "cactus mix" },
+  "Notocactus": { common: ["Ball Cactus","Tom Thumb"], species: ["ottonis","leninghausii","magnificus","scopa","haselbergii","uebelmannianus","concinnus"], water: 14, light: "bright indirect to full sun", humidity: "low", substrate: "cactus mix", notes: "Now mostly synonymised with Parodia, but widely used name in collections." },
+  "Harrisia": { common: ["Moon Cactus Rootstock","Harrisia"], species: ["jusbertii","tortuosa","bonplandii","pomanensis","martinii","gracilis"], water: 14, light: "full sun to bright indirect", humidity: "low-medium", substrate: "cactus mix", notes: "Fast-growing columnar cactus widely used as grafting rootstock, especially for slow-growing species." },
+  "Stenocactus": { common: ["Brain Cactus","Wave Cactus","Mille-spined Cactus"], species: ["multicostatus","obvallatus","crispatus","coptonogonus","lamellosus","vaupelianus"], water: 21, light: "full sun to bright indirect", humidity: "low", substrate: "cactus mix, grit", notes: "Distinctive wavy ribs. Also known as Echinofossulocactus." },
   "Ferocactus": { common: ["Barrel Cactus","Fishhook Barrel"], species: ["wislizeni","cylindraceus","glaucescens","pilosus","latispinus","emoryi","herrerae","histrix"], water: 21, light: "full sun", humidity: "low", substrate: "cactus mix, grit" },
   "Echinocactus": { common: ["Golden Barrel Cactus","Golden Ball"], species: ["grusonii","platyacanthus","polycephalus","texensis","horizonthalonius"], water: 21, light: "full sun", humidity: "low", substrate: "cactus mix" },
   "Gymnocalycium": { common: ["Chin Cactus"], species: ["mihanovichii","baldianum","saglionis","andreae","quehlianum","bruchii","damsii","pflanzii","paraguayense"], water: 14, light: "medium to bright indirect", humidity: "low-medium", substrate: "cactus mix" },
@@ -2937,11 +2945,15 @@ const PLANT_FAMILIES = {
     Berberidaceae: ['Berberis','Mahonia','Epimedium','Podophyllum','Nandina'],
 
     Cactaceae: ['Mammillaria','Cereus','Opuntia','Selenicereus','Rhipsalis','Epiphyllum',
-                'Echinopsis','Ferocactus','Gymnocalycium','Notocactus','Parodia',
-                'Echinocactus','Astrophytum','Lophophora','Pereskia','Disocactus',
-                'Hylocereus','Schlumbergera','Hatiora','Melocactus','Copiapoa',
-                'Rebutia','Sulcorebutia','Frailea','Matucana','Cleistocactus',
-                'Echinomastus','Stenocactus','Myrtillocactus','Pachycereus','Carnegiea'],
+                'Echinopsis','Trichocereus','Ferocactus','Gymnocalycium','Notocactus','Parodia',
+                'Echinocactus','Astrophytum','Lophophora','Pereskia','Pereskiopsis','Disocactus',
+                'Hylocereus','Schlumbergera','Hatiora','Lepismium','Melocactus','Copiapoa',
+                'Rebutia','Sulcorebutia','Frailea','Matucana','Cleistocactus','Harrisia',
+                'Echinomastus','Stenocactus','Myrtillocactus','Pachycereus','Carnegiea',
+                'Ariocarpus','Turbinicarpus','Aztekium','Pelecyphora','Thelocactus',
+                'Escobaria','Coryphantha','Epithelantha','Pilosocereus','Espostoa',
+                'Cephalocereus','Stenocereus','Cylindropuntia','Austrocylindropuntia',
+                'Tephrocactus','Melocactus','Harrisia'],
     Aizoaceae: ['Lithops','Conophytum','Faucaria','Delosperma','Lampranthus',
                 'Mesembryanthemum','Titanopsis','Pleiospilos','Argyroderma',
                 'Gibbaeum','Dinteranthus','Lapidaria','Schwantesia'],
@@ -7855,7 +7867,7 @@ function AddScreen() {
                         React.createElement("div", { style: { marginBottom: 8 } },
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Technique"),
                             React.createElement("select", { value: propGraftTechnique, onChange: function(e) { setPropGraftTechnique(e.target.value); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
-                                ['Approach graft', 'Cleft graft', 'Side graft', 'Wedge graft', 'T-bud graft', 'Saddle graft', 'Thread graft', 'Other'].map(function(t) { return React.createElement("option", { key: t, value: t }, t); })
+                                ['Approach graft', 'Cleft graft', 'Side graft', 'Wedge graft', 'T-bud graft', 'Saddle graft', 'Thread graft', 'Hypocotyl graft', 'Other'].map(function(t) { return React.createElement("option", { key: t, value: t }, t); })
                             )
                         )
                     )
@@ -10302,10 +10314,10 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, 'Start Date'),
                             React.createElement("input", { type: "date", value: form.startDate || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { startDate: e.target.value }))), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
-                        React.createElement("div", null,
+                        !form.isGraft && React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Prop Type *"),
                             React.createElement("select", { value: form.propType, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { propType: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_TYPES.map(t => React.createElement("option", { key: t, value: t }, t)))),
-                        React.createElement("div", null,
+                        !form.isGraft && React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Substrate"),
                             React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_SUBSTRATES.map(s => React.createElement("option", { key: s, value: s }, s)))),
                         React.createElement("div", { className: 'col-span-2' },
@@ -10335,10 +10347,10 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                     React.createElement("input", { type: "text", placeholder: "e.g. Monstera deliciosa (neighbour's plant)", value: form.parentFreetext || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { parentFreetext: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
                                     React.createElement("button", { type: "button", onClick: () => setParentInCollection(null), style: Object.assign(Object.assign({}, pxS), { marginTop: 4, fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer', color: theme.txtS, textDecoration: 'underline', padding: 0 }) }, '\< change answer'))
                                 : React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, '\u2014')),
-                        React.createElement("div", null,
+                        !form.isGraft && React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Prop Type *"),
                             React.createElement("select", { value: form.propType, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { propType: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_TYPES.map(t => React.createElement("option", { key: t, value: t }, t)))),
-                        React.createElement("div", null,
+                        !form.isGraft && React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Substrate"),
                             React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_SUBSTRATES.map(s => React.createElement("option", { key: s, value: s }, s))))),
                     React.createElement("div", { style: { marginTop: 8 } },
@@ -10391,7 +10403,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Graft Technique"),
                         React.createElement("select", { value: form.graftTechnique || 'Approach graft', onChange: function(e) { setForm(function(p) { return Object.assign({}, p, { graftTechnique: e.target.value }); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
-                            ['Approach graft', 'Cleft graft', 'Side graft', 'Wedge graft', 'T-bud graft', 'Saddle graft', 'Thread graft', 'Other'].map(function(t) { return React.createElement("option", { key: t, value: t }, t); })
+                            ['Approach graft', 'Cleft graft', 'Side graft', 'Wedge graft', 'T-bud graft', 'Saddle graft', 'Thread graft', 'Hypocotyl graft', 'Other'].map(function(t) { return React.createElement("option", { key: t, value: t }, t); })
                         )
                     )
                 )
