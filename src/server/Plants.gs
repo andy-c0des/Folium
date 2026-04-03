@@ -21,9 +21,12 @@ function plantosHome() {
   const lastWateredCol = plantosCol_(hmap, H.LAST_WATERED), everyDaysCol = plantosColMulti_(hmap, H.WATER_EVERY_DAYS, H.WATER_EVERY_DAYS_ALT); // FIX #14
   const birthdayCol = plantosCol_(hmap, H.BIRTHDAY), lastFertCol = plantosCol_(hmap, H.LAST_FERTILIZED);
   const fertEveryCol = plantosCol_(hmap, H.FERT_EVERY_DAYS);
+  const lastProgressCol = plantosCol_(hmap, H.LAST_PROGRESS_UPDATE);
+  const PROGRESS_INTERVAL = 30; // days between required progress updates
   const now = plantosNow_(), tz = Session.getScriptTimeZone();
   const today = Utilities.formatDate(now, tz, 'MM/dd');
   const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [];
+  const progressDueNow = [];
   let totalCount = 0;
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
@@ -65,10 +68,18 @@ function plantosHome() {
     if (fertBucket === 'upcoming') fertUpcoming.push({ uid, primary, due: fertDue });
     if (waterBucket === 'now' && fertBucket === 'now') bothDueNow.push({ uid, primary, due: waterDue, fertDue });
     else if ((waterBucket === 'now' || waterBucket === 'upcoming') && (fertBucket === 'now' || fertBucket === 'upcoming')) bothUpcoming.push({ uid, primary, due: waterDue, fertDue });
+    // Progress update tracking: flag plants whose last update was >30 days ago
+    if (lastProgressCol >= 0) {
+      const lp = plantosAsDate_(row[lastProgressCol]);
+      if (lp && plantosAddDays_(lp, PROGRESS_INTERVAL) <= now) {
+        progressDueNow.push({ uid, primary, nickname: nn });
+      }
+    }
   }
   const byDue = (a, b) => String(a.due || '').localeCompare(String(b.due || ''));
   [dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming].forEach(a => a.sort(byDue));
-  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount };
+  progressDueNow.sort((a, b) => String(a.primary || '').localeCompare(String(b.primary || '')));
+  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow };
 }
 
 /* ===================== FIX #5: Case-insensitive location matching ===================== */
