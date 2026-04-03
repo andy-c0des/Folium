@@ -22,7 +22,7 @@ function plantosHome() {
   const birthdayCol = plantosCol_(hmap, H.BIRTHDAY), lastFertCol = plantosCol_(hmap, H.LAST_FERTILIZED);
   const fertEveryCol = plantosCol_(hmap, H.FERT_EVERY_DAYS);
   const lastProgressCol = plantosCol_(hmap, H.LAST_PROGRESS_UPDATE);
-  const PROGRESS_INTERVAL = 30; // days between required progress updates
+  const PROGRESS_INTERVAL = 14; // days between required progress updates
   const now = plantosNow_(), tz = Session.getScriptTimeZone();
   const today = Utilities.formatDate(now, tz, 'MM/dd');
   const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [];
@@ -68,10 +68,10 @@ function plantosHome() {
     if (fertBucket === 'upcoming') fertUpcoming.push({ uid, primary, due: fertDue });
     if (waterBucket === 'now' && fertBucket === 'now') bothDueNow.push({ uid, primary, due: waterDue, fertDue });
     else if ((waterBucket === 'now' || waterBucket === 'upcoming') && (fertBucket === 'now' || fertBucket === 'upcoming')) bothUpcoming.push({ uid, primary, due: waterDue, fertDue });
-    // Progress update tracking: flag plants whose last update was >30 days ago
+    // Progress update tracking: flag plants with no update ever, or last update >14 days ago
     if (lastProgressCol >= 0) {
       const lp = plantosAsDate_(row[lastProgressCol]);
-      if (lp && plantosAddDays_(lp, PROGRESS_INTERVAL) <= now) {
+      if (!lp || plantosAddDays_(lp, PROGRESS_INTERVAL) <= now) {
         progressDueNow.push({ uid, primary, nickname: nn });
       }
     }

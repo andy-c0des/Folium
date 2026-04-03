@@ -7755,7 +7755,7 @@ function AddScreen() {
     return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '800px' : '680px', margin: '0 auto' } },
         React.createElement(PlantCard, { title: "ADD PLANT" },
             React.createElement("div", { style: { display: 'flex', gap: 0, marginBottom: 14, border: `3px solid ${theme.cardBorder}` } },
-                [['single', '🌿 Single'], ['batch', '🪴 Batch'], ['prop', 'Γ£é∩╕Å Prop']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setMode(id), style: Object.assign(Object.assign({}, pxS), { flex: 1, padding: '10px 6px', fontSize: '12px', fontWeight: 900, cursor: 'pointer', border: 'none', borderRight: id !== 'prop' ? `3px solid ${theme.cardBorder}` : 'none', background: mode === id ? theme.btnP.bg : theme.cardBg, color: mode === id ? theme.btnP.text : theme.txtS }) }, label)))),
+                [['single', '🌿 Single'], ['batch', '🪴 Batch'], ['prop', '\uD83C\uDF31 Prop']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setMode(id), style: Object.assign(Object.assign({}, pxS), { flex: 1, padding: '10px 6px', fontSize: '12px', fontWeight: 900, cursor: 'pointer', border: 'none', borderRight: id !== 'prop' ? `3px solid ${theme.cardBorder}` : 'none', background: mode === id ? theme.btnP.bg : theme.cardBg, color: mode === id ? theme.btnP.text : theme.txtS }) }, label)))),
             status && React.createElement("div", { className: "mb-3" },
                 React.createElement(StatusMessage, { type: status.type, message: status.message })),
 
@@ -10564,7 +10564,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         return React.createElement("div", { style: { marginBottom: 12, border: `2px solid ${theme.rowBorder}`, background: theme.cardBg } },
                             /* card header */
                             React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderBottom: `2px solid ${theme.rowBorder}` } },
-                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: theme.txtS }) }, "Γ£é∩╕Å PROP DETAILS"),
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: theme.txtS }) }, "\uD83C\uDF31 PROP DETAILS"),
                                 !isDone && React.createElement("button", { type: "button",
                                     onClick: function() {
                                         if (isEditing) { setEditPropId(null); setEditPropForm({}); }
