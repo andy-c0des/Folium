@@ -7731,12 +7731,12 @@ function AddScreen() {
                 propNotes.trim(),
             ].filter(Boolean).join(' — ');
             const payload = {
-                genus:      String(genus  || '').trim(),
-                species:    String(taxon  || '').trim(),
-                propType:   propType,
-                substrate:  propSubstrate,
+                genus:      propIsGraft ? String(propScionGenus || '').trim() : String(genus || '').trim(),
+                species:    propIsGraft ? String(propScionSpecies || '').trim() : String(taxon || '').trim(),
+                propType:   propIsGraft ? 'Graft' : propType,
+                substrate:  propIsGraft ? '' : propSubstrate,
                 startDate:  birthday || new Date().toISOString().slice(0, 10),
-                parentUID:  null,      // intentionally no parent — received externally
+                parentUID:  null,
                 notes:      sourceNote,
                 isGraft:    propIsGraft,
                 scionGenus: propIsGraft ? String(propScionGenus || '').trim() : '',
