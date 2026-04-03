@@ -7777,11 +7777,13 @@ function AddScreen() {
                     background: theme.rowBg, borderLeft: '4px solid ' + theme.rowBorder,
                 }},
                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, lineHeight: 1.6 }) },
-                        "Log a cutting or propagule you received. It lives in the \uD83C\uDF31 Props tab — not in your main plant collection — until you graduate it to a full specimen."
+                        propIsGraft
+                            ? "\uD83D\uDD17 Recording a graft — fill in scion, rootstock and technique below. The scion genus will be used as the plant name."
+                            : "Log a cutting or propagule you received. It lives in the \uD83C\uDF31 Props tab — not in your main plant collection — until you graduate it to a full specimen."
                     )
                 ),
 
-                React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
+                !propIsGraft && React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Genus *"),
                         React.createElement(TaxonAutocomplete, {
@@ -7812,7 +7814,7 @@ function AddScreen() {
                     )
                 ),
 
-                React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
+                !propIsGraft && React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Date received"),
                         React.createElement("input", { type: "date", value: birthday, onChange: e => setBirthday(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
@@ -7823,14 +7825,9 @@ function AddScreen() {
                     )
                 ),
 
-                React.createElement("div", { className: "mb-3" },
-                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Notes (optional)"),
-                    React.createElement("textarea", { value: propNotes, onChange: e => setPropNotes(e.target.value), placeholder: "e.g. 2-node stem, looks healthy, wrapping in moss", rows: 2, className: "mt-1 w-full border-4 px-2 py-1.5 resize-none input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
-                ),
-
-                React.createElement("div", { style: { marginTop: 10, paddingTop: 10, borderTop: '2px solid ' + theme.rowBorder } },
+                React.createElement("div", { style: { marginTop: 4, paddingTop: propIsGraft ? 0 : 0 } },
                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: theme.txtS, marginBottom: 8 }) }, "\uD83D\uDD17 IS IT A GRAFT?"),
-                    React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: propIsGraft ? 10 : 0 } },
+                    React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
                         ['No', 'Yes'].map(function(v) {
                             var active = v === 'Yes' ? propIsGraft : !propIsGraft;
                             return React.createElement("button", { key: v, type: "button",
@@ -7842,11 +7839,15 @@ function AddScreen() {
                         })
                     ),
                     propIsGraft && React.createElement(React.Fragment, null,
+                        React.createElement("div", { className: "mb-3" },
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Graft date"),
+                            React.createElement("input", { type: "date", value: birthday, onChange: e => setBirthday(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
+                        ),
                         React.createElement("div", { style: { padding: '8px 10px', border: '2px solid ' + theme.rowBorder, marginBottom: 8, borderLeft: '4px solid #2E6A18' } },
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#2E6A18', marginBottom: 6 }) }, "\uD83C\uDF3F Scion (top / bud)"),
                             React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
                                 React.createElement("div", null,
-                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Genus"),
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Genus *"),
                                     React.createElement("input", { type: "text", value: propScionGenus, onChange: function(e) { setPropScionGenus(e.target.value); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
                                 React.createElement("div", null,
                                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Species"),
@@ -7869,12 +7870,21 @@ function AddScreen() {
                             React.createElement("select", { value: propGraftTechnique, onChange: function(e) { setPropGraftTechnique(e.target.value); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                                 ['Approach graft', 'Cleft graft', 'Side graft', 'Wedge graft', 'T-bud graft', 'Saddle graft', 'Thread graft', 'Hypocotyl graft', 'Other'].map(function(t) { return React.createElement("option", { key: t, value: t }, t); })
                             )
+                        ),
+                        React.createElement("div", { className: "mb-3" },
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Notes (optional)"),
+                            React.createElement("textarea", { value: propNotes, onChange: e => setPropNotes(e.target.value), placeholder: "e.g. union sealed with parafilm, placed under humidity dome", rows: 2, className: "mt-1 w-full border-4 px-2 py-1.5 resize-none input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
                         )
                     )
                 ),
 
+                !propIsGraft && React.createElement("div", { className: "mb-3" },
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Notes (optional)"),
+                    React.createElement("textarea", { value: propNotes, onChange: e => setPropNotes(e.target.value), placeholder: "e.g. 2-node stem, looks healthy, wrapping in moss", rows: 2, className: "mt-1 w-full border-4 px-2 py-1.5 resize-none input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
+                ),
+
                 React.createElement("div", { className: "flex gap-2 mt-2" },
-                    React.createElement(PlantButton, { onClick: submitProp, disabled: !String(genus||'').trim() }, propIsGraft ? '\uD83D\uDD17 Record Graft' : '\u2705 Log Prop'),
+                    React.createElement(PlantButton, { onClick: submitProp, disabled: propIsGraft ? !String(propScionGenus||'').trim() : !String(genus||'').trim() }, propIsGraft ? '\uD83D\uDD17 Record Graft' : '\u2705 Log Prop'),
                     React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back")
                 )
             ),
