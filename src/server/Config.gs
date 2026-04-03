@@ -1,4 +1,4 @@
-/* PlantOS — Code.gs v2.0 */
+/* PlantOS — Config.gs v2.0 */
 
 const PLANTOS_BACKEND_CFG = {
   INVENTORY_SHEET: 'Plant Care Tracking + Inventory',
