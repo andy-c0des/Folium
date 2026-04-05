@@ -26,7 +26,8 @@ function plantosHome() {
   const now = plantosNow_(), tz = Session.getScriptTimeZone();
   const today = Utilities.formatDate(now, tz, 'MM/dd');
   const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [];
-  const progressDueNow = [];
+  const progressDueNow = [], wateredToday = [], fertedToday = [];
+  const todayStr = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
   let totalCount = 0;
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
@@ -68,6 +69,8 @@ function plantosHome() {
     if (fertBucket === 'upcoming') fertUpcoming.push({ uid, primary, due: fertDue });
     if (waterBucket === 'now' && fertBucket === 'now') bothDueNow.push({ uid, primary, due: waterDue, fertDue });
     else if ((waterBucket === 'now' || waterBucket === 'upcoming') && (fertBucket === 'now' || fertBucket === 'upcoming')) bothUpcoming.push({ uid, primary, due: waterDue, fertDue });
+    if (lw && Utilities.formatDate(lw, tz, 'yyyy-MM-dd') === todayStr) wateredToday.push({ uid, primary });
+    if (lf && Utilities.formatDate(lf, tz, 'yyyy-MM-dd') === todayStr) fertedToday.push({ uid, primary });
     // Progress update tracking: flag plants with no update ever, or last update >14 days ago
     if (lastProgressCol >= 0) {
       const lp = plantosAsDate_(row[lastProgressCol]);
@@ -79,7 +82,7 @@ function plantosHome() {
   const byDue = (a, b) => String(a.due || '').localeCompare(String(b.due || ''));
   [dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming].forEach(a => a.sort(byDue));
   progressDueNow.sort((a, b) => String(a.primary || '').localeCompare(String(b.primary || '')));
-  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow };
+  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow, wateredToday, fertedToday };
 }
 
 /* ===================== FIX #5: Case-insensitive location matching ===================== */

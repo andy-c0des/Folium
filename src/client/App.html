@@ -3849,7 +3849,7 @@ const SEMIHYDRO_SUBSTRATES = [
 // Substrates for traditional substrate-in-pot grows
 const SOIL_SUBSTRATES = [
     'Aroid mix', 'Moist potting mix', 'Dry potting mix', 'Coco coir',
-    'Sphagnum moss', 'Bark', 'Sand', 'Pumice', 'Perlite', 'Soil mix', 'Custom mix', 'Agar'
+    'Sphagnum moss', 'Bark', 'Sand', 'Pumice', 'Perlite', 'Fluval Stratum', 'Soil mix', 'Custom mix', 'Agar'
 ];
 // Helper — get the right list based on growingMethod
 function substratesForMethod(growingMethod) {
@@ -5652,21 +5652,24 @@ function HomeScreen() {
     const WeeklySchedule = () => {
         var _ecState = React.useState({});
         var expandedDays = _ecState[0], setExpandedDays = _ecState[1];
+        var today = new Date();
+        var todayKey = today.toISOString().slice(0, 10);
         var eventMap = {};
-        function markEvt(list, type) {
+        function markEvt(list, type, forceKey) {
             (list || []).forEach(function(p) {
-                var key = p.due || p.waterDue || p.fertDue || '';
+                var key = forceKey || p.due || p.waterDue || p.fertDue || '';
                 if (!key) return;
-                if (!eventMap[key]) eventMap[key] = { water: [], fert: [] };
+                if (!eventMap[key]) eventMap[key] = { water: [], fert: [], waterDone: [], fertDone: [] };
                 var name = p.nickname || p.primary || p.classification || '#' + (p.uid || '?');
                 eventMap[key][type].push(name);
             });
         }
-        markEvt(homeData && homeData.dueNow, 'water');
+        markEvt(homeData && homeData.dueNow, 'water', todayKey);
         markEvt(homeData && homeData.upcoming, 'water');
-        markEvt(homeData && homeData.fertDueNow, 'fert');
+        markEvt(homeData && homeData.fertDueNow, 'fert', todayKey);
         markEvt(homeData && homeData.fertUpcoming, 'fert');
-        var today = new Date();
+        markEvt(homeData && homeData.wateredToday, 'waterDone', todayKey);
+        markEvt(homeData && homeData.fertedToday, 'fertDone', todayKey);
         var DOW_SHORT = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
         var MON_FULL = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         var weekDays = [];
@@ -5688,7 +5691,9 @@ function HomeScreen() {
                     var ev = eventMap[key] || {};
                     var waterList = ev.water || [];
                     var fertList = ev.fert || [];
-                    var total = waterList.length + fertList.length;
+                    var waterDoneList = ev.waterDone || [];
+                    var fertDoneList = ev.fertDone || [];
+                    var total = waterList.length + fertList.length + waterDoneList.length + fertDoneList.length;
                     var isOpen = expandedDays[key];
                     return React.createElement('div', { key: key, style: { borderBottom: '1px solid #D8C8A0' } },
                         React.createElement('div', {
@@ -5710,6 +5715,8 @@ function HomeScreen() {
                                         React.createElement('span', { style: { fontSize: 10, color: '#2A5808', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' } }, '\u25BC'))
                                     : React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#8B6C3A', opacity: 0.45 }) }, '\u2014'))),
                         isOpen && total > 0 && React.createElement('div', { style: { background: '#FAFAF5', borderTop: '1px solid #D8C8A0', padding: '4px 0' } },
+                            waterDoneList.map(function(name, i) { return React.createElement('div', { key: 'wd'+i, style: Object.assign({}, pxS, { fontSize: '11px', color: '#C0392B', padding: '3px 14px', textDecoration: 'line-through', opacity: 0.7 }) }, '\uD83D\uDCA7 ' + name); }),
+                            fertDoneList.map(function(name, i) { return React.createElement('div', { key: 'fd'+i, style: Object.assign({}, pxS, { fontSize: '11px', color: '#C0392B', padding: '3px 14px', textDecoration: 'line-through', opacity: 0.7 }) }, '\uD83C\uDF3E ' + name); }),
                             waterList.map(function(name, i) { return React.createElement('div', { key: 'w'+i, style: Object.assign({}, pxS, { fontSize: '11px', color: '#1A6A9A', padding: '3px 14px' }) }, '\uD83D\uDCA7 ' + name); }),
                             fertList.map(function(name, i) { return React.createElement('div', { key: 'f'+i, style: Object.assign({}, pxS, { fontSize: '11px', color: '#4A7A28', padding: '3px 14px' }) }, '\uD83C\uDF3E ' + name); })));
                 })),
@@ -6405,6 +6412,27 @@ function WateringScreen() {
         }, 220);
         return () => { alive = false; clearTimeout(t); };
     }, [manualQ, tab]);
+    const manualFilteredPlants = useMemo(() => {
+        if (!subPreset && !locFilter) return [];
+        return (allPlantsCache || []).filter(function(p) {
+            var uid = String(p && p.uid ? p.uid : '').trim();
+            if (!uid) return false;
+            if (locFilter) {
+                var meta = metaByUid[uid];
+                var loc = (meta && meta.location) ? meta.location : String(p.location || '').trim();
+                if (loc !== locFilter) return false;
+            }
+            if (subPreset) {
+                var sub = normalizeSubText(p);
+                if (!sub || sub.indexOf(subPreset) === -1) return false;
+            }
+            return true;
+        }).map(function(p) {
+            var uid = String(p.uid || '');
+            var primary = p.nickname || [p.genus, p.taxon].filter(Boolean).join(' ') || uid;
+            return Object.assign({}, p, { primary: primary });
+        });
+    }, [subPreset, locFilter, allPlantsCache, metaByUid]);
     async function manualLog(uid, kind) {
         setManualStatus({ type: 'loading', message: 'Saving...' });
         try {
@@ -6562,10 +6590,11 @@ function WateringScreen() {
                     className: 'w-full border-4 border-[#3C1800] p-2 input-depth mb-2',
                     style: Object.assign({}, pxS, { fontSize: '14px', color: '#2C1000' }),
                     placeholder: 'Search by name, genus, UID\u2026' }),
-                !manualQ && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A', opacity: 0.7 }) }, 'Type to search\u2026'),
+                !manualQ && !subPreset && !locFilter && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A', opacity: 0.7 }) }, 'Type to search or select a Medium filter above\u2026'),
+                !manualQ && (subPreset || locFilter) && manualFilteredPlants.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A' }) }, 'No plants match this filter.'),
                 manualQ && manualResults.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A' }) }, 'No matches.'),
                 React.createElement('div', { className: 'space-y-2' },
-                    (manualResults || []).map(p => {
+                    (manualQ ? manualResults : manualFilteredPlants).map(p => {
                         const uid = String(p.uid || '');
                         const primary = p.primary || p.nickname || p.gs || uid;
                         const checked = !!selected[uid];
@@ -8126,6 +8155,7 @@ function MyPlantsScreen({ openTab, prefill }) {
     const [fetchError, setFetchError] = useState('');
     const [thumbs, setThumbs] = useState({});
     const [plantFilter, setPlantFilter] = useState('');
+    const [substrateFilter, setSubstrateFilter] = useState('');
     const [globalQ, setGlobalQ] = useState('');
     const [globalResults, setGlobalResults] = useState([]);
     const [globalLoading, setGlobalLoading] = useState(false);
@@ -8305,6 +8335,7 @@ function MyPlantsScreen({ openTab, prefill }) {
     const hasSelection = selectedLocs.length > 0;
     function toggleLoc(loc) {
         setPlantFilter('');
+        setSubstrateFilter('');
         setEditUid('');
         setGlobalQ('');
         setGlobalResults([]);
@@ -8353,6 +8384,7 @@ function MyPlantsScreen({ openTab, prefill }) {
             if (!hasSelection) {
                 setPlants([]);
                 setPlantFilter('');
+                setSubstrateFilter('');
                 setEditUid('');
                 return;
             }
@@ -8460,15 +8492,28 @@ function MyPlantsScreen({ openTab, prefill }) {
         })();
         return () => { alive = false; };
     }, [globalQ]);
+    const substrateOptions = useMemo(() => {
+        const seen = new Set();
+        (plants || []).forEach(function(p) {
+            var s = String(p.substrate || p.medium || '').trim();
+            if (s) seen.add(s);
+        });
+        return Array.from(seen).sort();
+    }, [plants]);
     const filteredPlants = useMemo(() => {
         const q = normStr(plantFilter);
-        if (!q)
-            return plants;
         return (plants || []).filter(p => {
-            const hay = [p._title, p._tax, p.genus, p.species, p.taxon, p.nickname, p.primary, p.gs, p.cultivar].map(x => String(x || '')).join(' ').toLowerCase();
-            return hay.includes(q);
+            if (q) {
+                const hay = [p._title, p._tax, p.genus, p.species, p.taxon, p.nickname, p.primary, p.gs, p.cultivar].map(x => String(x || '')).join(' ').toLowerCase();
+                if (!hay.includes(q)) return false;
+            }
+            if (substrateFilter) {
+                var s = String(p.substrate || p.medium || '').trim();
+                if (s !== substrateFilter) return false;
+            }
+            return true;
         });
-    }, [plantFilter, plants]);
+    }, [plantFilter, substrateFilter, plants]);
     function populateEdit(p) {
         var genus = p.genus || '';
         var derivedFamily = (genus && typeof getPlantFamily !== 'undefined') ? (getPlantFamily(genus) || '') : '';
@@ -8882,7 +8927,16 @@ function MyPlantsScreen({ openTab, prefill }) {
                             " locations selected"))),
                     hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-3" },
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, plants.length + ' plants loaded · ' + filteredPlants.length + ' showing'),
-                        React.createElement("input", { value: plantFilter, onChange: e => setPlantFilter(e.target.value), placeholder: "Filter plants...", className: "w-full border-4  p-2 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
+                        React.createElement("input", { value: plantFilter, onChange: e => setPlantFilter(e.target.value), placeholder: "Filter plants...", className: "w-full border-4  p-2 input-depth mb-2", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
+                        substrateOptions.length > 0 && React.createElement("select", {
+                            value: substrateFilter,
+                            onChange: function(e) { setSubstrateFilter(e.target.value); },
+                            className: "w-full border-4 p-2",
+                            style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg })
+                        },
+                            React.createElement("option", { value: "" }, "All substrates"),
+                            substrateOptions.map(function(s) { return React.createElement("option", { key: s, value: s }, s); })
+                        ))),
                     loading && React.createElement("div", { className: "space-y-2" },
                         Array.from({ length: 6 }).map(function(_, i) {
                             return React.createElement("div", { key: 'skel-' + i, className: "flex items-center gap-2 border-2 p-2", style: { borderColor: '#7A4A1A', opacity: 1 - i * 0.1 } },
@@ -10815,11 +10869,17 @@ function PlantLogScreen() {
         React.createElement(PlantCard, { title: "ACTIVITY LOG" },
             loading && React.createElement(StatusMessage, { type: "loading", message: "Loading log..." }),
             !loading && items.length === 0 && React.createElement(StatusMessage, { type: "info", message: "No entries yet." }),
-            !loading && items.length > 0 && (React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2 max-h-[65vh] overflow-y-auto" : "space-y-2 max-h-96 overflow-y-auto" }, items.map((it, idx) => (React.createElement("div", { key: idx, className: "border-b border-[#7A4A1A] pb-2" },
-                React.createElement("div", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '14px', color: '#2E1408' } }, it.ts),
-                React.createElement("div", { style: { fontFamily: "'Press Start 2P', cursive", fontSize: '13px', color: '#2C1000' } }, it.action),
-                React.createElement("div", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '12px', color: '#2C1000', fontWeight: 900 }, className: "cursor-pointer plant-item", onClick: () => navigate('plant', { uid: it.uid }) }, (plants[it.uid] && plants[it.uid].primary) ? plants[it.uid].primary : it.uid),
-                it.details && React.createElement("div", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '12px', color: '#2C1000' } }, it.details)))))),
+            !loading && items.length > 0 && (React.createElement("div", { className: isDesktop ? "grid grid-cols-2 gap-2 max-h-[65vh] overflow-y-auto" : "space-y-2 max-h-96 overflow-y-auto" }, items.map((it, idx) => {
+                const plant = plants[it.uid] || null;
+                const thumbUrl = plant ? (plant.thumbUrl || null) : null;
+                return React.createElement("div", { key: idx, className: "border-b border-[#7A4A1A] pb-2", style: { display: 'flex', gap: 10, alignItems: 'flex-start' } },
+                    React.createElement(MiniThumb, { url: thumbUrl }),
+                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                        React.createElement("div", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '14px', color: '#2E1408' } }, it.ts),
+                        React.createElement("div", { style: { fontFamily: "'Press Start 2P', cursive", fontSize: '13px', color: '#2C1000' } }, it.action),
+                        React.createElement("div", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '12px', color: '#2C1000', fontWeight: 900 }, className: "cursor-pointer plant-item", onClick: () => navigate('plant', { uid: it.uid }) }, (plant && plant.primary) ? plant.primary : it.uid),
+                        it.details && React.createElement("div", { style: { fontFamily: "'Pixelify Sans', cursive", fontSize: '12px', color: '#2C1000' } }, it.details)));
+            }))),
             React.createElement("div", { className: "mt-4" },
                 React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back")))));
 }
@@ -12172,77 +12232,9 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                         border: '4px solid ' + theme.cardBorder,
                         padding: 16,
                     }},
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 } },
-                        React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '14px', color: theme.txtP } }, "EDIT DETAILS"),
-                        React.createElement("button", {
-                            type: "button",
-                            onClick: doAutofill,
-                            disabled: autofillStatus === 'loading',
-                            style: {
-                                fontFamily: "'Press Start 2P',cursive", fontSize: '13px',
-                                padding: '5px 8px', cursor: 'pointer', border: '2px solid #2E5A1A',
-                                background: autofillStatus === 'done' ? '#2E5A1A' : 'linear-gradient(180deg,#2E5A1A,#1A3A08)',
-                                color: '#D0F0A8', letterSpacing: '0.05em',
-                                boxShadow: '0 2px 0 #0E2004', opacity: autofillStatus === 'loading' ? 0.6 : 1,
-                            }
-                        }, autofillStatus === 'loading' ? '⌛ ASKING CARL...' : '\uD83C\uDF3F CARL AUTOFILL')
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', marginBottom: 10 } },
+                        React.createElement("div", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '14px', color: theme.txtP } }, "EDIT DETAILS")
                     ),
-                    autofillStatus === 'done' && autofillPreview && React.createElement("div", { style: {
-                        marginBottom: 10, border: '2px solid #2E5A1A',
-                        background: 'linear-gradient(180deg, #1A2A12, #0E1808)',
-                        padding: '8px 10px',
-                    }},
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 } },
-                            React.createElement("span", { style: { fontSize: 16 } }, '\uD83C\uDF3F'),
-                            React.createElement("span", { style: { fontFamily: "'Press Start 2P',cursive", fontSize: '13px', color: '#A0D880', letterSpacing: '0.08em' } }, "CARL'S RECOMMENDATIONS")
-                        ),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 10px', marginBottom: 8 } },
-                            autofillPreview.substrate && React.createElement(React.Fragment, null,
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '13px', color: '#6A9A50' } }, "Substrate"),
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '14px', color: '#C8F0A0', fontWeight: 700 } }, autofillPreview.substrate)
-                            ),
-                            autofillPreview.potMaterial && React.createElement(React.Fragment, null,
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '13px', color: '#6A9A50' } }, "Pot Material"),
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '14px', color: '#C8F0A0', fontWeight: 700 } }, autofillPreview.potMaterial)
-                            ),
-                            autofillPreview.everyDays && React.createElement(React.Fragment, null,
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '13px', color: '#6A9A50' } }, "Water every"),
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '14px', color: '#C8F0A0', fontWeight: 700 } }, autofillPreview.everyDays + 'd')
-                            ),
-                            autofillPreview.fertilizeEveryDays && React.createElement(React.Fragment, null,
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '13px', color: '#6A9A50' } }, "Fert every"),
-                                React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '14px', color: '#C8F0A0', fontWeight: 700 } }, (function() {
-                                    var fD = parseInt(autofillPreview.fertilizeEveryDays, 10);
-                                    var wD = parseInt(autofillPreview.everyDays || '0', 10);
-                                    var mult = (wD > 0 && fD > 0) ? Math.round(fD / wD) : 0;
-                                    return fD + 'd' + (mult > 0 ? ' (every ' + mult + 'x water)' : '');
-                                }()))
-                            )
-                        ),
-                        autofillPreview._reasons && React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '12px', color: '#5A8840', marginBottom: 8, lineHeight: 1.5 } },
-                            autofillPreview._reasons.map(function(r, i) { return '\u2022 ' + r; }).join('\n')
-                        ),
-                        React.createElement("div", { style: { display: 'flex', gap: 6 } },
-                            React.createElement("button", {
-                                type: "button", onClick: applyAutofill,
-                                style: {
-                                    fontFamily: "'Press Start 2P',cursive", fontSize: '13px',
-                                    padding: '6px 10px', cursor: 'pointer', border: '2px solid #4A9A28',
-                                    background: '#3A8020', color: '#D0F8A0',
-                                    boxShadow: '0 2px 0 #1A4008', flex: 1,
-                                }
-                            }, '\u2713 APPLY ALL'),
-                            React.createElement("button", {
-                                type: "button", onClick: function() { setAutofillPreview(null); setAutofillStatus(null); },
-                                style: {
-                                    fontFamily: "'Press Start 2P',cursive", fontSize: '13px',
-                                    padding: '6px 8px', cursor: 'pointer', border: `2px solid ${theme.cardBorder}`,
-                                    background: theme.rowBg, color: theme.txtS,
-                                }
-                            }, 'DISMISS')
-                        )
-                    ),
-                    autofillStatus === 'error' && React.createElement("div", { style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '14px', color: '#F87171', marginBottom: 8 } }, "No KB data for this genus yet — fill in manually."),
                     React.createElement("div", { className: "space-y-2" },
                         [
                             ['Nickname', editNickname, setEditNickname, 'e.g. Giga Chad'],
@@ -16300,8 +16292,8 @@ function SettingsScreen() {
                 React.createElement(Row, { label: "Batch Fertilize", sublabel: "Fertilize multiple plants at once" },
                     React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('batch-fertilize') }, "Open \>"))),
             React.createElement(Section, { title: "\u2139\uFE0F ABOUT" },
-                React.createElement(Row, { label: "Version", sublabel: "Folium v5.6" },
-                    React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "v5.6")),
+                React.createElement(Row, { label: "Version", sublabel: "Folium v5.7" },
+                    React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "v5.7")),
                 React.createElement(Row, { label: "Mode", sublabel: HAS_GAS ? 'Live — connected to sheet' : 'Demo — no persistence' },
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: HAS_GAS ? '#4CAF50' : '#FF9800' }) }, HAS_GAS ? 'LIVE' : 'DEMO')),
                 React.createElement(Row, { label: "Locations", sublabel: `${(locations || []).length} defined` },
@@ -16695,7 +16687,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '5.6';
+const PLANTOS_VERSION = '5.7';
 
 function PlantOSApp() {
   return (React.createElement(ThemeProvider, null,
