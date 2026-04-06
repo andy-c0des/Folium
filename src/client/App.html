@@ -8931,14 +8931,13 @@ function MyPlantsScreen({ openTab, prefill }) {
                             " locations selected"))),
                     hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-3" },
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, plants.length + ' plants loaded · ' + filteredPlants.length + ' showing'),
-                        React.createElement("input", { value: plantFilter, onChange: e => setPlantFilter(e.target.value), placeholder: "Filter plants...", className: "w-full border-4  p-2 input-depth mb-2", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
-                        substrateOptions.length > 0 && React.createElement("select", {
+                        React.createElement("select", {
                             value: substrateFilter,
                             onChange: function(e) { setSubstrateFilter(e.target.value); },
                             className: "w-full border-4 p-2",
                             style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg })
                         },
-                            React.createElement("option", { value: "" }, "All substrates"),
+                            React.createElement("option", { value: "" }, "Filter by substrate..."),
                             substrateOptions.map(function(s) { return React.createElement("option", { key: s, value: s }, s); })
                         ))),
                     loading && React.createElement("div", { className: "space-y-2" },
@@ -9268,8 +9267,8 @@ function PlantKnowledgePanel({ plant, inline }) {
             [
                 dbEntry.light       && ['\u2600\uFE0F',  dbEntry.light,       '☀️ Light'],
                 dbEntry.humidity    && ['\uD83D\uDCA7',  dbEntry.humidity,    '💧 Humidity'],
-                dbEntry.substrate   && ['\uD83E\uDEB8',  dbEntry.substrate,   '🪨 Substrate'],
-                dbEntry.potMaterial && ['\uD83E\uDEB4',  dbEntry.potMaterial, '🪴 Pot'],
+                (plant.substrate || plant.medium || dbEntry.substrate) && ['\uD83E\uDEB8', plant.substrate || plant.medium || dbEntry.substrate, '🪨 Substrate'],
+                (plant.potMaterial || dbEntry.potMaterial) && ['\uD83E\uDEB4', plant.potMaterial || dbEntry.potMaterial, '🪴 Pot Material'],
                 dbEntry.water       && ['\uD83D\uDD01',  '~' + dbEntry.water + 'd', '🔁 Water interval'],
                 (plant.potSize) && ['\uD83D\uDCCF', plant.potSize, '\uD83D\uDCCF Pot size'],
                 (Number(plant.fertEveryDays || plant.fertilizeEveryDays) > 0) && ['\uD83C\uDF31', (plant.fertEveryDays || plant.fertilizeEveryDays) + 'd', '\uD83C\uDF31 Fert every'],
@@ -11499,8 +11498,11 @@ function PlantScreen({ uid }) {
         setEditLoc(p.location || '');
         setEditPot(p.potSize || '');
         setEditSub(p.substrate || p.medium || '');
-        setEditWaterEvery(String(p.waterEveryDays || p.everyDays || p.every || ''));
-        setEditFertEvery(String(p.fertEveryDays || p.fertilizeEveryDays || ''));
+        var rawWater = parseInt(p.waterEveryDays || p.everyDays || p.every || '', 10);
+        var rawFertVal = parseInt(p.fertEveryDays || p.fertilizeEveryDays || '', 10);
+        var snappedFert = (rawWater > 0 && rawFertVal > 0) ? String(Math.max(rawWater, Math.round(rawFertVal / rawWater) * rawWater)) : (rawFertVal > 0 ? String(rawFertVal) : '');
+        setEditWaterEvery(rawWater > 0 ? String(rawWater) : '');
+        setEditFertEvery(snappedFert);
         setEditBirthday(p.birthday || '');
         setEditPotMaterial(p.potMaterial || '');
         setEditPotShape(p.potShape || '');
@@ -12275,7 +12277,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             ),
                             React.createElement("div", { style: { marginBottom: 8 } },
                                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "💧 Water Every (days)"),
-                                React.createElement("input", { value: editWaterEvery, onChange: e => setEditWaterEvery(e.target.value.replace(/[^0-9]/g,'')), placeholder: "e.g. 7", className: "w-full border-4 px-3 py-2 mt-1 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: editWaterEvery ? theme.cardBorder : '#C87820', color: theme.txtP, background: theme.rowBg }) })
+                                React.createElement("input", { value: editWaterEvery, onChange: function(e) { var newW = e.target.value.replace(/[^0-9]/g,''); setEditWaterEvery(newW); var wD = parseInt(newW, 10); var fD = parseInt(editFertEvery || '', 10); if (wD > 0 && fD > 0) { setEditFertEvery(String(Math.max(wD, Math.round(fD / wD) * wD))); } }, placeholder: "e.g. 7", className: "w-full border-4 px-3 py-2 mt-1 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: editWaterEvery ? theme.cardBorder : '#C87820', color: theme.txtP, background: theme.rowBg }) })
                             ),
                             React.createElement("div", { key: "fert-every" },
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800 }) }, "🌿 Fertilize Every (days)"),
@@ -12533,7 +12535,7 @@ function plantSanityChecks(plant) {
 
     if (fertDays > 0 && waterDays > 0 && fertDays < waterDays) {
         checks.push({
-            severity: 'danger', code: 'fert-more-than-water', icon: 'Γÿá∩╕Å',
+            severity: 'danger', code: 'fert-more-than-water', icon: '\uD83D\uDEAB',
             title: 'Fertilizing more often than watering is impossible',
             detail: 'You\'re set to fertilize every ' + fertDays + 'd but only water every ' + waterDays + 'd. Fertilizer needs water to move into the substrate — if you\'re not watering, the fertilizer just builds up as salt on the surface.',
         });
