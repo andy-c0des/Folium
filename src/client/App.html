@@ -5626,7 +5626,7 @@ function HomeScreen() {
         const tip = PLANT_TIPS[dayOfYear % PLANT_TIPS.length];
         return React.createElement('div', { style: { display: 'flex', alignItems: 'stretch', background: '#F4EDD8', border: '3px solid #8B6C3A', marginBottom: 10 } },
             React.createElement('div', { style: { flex: 1, padding: '10px 14px' } },
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isDesktop ? '15px' : '14px', fontWeight: 900, color: '#2A4A10', marginBottom: 3 }) }, greeting + ', plant parent!'),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isDesktop ? '15px' : '14px', fontWeight: 900, color: '#2A4A10', marginBottom: 3 }) }, greeting + ', ' + (function(){ try { return localStorage.getItem('plantos_username') || 'plant parent'; } catch(e) { return 'plant parent'; } })() + '!'),
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#5A4020', lineHeight: 1.4 }) }, tip.icon + ' ' + tip.tip)),
             totalCount != null && React.createElement('div', { style: { background: '#E8F4D8', borderLeft: '3px solid #8B6C3A', padding: '8px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 100, flexShrink: 0 } },
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '26px', fontWeight: 900, color: '#2A4A10', lineHeight: 1 }) }, totalCount),
