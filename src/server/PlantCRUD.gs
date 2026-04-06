@@ -374,6 +374,29 @@ function plantosGetLatestPhoto(uid) {
   return { ok: true, photo: { fileId, viewUrl: newest.f.getUrl(), thumbUrl: plantosDriveThumbUrl_(fileId, 300), name: newest.f.getName(), updated: newest.t.toISOString() } };
 }
 
+/* ===================== PROP PHOTO BACKEND ===================== */
+
+function plantosUploadPropPhoto(propId, dataUrl, originalName) {
+  propId = plantosSafeStr_(propId).trim();
+  if (!propId) return { ok: false, reason: 'Missing propId' };
+  const parsed = plantosParseDataUrl_(dataUrl);
+  if (!parsed || !parsed.bytes) return { ok: false, reason: 'Bad image data' };
+  const root = plantosGetOrCreateRootFolder_();
+  const propsPhotosFolder = plantosEnsureSubfolder_(root, 'Prop Photos');
+  const propFolder = plantosEnsureSubfolder_(propsPhotosFolder, propId);
+  const safeName = (originalName && String(originalName).trim()) ? String(originalName).trim() : 'photo.jpg';
+  const ext = safeName.toLowerCase().endsWith('.png') || parsed.mime === 'image/png' ? 'png' : 'jpg';
+  const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HH-mm-ss');
+  const filename = `${ts}_${propId}.${ext}`;
+  const blob = Utilities.newBlob(parsed.bytes, parsed.mime || (ext === 'png' ? 'image/png' : 'image/jpeg'), filename);
+  const file = propFolder.createFile(blob);
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+  const fileId = file.getId();
+  const viewUrl = file.getUrl();
+  const thumbUrl = plantosDriveThumbUrl_(fileId, 300);
+  return { ok: true, thumbUrl, viewUrl, name: filename };
+}
+
 function plantosParseDataUrl_(dataUrl) {
   const m = String(dataUrl || '').match(/^data:([^;]+);base64,(.+)$/);
   if (!m) return null;

@@ -4980,12 +4980,31 @@ function PlantDataProvider({ children }) {
         }
         return gasCall('plantosUpdatePropStatus', propId, status, failCause || '', failCauseDetail || '');
     };
-    const addPropNote = (propId, note) => {
+    const addPropNote = (propId, note, photoUrl) => {
         if (DEMO_MODE) {
-            demoPushPropLog_(propId, 'NOTE', String(note || '').trim());
+            const action = photoUrl ? 'PHOTO' : 'NOTE';
+            const details = String(note || '').trim();
+            if (photoUrl) {
+                const item = { propId: String(propId), ts: demoNowStamp_(), action, details, photoUrl: String(photoUrl) };
+                setDemoPropTimelines(prev => {
+                    const next = Object.assign({}, (prev || {}));
+                    const arr = Array.isArray(next[propId]) ? next[propId].slice() : [];
+                    arr.unshift(item);
+                    next[propId] = arr.slice(0, 100);
+                    return next;
+                });
+            } else {
+                demoPushPropLog_(propId, action, details);
+            }
             return Promise.resolve({ ok: true });
         }
-        return gasCall('plantosAddPropNote', propId, note);
+        return gasCall('plantosAddPropNote', propId, note, photoUrl || '');
+    };
+    const uploadPropPhoto = (propId, dataUrl, name) => {
+        if (DEMO_MODE) {
+            return Promise.resolve({ ok: true, thumbUrl: dataUrl, viewUrl: dataUrl, name: name || 'photo.jpg' });
+        }
+        return gasCall('plantosUploadPropPhoto', propId, dataUrl, name || 'photo.jpg');
     };
     const graduateProp = (propId, specimenPayload) => {
         if (DEMO_MODE) {
@@ -5392,7 +5411,7 @@ function PlantDataProvider({ children }) {
         getPlantsByLocation, getPlant, getTimeline, getRecentLog,
         createPlant, updatePlant, setNickname, addLocation,
         quickLog, batchWater, batchFertilize, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
-        getProps, getPropTimeline, createProp, updatePropStatus, addPropNote, graduateProp,
+        getProps, getPropTimeline, createProp, updatePropStatus, addPropNote, uploadPropPhoto, graduateProp,
         updateProp: (propId, patch) => {
             var arr = demoPropsRef.current || [];
             var idx = arr.findIndex(function(p){ return p.propId === propId; });
@@ -5437,7 +5456,8 @@ function PlantDataProvider({ children }) {
             }
             return gasCall('plantosUpdateProp', propId, patch);
         },
-        addPropNote: (propId, note) => gasCall('plantosAddPropNote', propId, note),
+        addPropNote: (propId, note, photoUrl) => gasCall('plantosAddPropNote', propId, note, photoUrl || ''),
+        uploadPropPhoto: (propId, dataUrl, name) => gasCall('plantosUploadPropPhoto', propId, dataUrl, name || 'photo.jpg'),
         graduateProp: (propId, specimenPayload) => { var gp = Object.assign({}, specimenPayload); if (gp.generation && typeof gp.generation === 'object') gp.generation = gp.generation.str || ''; return gasCall('plantosGraduateProp', propId, gp); },
         getEnvironments: () => gasCall('plantosGetEnvironments').then(r => Array.isArray(r) ? r : []).catch(() => []),
         getLocationEnvMap: () => gasCall('plantosGetLocationEnvMap').then(r => (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}).catch(() => ({})),
@@ -10171,7 +10191,7 @@ function GenusAutocompleteInput({ genusValue, speciesValue, onGenusChange, onSpe
 }
 
 function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowForm }) {
-    const { getProps, getPropTimeline, createProp, updatePropStatus, updateProp, addPropNote, graduateProp, getPlant } = usePlantData();
+    const { getProps, getPropTimeline, createProp, updatePropStatus, updateProp, addPropNote, uploadPropPhoto, graduateProp, getPlant } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const { navigate } = useNavigation();
@@ -10218,6 +10238,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         setCrossWarning(check.warn || null);
     }, [form.hybridType, form.motherGenus, form.fatherGenus, form.motherFreetext, form.fatherFreetext]);
     const [noteText, setNoteText] = useState('');
+    const propPhotoRef = useRef(null);
+    const [propPhotoMsg, setPropPhotoMsg] = useState(null);
     const [showStatusPicker, setShowStatusPicker] = useState(false);
     const [failCause, setFailCause] = useState('');
     const [failDetail, setFailDetail] = useState('');
@@ -10400,6 +10422,28 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         catch(e) { setFormStatus({ type: 'error', message: 'Note failed: ' + (e && e.message || String(e)) }); return; }
         setNoteText('');
         getPropTimeline(propId).then(t => setTimeline(t || []));
+    }
+    async function handlePropPhotoPicked(propId, e) {
+        const file = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        setPropPhotoMsg({ type: 'loading', text: 'Uploading photo...' });
+        try {
+            const dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
+            const res = await uploadPropPhoto(propId, dataUrl, file.name || 'photo.jpg');
+            if (res && res.ok) {
+                const caption = noteText.trim() || 'Progress photo';
+                await addPropNote(propId, caption, res.thumbUrl || res.viewUrl || dataUrl);
+                setNoteText('');
+                setPropPhotoMsg({ type: 'success', text: 'Photo saved! \uD83D\uDCF8' });
+                getPropTimeline(propId).then(t => setTimeline(t || []));
+            } else {
+                setPropPhotoMsg({ type: 'error', text: 'Upload failed.' });
+            }
+        } catch(err) {
+            setPropPhotoMsg({ type: 'error', text: 'Error: ' + (err && err.message || String(err)) });
+        }
+        setTimeout(() => setPropPhotoMsg(null), 4000);
     }
     async function handleGraduate(propId) {
         var _a;
@@ -10947,20 +10991,28 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
 })(gradForm.everyDays, gradForm.fertilizeEveryDays || '', e => setGradForm(prev => Object.assign(Object.assign({}, prev), { fertilizeEveryDays: e.target.value })), pxS, theme))),
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, marginBottom: 6 }) }, "Genus, species, and substrate will be carried over from the prop."),
                         React.createElement(PlantButton, { variant: "secondary", onClick: () => handleGraduate(prop.propId), className: "py-1 px-3" }, "\uD83C\uDF93 Create Specimen"))),
-                    !isDone && (React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 12 } },
-                        React.createElement("input", { value: noteText, onChange: e => setNoteText(e.target.value), placeholder: "Add an observation or note...", onKeyDown: e => { if (e.key === 'Enter')
-                                handleAddNote(prop.propId); }, className: "border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, flex: '1 1 0', minWidth: 0 }) }),
-                        React.createElement(PlantButton, { onClick: () => handleAddNote(prop.propId), disabled: !noteText.trim(), className: "py-1 px-3", style: { flexShrink: 0 } }, "\uD83D\uDCDD Save"))),
+                    !isDone && (React.createElement("div", { style: { marginBottom: 12 } },
+                        React.createElement("div", { style: { display: 'flex', gap: 6 } },
+                            React.createElement("input", { value: noteText, onChange: e => setNoteText(e.target.value), placeholder: "Add a note or photo caption...", onKeyDown: e => { if (e.key === 'Enter') handleAddNote(prop.propId); }, className: "border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, flex: '1 1 0', minWidth: 0 }) }),
+                            React.createElement(PlantButton, { onClick: () => handleAddNote(prop.propId), disabled: !noteText.trim(), className: "py-1 px-3", style: { flexShrink: 0 } }, "\uD83D\uDCDD Save"),
+                            React.createElement(PlantButton, { variant: "secondary", onClick: () => { if (propPhotoRef.current) propPhotoRef.current.dataset.propid = prop.propId; if (propPhotoRef.current) propPhotoRef.current.click(); }, className: "py-1 px-3", style: { flexShrink: 0 } }, "\uD83D\uDCF8 Photo")),
+                        propPhotoMsg && React.createElement("div", { style: { marginTop: 4 } },
+                            React.createElement(StatusMessage, { type: propPhotoMsg.type, message: propPhotoMsg.text })))),
+                    React.createElement("input", { ref: propPhotoRef, type: "file", accept: "image/*", style: { display: 'none' }, onChange: e => { const pid = propPhotoRef.current && propPhotoRef.current.dataset.propid; if (pid) handlePropPhotoPicked(pid, e); } }),
                     React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: theme.txtP, marginBottom: 6 }) }, "DIARY"),
                     React.createElement("div", { style: { maxHeight: 200, overflowY: 'auto' } },
                         (timeline || []).length === 0 && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "No entries yet."),
                         (timeline || []).map((entry, i) => {
                             const icons = { CREATED: '🌱', STATUS: '📈', NOTE: '\uD83D\uDCDD', PHOTO: '📸' };
-                            return (React.createElement("div", { key: i, style: { display: 'flex', gap: 8, padding: '4px 0', borderBottom: i < timeline.length - 1 ? `1px solid ${theme.rowBorder}` : 'none' } },
-                                React.createElement("span", { style: { fontSize: 12, flexShrink: 0 } }, icons[entry.action] || '•'),
-                                React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtP }) }, entry.details),
-                                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: '#aaa' }) }, entry.ts))));
+                            return (React.createElement("div", { key: i, style: { padding: '6px 0', borderBottom: i < timeline.length - 1 ? `1px solid ${theme.rowBorder}` : 'none' } },
+                                React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                                    React.createElement("span", { style: { fontSize: 12, flexShrink: 0 } }, icons[entry.action] || '•'),
+                                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtP }) }, entry.details),
+                                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: '#aaa' }) }, entry.ts))),
+                                entry.photoUrl && React.createElement("div", { style: { marginTop: 4, marginLeft: 20 } },
+                                    React.createElement("a", { href: entry.viewUrl || entry.photoUrl, target: '_blank', rel: 'noopener noreferrer' },
+                                        React.createElement("img", { src: entry.photoUrl, alt: entry.details || 'Progress photo', style: { maxWidth: '100%', maxHeight: 180, border: `2px solid ${theme.cardBorder}`, display: 'block' } })))));
                         }))))));
         }),
         !loading && filterStatus === 'active' && (props || []).some(p => ['Graduated', 'Failed'].includes(p.status)) && (React.createElement("div", { style: { textAlign: 'center', marginTop: 8 } },

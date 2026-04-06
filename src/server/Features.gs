@@ -95,6 +95,7 @@ function doPost(e) {
       plantosUpdatePropStatus: plantosUpdatePropStatus,
       plantosUpdateProp: plantosUpdateProp,
       plantosAddPropNote: plantosAddPropNote,
+      plantosUploadPropPhoto: plantosUploadPropPhoto,
       plantosGraduateProp: plantosGraduateProp,
       plantosGetWishlist: plantosGetWishlist,
       plantosAddToWishlist: plantosAddToWishlist,
