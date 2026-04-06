@@ -97,6 +97,7 @@ function doPost(e) {
       plantosAddPropNote: plantosAddPropNote,
       plantosUploadPropPhoto: plantosUploadPropPhoto,
       plantosGraduateProp: plantosGraduateProp,
+      plantosSellProp: plantosSellProp,
       plantosGetWishlist: plantosGetWishlist,
       plantosAddToWishlist: plantosAddToWishlist,
       plantosRemoveFromWishlist: plantosRemoveFromWishlist,
@@ -339,6 +340,20 @@ function plantosGraduateProp(propId, plantPayload) {
   PropertiesService.getScriptProperties().setProperty(PLANTOS_PROPS_KEY, JSON.stringify(props));
   plantosPropTimelineAppend_(id, { action: 'STATUS', details: 'Graduated → UID ' + result.uid });
   return { ok: true, uid: result.uid };
+}
+
+function plantosSellProp(propId, priceSold) {
+  const id = plantosSafeStr_(propId).trim();
+  const props = plantosGetProps();
+  const idx = props.findIndex(p => p.propId === id);
+  if (idx < 0) return { ok: false, error: 'Prop not found' };
+  props[idx].status = 'Sold';
+  props[idx].priceSold = plantosSafeStr_(String(priceSold || '')).trim();
+  props[idx].soldDate = Utilities.formatDate(plantosNow_(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  PropertiesService.getScriptProperties().setProperty(PLANTOS_PROPS_KEY, JSON.stringify(props));
+  const priceStr = props[idx].priceSold ? ` for ${props[idx].priceSold}` : '';
+  plantosPropTimelineAppend_(id, { action: 'SOLD', details: `Prop sold${priceStr}.` });
+  return { ok: true };
 }
 
 /* ===================== FIX #15: plantosUpdateProp — was missing entirely ===================== */

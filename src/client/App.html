@@ -3855,7 +3855,7 @@ const SOIL_SUBSTRATES = [
 function substratesForMethod(growingMethod) {
     return growingMethod === 'semihydro' ? SEMIHYDRO_SUBSTRATES : SOIL_SUBSTRATES;
 }
-const PROP_STATUSES = ['Trying', 'Rooted', 'Potted Up', 'Graduated', 'Failed'];
+const PROP_STATUSES = ['Trying', 'Rooted', 'Potted Up', 'Graduated', 'Failed', 'Sold'];
 const PROP_FAIL_CAUSES = [
     'Rotted', 'Dried out', 'No roots formed', 'Pests',
     'Disease / mould', 'Too cold', 'Too hot', 'Unknown'
@@ -5412,6 +5412,12 @@ function PlantDataProvider({ children }) {
         createPlant, updatePlant, setNickname, addLocation,
         quickLog, batchWater, batchFertilize, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
         getProps, getPropTimeline, createProp, updatePropStatus, addPropNote, uploadPropPhoto, graduateProp,
+        sellProp: (propId, priceSold) => {
+            setDemoProps(prev => (prev || []).map(p => p.propId !== propId ? p : Object.assign({}, p, { status: 'Sold', priceSold: String(priceSold || ''), soldDate: new Date().toISOString().slice(0,10) })));
+            const priceStr = priceSold ? ` for ${priceSold}` : '';
+            demoPushPropLog_(propId, 'SOLD', `Prop sold${priceStr}.`);
+            return Promise.resolve({ ok: true });
+        },
         updateProp: (propId, patch) => {
             var arr = demoPropsRef.current || [];
             var idx = arr.findIndex(function(p){ return p.propId === propId; });
@@ -5475,6 +5481,7 @@ function PlantDataProvider({ children }) {
         addPropNote: (propId, note, photoUrl) => gasCall('plantosAddPropNote', propId, note, photoUrl || ''),
         uploadPropPhoto: (propId, dataUrl, name) => gasCall('plantosUploadPropPhoto', propId, dataUrl, name || 'photo.jpg'),
         graduateProp: (propId, specimenPayload) => { var gp = Object.assign({}, specimenPayload); if (gp.generation && typeof gp.generation === 'object') gp.generation = gp.generation.str || ''; return gasCall('plantosGraduateProp', propId, gp); },
+        sellProp: (propId, priceSold) => gasCall('plantosSellProp', propId, priceSold || ''),
         getEnvironments: () => gasCall('plantosGetEnvironments').then(r => Array.isArray(r) ? r : []).catch(() => []),
         getLocationEnvMap: () => gasCall('plantosGetLocationEnvMap').then(r => (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}).catch(() => ({})),
         getLocationConditions: () => gasCall('plantosGetLocationConditions').then(r => (r && typeof r === 'object') ? r : {}).catch(() => ({})),
@@ -10239,7 +10246,7 @@ function GenusAutocompleteInput({ genusValue, speciesValue, onGenusChange, onSpe
 }
 
 function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowForm }) {
-    const { getProps, getPropTimeline, createProp, updatePropStatus, updateProp, addPropNote, uploadPropPhoto, graduateProp, getPlant } = usePlantData();
+    const { getProps, getPropTimeline, createProp, updatePropStatus, updateProp, addPropNote, uploadPropPhoto, graduateProp, sellProp, getPlant } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const { navigate } = useNavigation();
@@ -10294,6 +10301,9 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const [showGraduate, setShowGraduate] = useState(false);
     const [gradForm, setGradForm] = useState({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' });
     const [gradStatus, setGradStatus] = useState(null);
+    const [showSell, setShowSell] = useState(false);
+    const [sellPrice, setSellPrice] = useState('');
+    const [sellStatus, setSellStatus] = useState(null);
     const [filterStatus, setFilterStatus] = useState('active'); // 'active' | 'all'
     const [propTab, setPropTab] = useState('all'); // 'all' | 'cutting' | 'seed' | 'hybrid' | 'graft'
     const [parentInCollection, setParentInCollection] = useState(
@@ -10362,6 +10372,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         'Potted Up': { bg: '#5A3808', border: '#3A2000', text: '#FFE8C0' },
         'Graduated': { bg: '#3A6A18', border: '#2E5A08', text: '#E8FFD0' },
         'Failed': { bg: '#6A1818', border: '#3A0808', text: '#FFD0D0' },
+        'Sold': { bg: '#3A2A68', border: '#1E1040', text: '#E0D8FF' },
     };
     function statusBadge(status) {
         const c = STATUS_COLORS[status] || STATUS_COLORS['Trying'];
@@ -10526,6 +10537,18 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         }
         else {
             setGradStatus({ type: 'error', message: 'Failed: ' + ((res && res.reason) || 'unknown') });
+        }
+    }
+    async function handleSell(propId) {
+        setSellStatus({ type: 'loading', message: 'Recording sale...' });
+        let res; try { res = await sellProp(propId, sellPrice.trim()); } catch(e) { setSellStatus({ type: 'error', message: 'Error: ' + (e&&e.message||String(e)) }); return; }
+        if (res && res.ok) {
+            setSellStatus({ type: 'success', message: 'Sold! 💰' });
+            refreshProps();
+            getPropTimeline(propId).then(t => setTimeline(t || []));
+            setTimeout(() => { setShowSell(false); setSellStatus(null); setSellPrice(''); }, 2000);
+        } else {
+            setSellStatus({ type: 'error', message: 'Failed: ' + ((res && res.error) || 'unknown') });
         }
     }
     async function handleSavePropEdit(propId) {
@@ -10815,7 +10838,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             const sc = STATUS_COLORS[prop.status] || STATUS_COLORS['Trying'];
             const isFailed = prop.status === 'Failed';
             const isGraduated = prop.status === 'Graduated';
-            const isDone = isFailed || isGraduated;
+            const isSold = prop.status === 'Sold';
+            const isDone = isFailed || isGraduated || isSold;
             const curStep = stepIdx(prop.status);
             return (React.createElement("div", { key: prop.propId, style: { border: `3px solid ${isOpen ? theme.cardBorder : theme.rowBorder}`, marginBottom: 8, background: isOpen ? theme.cardBg : theme.rowBg } },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', cursor: 'pointer' }, onClick: () => { setOpenPropId(isOpen ? null : prop.propId); setShowStatusPicker(false); setShowGraduate(false); setNoteText(''); } },
@@ -10991,8 +11015,17 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     /* ── ACTIONS ── */
                     !isDone && (React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 } },
                         React.createElement(PlantButton, { onClick: () => setShowStatusPicker(v => !v), className: "py-1 px-3" }, "\uD83D\uDCC8 Update Status"),
-                        prop.status === 'Potted Up' && (React.createElement(PlantButton, { variant: "secondary", onClick: () => { setShowGraduate(v => !v); setShowStatusPicker(false); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); }, className: "py-1 px-3" }, "\uD83C\uDF93 Graduate")),
+                        prop.status === 'Potted Up' && (React.createElement(PlantButton, { variant: "secondary", onClick: () => { setShowGraduate(v => !v); setShowSell(false); setShowStatusPicker(false); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); }, className: "py-1 px-3" }, "\uD83C\uDF93 Graduate")),
+                        React.createElement(PlantButton, { variant: "secondary", onClick: () => { setShowSell(v => !v); setShowGraduate(false); setShowStatusPicker(false); setSellPrice(''); setSellStatus(null); }, className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, "\uD83D\uDCB0 Sell"),
                         React.createElement(PlantButton, { variant: "ghost", onClick: () => handleStatusUpdate(prop.propId, 'Failed'), className: "py-1 px-3" }, "\uD83D\uDC80 Mark Failed"))),
+                    isSold && React.createElement("div", { style: { marginBottom: 12, padding: '8px 10px', border: '2px solid #1E1040', background: '#1A0A30' } },
+                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', color: '#D0C0FF' }) }, "\uD83D\uDCB0 Sold" + (prop.priceSold ? ` for ${prop.priceSold}` : '') + (prop.soldDate ? ` on ${prop.soldDate}` : ''))),
+                    showSell && !isDone && (React.createElement("div", { style: { border: '2px solid #4A2A88', padding: 10, marginBottom: 12, background: '#0E0820' } },
+                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#D0C0FF', marginBottom: 8 }) }, "LOG SALE"),
+                        sellStatus && React.createElement("div", { className: "mb-2" }, React.createElement(StatusMessage, { type: sellStatus.type, message: sellStatus.message })),
+                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: '#A090D0', marginBottom: 4 }) }, "Price sold (optional)"),
+                        React.createElement("input", { value: sellPrice, onChange: e => setSellPrice(e.target.value), placeholder: "e.g. \xA325 or $40", className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: '#D0C0FF', borderColor: '#4A2A88', background: '#1A0A30', marginBottom: 8 }) }),
+                        React.createElement(PlantButton, { onClick: () => handleSell(prop.propId), className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, "\uD83D\uDCB0 Confirm Sale"))),
                     showStatusPicker && !isDone && (React.createElement("div", { style: { border: `2px solid ${theme.rowBorder}`, padding: 10, marginBottom: 12, background: theme.rowBg } },
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, "Update status to:"),
                         React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: failCause ? 8 : 0 } }, STEPS.filter(s => STEPS.indexOf(s) > curStep).map(s => (React.createElement(PlantButton, { key: s, onClick: () => handleStatusUpdate(prop.propId, s), className: "py-1 px-3" }, s)))),
@@ -11053,7 +11086,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("div", { style: { maxHeight: 200, overflowY: 'auto' } },
                         (timeline || []).length === 0 && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "No entries yet."),
                         (timeline || []).map((entry, i) => {
-                            const icons = { CREATED: '🌱', STATUS: '📈', NOTE: '\uD83D\uDCDD', PHOTO: '📸' };
+                            const icons = { CREATED: '🌱', STATUS: '📈', NOTE: '\uD83D\uDCDD', PHOTO: '📸', SOLD: '💰' };
                             return (React.createElement("div", { key: i, style: { padding: '6px 0', borderBottom: i < timeline.length - 1 ? `1px solid ${theme.rowBorder}` : 'none' } },
                                 React.createElement("div", { style: { display: 'flex', gap: 8 } },
                                     React.createElement("span", { style: { fontSize: 12, flexShrink: 0 } }, icons[entry.action] || '•'),
@@ -11065,8 +11098,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                         React.createElement("img", { src: entry.photoUrl, alt: entry.details || 'Progress photo', style: { maxWidth: '100%', maxHeight: 180, border: `2px solid ${theme.cardBorder}`, display: 'block' } })))));
                         }))))));
         }),
-        !loading && filterStatus === 'active' && (props || []).some(p => ['Graduated', 'Failed'].includes(p.status)) && (React.createElement("div", { style: { textAlign: 'center', marginTop: 8 } },
-            React.createElement("button", { type: "button", onClick: () => setFilterStatus('all'), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, "Show graduated & failed props")))));
+        !loading && filterStatus === 'active' && (props || []).some(p => ['Graduated', 'Failed', 'Sold'].includes(p.status)) && (React.createElement("div", { style: { textAlign: 'center', marginTop: 8 } },
+            React.createElement("button", { type: "button", onClick: () => setFilterStatus('all'), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, "Show graduated, sold & failed props")))));
 }
 function LocationsScreen() { return React.createElement(MyPlantsScreen, null); }
 function PlantLogScreen() {
