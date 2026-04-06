@@ -10841,7 +10841,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             (form.hybridType || parentInCollection !== null) && React.createElement("div", { style: { marginTop: 8 } },
                 React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : form.isGraft ? '🔗 Record Graft' : '🌱 Start Prop')))),
         (props || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 8 } }, [['active', 'Active'], ['all', 'All']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setFilterStatus(id), style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', fontWeight: 900, padding: '5px 12px', border: `2px solid ${filterStatus === id ? theme.btnP.border : theme.rowBorder}`, background: filterStatus === id ? theme.btnP.bg : 'transparent', color: filterStatus === id ? theme.btnP.text : theme.txtS, cursor: 'pointer' }) }, label))))),
-        !showForm && React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
+        !showForm && !defaultPropTab && React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
             [
                 { id: 'all', label: '🌱 All' },
                 { id: 'cutting', label: '\u2702 Cuttings' },
