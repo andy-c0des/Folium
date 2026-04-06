@@ -5849,17 +5849,28 @@ function HomeScreen() {
 
     const { isMobile: _headerIsMobile } = useScreenSize();
     const Header = () => {
+        var _hdrUser = (function() { try { return localStorage.getItem('plantos_username') || '?'; } catch(e) { return '?'; } })();
         if (_headerIsMobile) return React.createElement("div", {
             style: {
                 position: 'sticky', top: 0, zIndex: 50,
                 background: '#0D2010', borderBottom: '3px solid #1A4010',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '4px 0', marginBottom: 10, width: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '4px 12px', marginBottom: 10, width: '100%',
             }
-        }, React.createElement('img', {
-            src: LOGO_PNG, alt: 'Folium', onClick: () => navigate('home'),
-            style: { height: '40px', width: 'auto', cursor: 'pointer', display: 'block' }
-        }));
+        },
+            React.createElement("div", { style: { width: 38 } }),
+            React.createElement('img', {
+                src: LOGO_PNG, alt: 'Folium', onClick: () => navigate('home'),
+                style: { height: '40px', width: 'auto', cursor: 'pointer', display: 'block' }
+            }),
+            React.createElement("button", {
+                type: "button", onClick: () => navigate('settings'),
+                title: "Settings & Sign Out",
+                style: { width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.3)',
+                    cursor: 'pointer', flexShrink: 0 }
+            }, React.createElement(PixelNavIcon, { id: 'settings', darkColor: '#FFFFFF', lightColor: 'rgba(200,240,160,0.8)', size: 22 }))
+        );
         return React.createElement("div", {
             className: "sticky-header",
             style: { background: '#0D2010', borderColor: '#1A4010' }
@@ -5894,6 +5905,17 @@ function HomeScreen() {
                 },
                     React.createElement(PixelNavIcon, { id: 'add', darkColor: '#FFFFFF', lightColor: 'rgba(200,240,160,0.8)', size: 16 }),
                     React.createElement("span", null, "Add Plant"))),
+            React.createElement("button", {
+                type: "button", onClick: () => navigate('settings'),
+                title: "Settings & Sign Out",
+                style: { flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                    background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.3)',
+                    color: '#FFFFFF', padding: '5px 12px', cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', fontWeight: 900, fontSize: 'var(--fs-small)',
+                    whiteSpace: 'nowrap' }
+            },
+                React.createElement(PixelNavIcon, { id: 'settings', darkColor: '#FFFFFF', lightColor: 'rgba(200,240,160,0.8)', size: 14 }),
+                React.createElement("span", null, _hdrUser)),
             React.createElement(ThemePicker, null));
     };
 
@@ -16306,6 +16328,17 @@ function PixelNavIcon({ id, darkColor, lightColor, size }) {
             r(6,2,4,12),          // vertical bar
             r(6,6,4,4,l),         // center intersection (light)
         ];
+    } else if (id === 'settings') {
+        content = [
+            r(6,0,4,2),           // top tooth
+            r(6,14,4,2),          // bottom tooth
+            r(0,6,2,4),           // left tooth
+            r(14,6,2,4),          // right tooth
+            r(4,2,8,12),          // main body
+            r(2,4,2,8),           // left body extension
+            r(12,4,2,8),          // right body extension
+            r(6,6,4,4,l),         // center hole (light)
+        ];
     }
     return React.createElement('svg', {
         viewBox: '0 0 16 16', width: s, height: s,
@@ -16324,6 +16357,7 @@ function BottomNav({ current, navigate, goBack }) {
         { id: 'watering' },
         { id: 'progress-updates' },
         { id: 'add' },
+        { id: 'settings' },
     ];
     return React.createElement("div", {
         style: {
