@@ -5431,13 +5431,29 @@ function PlantDataProvider({ children }) {
         patchSharedPlant, getSharedPatch, clearSharedPatch, removeProgressDue,
         getWishlist: (function() {
             var _demoWishlist = [];
-            return function() { return Promise.resolve(_demoWishlist.slice()); };
+            window.__demoWishlist = _demoWishlist;
+            return function() { return Promise.resolve((window.__demoWishlist || []).slice()); };
         }()),
         addToWishlist: function(item) {
             var entry = Object.assign({}, item, { wishlistId: 'WL' + Date.now(), dateAdded: new Date().toISOString().slice(0,10) });
-            return Promise.resolve({ ok: true, item: entry });
+            if (!window.__demoWishlist) window.__demoWishlist = [];
+            window.__demoWishlist.unshift(entry);
+            return Promise.resolve({ ok: true, item: entry, wishlist: window.__demoWishlist.slice() });
         },
-        removeFromWishlist: function() { return Promise.resolve({ ok: true }); },
+        removeFromWishlist: function(wishlistId) {
+            if (window.__demoWishlist) window.__demoWishlist = window.__demoWishlist.filter(function(i) { return i.wishlistId !== wishlistId; });
+            return Promise.resolve({ ok: true, wishlist: (window.__demoWishlist || []).slice() });
+        },
+        updateWishlistItem: function(wishlistId, updates) {
+            if (!window.__demoWishlist) return Promise.resolve({ ok: false });
+            var idx = window.__demoWishlist.findIndex(function(i) { return i.wishlistId === wishlistId; });
+            if (idx < 0) return Promise.resolve({ ok: false });
+            var allowed = ['genus', 'taxon', 'classification', 'cultivar', 'infraRank', 'infraEpithet', 'hybridNote', 'notes'];
+            var patch = {};
+            allowed.forEach(function(k) { if (updates[k] !== undefined) patch[k] = updates[k]; });
+            window.__demoWishlist[idx] = Object.assign({}, window.__demoWishlist[idx], patch);
+            return Promise.resolve({ ok: true, item: window.__demoWishlist[idx], wishlist: window.__demoWishlist.slice() });
+        },
     } : {
         locations, homeData, refreshHome, removeProgressDue, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
@@ -5477,6 +5493,7 @@ function PlantDataProvider({ children }) {
         getWishlist: () => gasCall('plantosGetWishlist').then(r => (r && r.wishlist) ? r.wishlist : []).catch(() => []),
         addToWishlist: (item) => gasCall('plantosAddToWishlist', item),
         removeFromWishlist: (wishlistId) => gasCall('plantosRemoveFromWishlist', wishlistId),
+        updateWishlistItem: (wishlistId, updates) => gasCall('plantosUpdateWishlistItem', wishlistId, updates),
     };
     return React.createElement(PlantDataContext.Provider, { value: ctxValue }, children);
 }
@@ -7629,7 +7646,7 @@ function VariantSuggestions({ genus, species, onSelect, theme, pxS }) {
 
 function AddScreen({ prefill, openMode }) {
     const { goBack, navigate } = useNavigation();
-    const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist } = usePlantData();
+    const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '14px' };
@@ -7689,6 +7706,7 @@ function AddScreen({ prefill, openMode }) {
     const [wishlistItems, setWishlistItems] = useState([]);
     const [wishlistLoading, setWishlistLoading] = useState(false);
     const [wishlistStatus, setWishlistStatus] = useState(null);
+    const [editingWishId, setEditingWishId] = useState(null);
     // Load wishlist when entering wishlist tab
     useEffect(() => {
         if (mode !== 'wishlist') return;
@@ -7860,17 +7878,44 @@ function AddScreen({ prefill, openMode }) {
     const isProp  = mode === 'prop';
     const isWishlist = mode === 'wishlist';
     const allModes = [['single', '\uD83C\uDF3F Single'], ['batch', '\uD83E\uDEB4 Batch'], ['prop', '\uD83C\uDF31 Prop'], ['wishlist', '\u2B50 Wishlist']];
+    function clearWishForm() {
+        setWishGenus(''); setWishTaxon(''); setWishClassification(''); setWishCultivar('');
+        setWishInfraRank(''); setWishInfraEpithet(''); setWishHybridNote(''); setWishNotes('');
+        setShowWishTaxonomy(false); setEditingWishId(null);
+    }
+    function startEditWishItem(item) {
+        setWishGenus(item.genus || '');
+        setWishTaxon(item.taxon || '');
+        setWishClassification(item.classification || '');
+        setWishCultivar(item.cultivar || '');
+        setWishInfraRank(item.infraRank || '');
+        setWishInfraEpithet(item.infraEpithet || '');
+        setWishHybridNote(item.hybridNote || '');
+        setWishNotes(item.notes || '');
+        const hasTaxonomy = !!(item.cultivar || item.infraRank || item.infraEpithet || item.hybridNote);
+        setShowWishTaxonomy(hasTaxonomy);
+        setEditingWishId(item.wishlistId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     async function submitWish() {
         const g = String(wishGenus || '').trim();
         if (!g) { setWishlistStatus({ type: 'error', message: 'Genus is required.' }); setTimeout(() => setWishlistStatus(null), 2000); return; }
-        setWishlistStatus({ type: 'loading', message: 'Saving...' });
+        setWishlistStatus({ type: 'loading', message: editingWishId ? 'Saving changes...' : 'Saving...' });
         try {
             const item = { genus: g, taxon: String(wishTaxon || '').trim(), classification: wishClassification, cultivar: String(wishCultivar || '').trim(), infraRank: wishInfraRank, infraEpithet: String(wishInfraEpithet || '').trim(), hybridNote: wishHybridNote, notes: String(wishNotes || '').trim() };
-            const res = await addToWishlist(item);
-            if (res && res.ok && res.item) { setWishlistItems(prev => [res.item, ...prev]); }
-            else if (res && res.wishlist) { setWishlistItems(res.wishlist); }
-            setWishGenus(''); setWishTaxon(''); setWishClassification(''); setWishCultivar(''); setWishInfraRank(''); setWishInfraEpithet(''); setWishHybridNote(''); setWishNotes(''); setShowWishTaxonomy(false);
-            setWishlistStatus({ type: 'success', message: 'Added \u2B50' });
+            if (editingWishId) {
+                const res = await updateWishlistItem(editingWishId, item);
+                if (res && res.wishlist) { setWishlistItems(res.wishlist); }
+                else if (res && res.item) { setWishlistItems(prev => prev.map(i => i.wishlistId === editingWishId ? res.item : i)); }
+                clearWishForm();
+                setWishlistStatus({ type: 'success', message: 'Updated \u2705' });
+            } else {
+                const res = await addToWishlist(item);
+                if (res && res.ok && res.item) { setWishlistItems(prev => [res.item, ...prev]); }
+                else if (res && res.wishlist) { setWishlistItems(res.wishlist); }
+                clearWishForm();
+                setWishlistStatus({ type: 'success', message: 'Added \u2B50' });
+            }
             setTimeout(() => setWishlistStatus(null), 2000);
         } catch(e) { setWishlistStatus({ type: 'error', message: 'Failed to save.' }); setTimeout(() => setWishlistStatus(null), 2000); }
     }
@@ -8051,8 +8096,9 @@ function AddScreen({ prefill, openMode }) {
                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS, marginBottom: 4 }) }, "Notes"),
                     React.createElement("textarea", { value: wishNotes, onChange: e => setWishNotes(e.target.value), placeholder: "Why you want it, where to source it\u2026", rows: 2, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, resize: 'vertical' }) })),
                 React.createElement("div", { className: "flex gap-2 mb-4" },
-                    React.createElement(PlantButton, { onClick: submitWish, disabled: !String(wishGenus || '').trim() }, '\u2B50 Add to Wishlist'),
-                    React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back")),
+                    React.createElement(PlantButton, { onClick: submitWish, disabled: !String(wishGenus || '').trim() }, editingWishId ? '\u2705 Save Changes' : '\u2B50 Add to Wishlist'),
+                    editingWishId && React.createElement(PlantButton, { variant: "ghost", onClick: clearWishForm }, "Cancel"),
+                    !editingWishId && React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back")),
                 wishlistLoading && React.createElement(StatusMessage, { type: "loading", message: "Loading wishlist\u2026" }),
                 !wishlistLoading && wishlistItems.length === 0 && React.createElement("div", { style: { textAlign: 'center', padding: '20px 0', opacity: 0.5 } },
                     React.createElement("div", { style: { fontSize: 28, marginBottom: 6 } }, '\u2B50'),
@@ -8069,7 +8115,9 @@ function AddScreen({ prefill, openMode }) {
                                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900, fontStyle: 'italic' }) }, wishDisplayName(item)),
                                         item.notes && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, item.notes),
                                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.6, marginTop: 2 }) }, 'Added ' + (item.dateAdded || ''))),
-                                    React.createElement("button", { type: 'button', onClick: () => removeWishItem(item.wishlistId), style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: theme.txtS, opacity: 0.5, flexShrink: 0, padding: '0 2px' }, title: 'Remove' }, '\u00D7')),
+                                    React.createElement("div", { style: { display: 'flex', gap: 4, flexShrink: 0 } },
+                                        React.createElement("button", { type: 'button', onClick: () => startEditWishItem(item), style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: theme.btnP.bg, opacity: 0.8, padding: '0 4px' }, title: 'Edit' }, '\u270F\uFE0F'),
+                                        React.createElement("button", { type: 'button', onClick: () => removeWishItem(item.wishlistId), style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: theme.txtS, opacity: 0.5, padding: '0 2px' }, title: 'Remove' }, '\u00D7'))),
                                 React.createElement("button", { type: 'button',
                                     onClick: () => navigate('add', { prefill: item, openMode: 'single' }),
                                     style: Object.assign({}, pxS, { fontSize: '11px', padding: '7px 10px', cursor: 'pointer', border: '2px solid #2E5A1A', background: 'linear-gradient(180deg,#3A6A1A,#2A5008)', color: '#D0F0A8', fontWeight: 900, letterSpacing: '0.04em', boxShadow: '0 2px 0 #1A3A08', width: '100%', textAlign: 'center' })

@@ -422,3 +422,21 @@ function plantosRemoveFromWishlist(wishlistId) {
     return { ok: false, error: e && e.message ? e.message : String(e) };
   }
 }
+
+function plantosUpdateWishlistItem(wishlistId, updates) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(PLANTOS_WISHLIST_KEY);
+    var list = [];
+    try { list = raw ? JSON.parse(raw) : []; } catch(e) {}
+    var idx = list.findIndex(function(i) { return i.wishlistId === String(wishlistId); });
+    if (idx < 0) return { ok: false, error: 'Item not found' };
+    var allowed = ['genus', 'taxon', 'classification', 'cultivar', 'infraRank', 'infraEpithet', 'hybridNote', 'notes'];
+    var patch = {};
+    allowed.forEach(function(k) { if (updates[k] !== undefined) patch[k] = updates[k]; });
+    list[idx] = Object.assign({}, list[idx], patch);
+    PropertiesService.getScriptProperties().setProperty(PLANTOS_WISHLIST_KEY, JSON.stringify(list));
+    return { ok: true, item: list[idx], wishlist: list };
+  } catch(e) {
+    return { ok: false, error: e && e.message ? e.message : String(e) };
+  }
+}

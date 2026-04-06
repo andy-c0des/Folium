@@ -100,6 +100,7 @@ function doPost(e) {
       plantosGetWishlist: plantosGetWishlist,
       plantosAddToWishlist: plantosAddToWishlist,
       plantosRemoveFromWishlist: plantosRemoveFromWishlist,
+      plantosUpdateWishlistItem: plantosUpdateWishlistItem,
       plantosDebug: plantosDebug,
       plantosDebugLocations: plantosDebugLocations,
       kbGetPlantFacts: kbGetPlantFacts,
