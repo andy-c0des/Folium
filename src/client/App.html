@@ -10609,7 +10609,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     function stepIdx(status) { const i = STEPS.indexOf(status); return i >= 0 ? i : (status === 'Graduated' ? 3 : (status === 'Failed' ? -1 : 0)); }
     return (React.createElement("div", { style: { paddingTop: 24 } },
         React.createElement("div", { style: { marginBottom: 16 } },
-            React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, "\uD83C\uDF31 Propagation Lab"),
+            React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, defaultPropTab === 'graft' ? "\uD83D\uDD17 Graft Bench" : "\uD83C\uDF31 Propagation Lab"),
             successRate !== null && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', color: theme.txtS }) },
                 succeededCount,
                 "/",
