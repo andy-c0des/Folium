@@ -7841,8 +7841,9 @@ function AddScreen({ prefill, openMode }) {
         }
     }
     async function submitProp() {
-        if (!String(genus || '').trim()) {
-            setStatus({ type: 'error', message: 'Genus is required.' });
+        const graftGenusOk = propIsGraft ? String(propScionGenus || '').trim() : true;
+        if (!propIsGraft && !String(genus || '').trim() || propIsGraft && !graftGenusOk) {
+            setStatus({ type: 'error', message: propIsGraft ? 'Scion genus is required.' : 'Genus is required.' });
             setTimeout(() => setStatus(null), 2200);
             return;
         }
