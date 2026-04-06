@@ -378,7 +378,8 @@ function plantosUpdateProp(propId, patch) {
                    'isIntrageneric','generationConfirmed',
                    'motherUid','motherUID','fatherUid','fatherUID','pollinationMethod',
                    'crossDate','motherGenus','motherSpecies','motherFreetext',
-                   'fatherGenus','fatherSpecies','fatherFreetext'];
+                   'fatherGenus','fatherSpecies','fatherFreetext',
+                   'isGraft','scionGenus','scionSpecies','rootstockGenus','rootstockSpecies','graftTechnique'];
   var boolFields = { hybridType: true, isIntrageneric: true, generationConfirmed: true };
   allowed.forEach(function(k) {
     if (k in patch && patch[k] !== null && patch[k] !== undefined) {

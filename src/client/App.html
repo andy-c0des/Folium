@@ -10325,6 +10325,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const [showSell, setShowSell] = useState(false);
     const [sellPrice, setSellPrice] = useState('');
     const [sellStatus, setSellStatus] = useState(null);
+    const [selectedStatus, setSelectedStatus] = useState('');
+    const [showPhotoPrompt, setShowPhotoPrompt] = useState(null);
     const [filterStatus, setFilterStatus] = useState('active'); // 'active' | 'all'
     const [propTab, setPropTab] = useState('all'); // 'all' | 'cutting' | 'seed' | 'hybrid' | 'graft'
     const [parentInCollection, setParentInCollection] = useState(
@@ -10491,6 +10493,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         }
         catch(e) { setFormStatus({ type: 'error', message: 'Failed: ' + (e && e.message || String(e)) }); return; }
         setShowStatusPicker(false);
+        if (newStatus !== 'Failed') { setShowPhotoPrompt(propId); }
         setFailCause('');
         setFailDetail('');
         setFormStatus(null);
@@ -10867,6 +10870,10 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             const days = daysSince(prop.startDate);
             const sc = STATUS_COLORS[prop.status] || STATUS_COLORS['Trying'];
             const isGraft = !!(prop.isGraft || prop.propType === 'Graft');
+            const GRAFT_STEPS = ['Trying', 'Callusing', 'Fused', 'Rooted', 'Potted Up'];
+            const propSteps = isGraft ? GRAFT_STEPS : STEPS;
+            const curPropStep = propSteps.indexOf(prop.status);
+            const availableStatuses = [...propSteps.filter(function(s, i){ return i > curPropStep; }), 'Failed'];
             const isFailed = prop.status === 'Failed';
             const isGraduated = prop.status === 'Graduated';
             const isSold = prop.status === 'Sold';
@@ -10911,17 +10918,6 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 prop.parentUID))),
                     React.createElement("span", { style: { color: theme.txtS, fontSize: 14 } }, isOpen ? '\u25BC' : '\u25B6')),
                 isOpen && (React.createElement("div", { style: { borderTop: `2px solid ${theme.rowBorder}`, padding: '12px' } },
-                    /* ── PROGRESS STEPPER ── */
-                    !isDone && (React.createElement("div", { style: { marginBottom: 12 } },
-                        React.createElement("div", { style: { display: 'flex', gap: 0 } }, (isGraft ? ['Trying', 'Callusing', 'Fused'] : STEPS).map((step, i) => {
-                            const done = i < curStep;
-                            const active = i === curStep;
-                            const stepList = isGraft ? ['Trying', 'Callusing', 'Fused'] : STEPS;
-                            return (React.createElement("div", { key: step, style: { flex: 1, textAlign: 'center', padding: '6px 4px', border: `2px solid ${theme.cardBorder}`, borderRight: i < stepList.length - 1 ? 'none' : `2px solid ${theme.cardBorder}`, background: done ? theme.btnP.bg : active ? theme.rowBg : 'transparent' } },
-                                React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: done ? theme.btnP.text : active ? theme.txtP : theme.txtS }) },
-                                    done ? '✓ ' : active ? '▶ ' : '',
-                                    step)));
-                        })))),
                     /* ── PROP INFO CARD ── */
                     (() => {
                         const isEditing = editPropId === prop.propId;
@@ -10935,7 +10931,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 !isDone && React.createElement("button", { type: "button",
                                     onClick: function() {
                                         if (isEditing) { setEditPropId(null); setEditPropForm({}); }
-                                        else { setEditPropId(prop.propId); setEditPropForm({ genus: prop.genus || '', species: prop.species || '', type: prop.type || prop.propType || '', substrate: prop.substrate || '', notes: prop.notes || '' }); }
+                                        else { setShowStatusPicker(false); setShowGraduate(false); setShowSell(false); setShowPhotoPrompt(null); setEditPropId(prop.propId); setEditPropForm({ genus: prop.scionGenus || prop.genus || '', species: prop.scionSpecies || prop.species || '', scionGenus: prop.scionGenus || '', scionSpecies: prop.scionSpecies || '', rootstockGenus: prop.rootstockGenus || '', rootstockSpecies: prop.rootstockSpecies || '', graftTechnique: prop.graftTechnique || 'Approach graft', type: prop.type || prop.propType || '', substrate: prop.substrate || '', notes: prop.notes || '' }); }
                                     },
                                     style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, padding: '3px 10px', border: `2px solid ${isEditing ? '#aaa' : theme.btnP.border}`, background: isEditing ? 'transparent' : theme.btnP.bg, color: isEditing ? theme.txtS : theme.btnP.text, cursor: 'pointer' })
                                 }, isEditing ? '\u00D7 Cancel' : '\u270F\uFE0F Edit')),
@@ -10964,26 +10960,44 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP }) }, prop.notes))),
                             /* edit mode */
                             isEditing && React.createElement("div", { style: { padding: '10px' } },
-                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
-                                    /* genus */
-                                    React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "GENUS"),
-                                        React.createElement("input", { value: ef.genus || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {genus: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                    /* species */
-                                    React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "SPECIES"),
-                                        React.createElement("input", { value: ef.species || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {species: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                    /* type */
-                                    React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "PROP TYPE"),
-                                        React.createElement("select", { value: ef.type || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {type: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
-                                            propTypeOpts.map(function(t){ return React.createElement("option", {key: t, value: t}, t); }))),
-                                    /* substrate */
-                                    React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "SUBSTRATE"),
-                                        React.createElement("select", { value: ef.substrate || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {substrate: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
-                                            React.createElement("option", {value: ''}, '— select —'),
-                                            subOpts.map(function(s){ return React.createElement("option", {key: s, value: s}, s); })))),
+                                isGraft
+                                    ? React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, "\uD83C\uDF3F SCION GENUS"),
+                                            React.createElement("input", { value: ef.scionGenus || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {scionGenus: e.target.value, genus: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, "SCION SPECIES"),
+                                            React.createElement("input", { value: ef.scionSpecies || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {scionSpecies: e.target.value, species: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, "\uD83E\uDEB5 ROOTSTOCK GENUS"),
+                                            React.createElement("input", { value: ef.rootstockGenus || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {rootstockGenus: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, "ROOTSTOCK SPECIES"),
+                                            React.createElement("input", { value: ef.rootstockSpecies || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {rootstockSpecies: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        React.createElement("div", { style: { gridColumn: 'span 2' } },
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "TECHNIQUE"),
+                                            React.createElement("select", { value: ef.graftTechnique || 'Approach graft', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {graftTechnique: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
+                                                ['Approach graft','Cleft graft','Side graft','Wedge graft','T-bud graft','Saddle graft','Thread graft','Hypocotyl graft','Other'].map(function(t){ return React.createElement("option", {key: t, value: t}, t); }))))
+                                    : React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
+                                        /* genus */
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "GENUS"),
+                                            React.createElement("input", { value: ef.genus || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {genus: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        /* species */
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "SPECIES"),
+                                            React.createElement("input", { value: ef.species || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {species: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        /* type */
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "PROP TYPE"),
+                                            React.createElement("select", { value: ef.type || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {type: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
+                                                propTypeOpts.map(function(t){ return React.createElement("option", {key: t, value: t}, t); }))),
+                                        /* substrate */
+                                        React.createElement("div", null,
+                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "SUBSTRATE"),
+                                            React.createElement("select", { value: ef.substrate || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {substrate: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
+                                                React.createElement("option", {value: ''}, '\u2014 select \u2014'),
+                                                subOpts.map(function(s){ return React.createElement("option", {key: s, value: s}, s); })))),
                                 /* notes full width */
                                 React.createElement("div", { style: { marginBottom: 8 } },
                                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "NOTES"),
@@ -11044,28 +11058,68 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                             prop.failCause),
                         prop.failCauseDetail && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#FFA0A0', marginTop: 2 }) }, prop.failCauseDetail))),
                     /* ── ACTIONS ── */
-                    !isDone && (React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 } },
-                        React.createElement(PlantButton, { onClick: () => setShowStatusPicker(v => !v), className: "py-1 px-3" }, "\uD83D\uDCC8 Update Status"),
-                        prop.status === 'Potted Up' && (React.createElement(PlantButton, { variant: "secondary", onClick: () => { setShowGraduate(v => !v); setShowSell(false); setShowStatusPicker(false); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); }, className: "py-1 px-3" }, "\uD83C\uDF93 Graduate")),
-                        React.createElement(PlantButton, { variant: "secondary", onClick: () => { setShowSell(v => !v); setShowGraduate(false); setShowStatusPicker(false); setSellPrice(''); setSellStatus(null); }, className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, "\uD83D\uDCB0 Sell"),
-                        React.createElement(PlantButton, { variant: "ghost", onClick: () => handleStatusUpdate(prop.propId, 'Failed'), className: "py-1 px-3" }, "\uD83D\uDC80 Mark Failed"))),
                     isSold && React.createElement("div", { style: { marginBottom: 12, padding: '8px 10px', border: '2px solid #1E1040', background: '#1A0A30' } },
-                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', color: '#D0C0FF' }) }, "\uD83D\uDCB0 Sold" + (prop.priceSold ? ` for ${prop.priceSold}` : '') + (prop.soldDate ? ` on ${prop.soldDate}` : ''))),
-                    showSell && !isDone && (React.createElement("div", { style: { border: '2px solid #4A2A88', padding: 10, marginBottom: 12, background: '#0E0820' } },
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#D0C0FF', marginBottom: 8 }) }, "LOG SALE"),
-                        sellStatus && React.createElement("div", { className: "mb-2" }, React.createElement(StatusMessage, { type: sellStatus.type, message: sellStatus.message })),
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: '#A090D0', marginBottom: 4 }) }, "Price sold (optional)"),
-                        React.createElement("input", { value: sellPrice, onChange: e => setSellPrice(e.target.value), placeholder: "e.g. \xA325 or $40", className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: '#D0C0FF', borderColor: '#4A2A88', background: '#1A0A30', marginBottom: 8 }) }),
-                        React.createElement(PlantButton, { onClick: () => handleSell(prop.propId), className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, "\uD83D\uDCB0 Confirm Sale"))),
-                    showStatusPicker && !isDone && (React.createElement("div", { style: { border: `2px solid ${theme.rowBorder}`, padding: 10, marginBottom: 12, background: theme.rowBg } },
-                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, "Update status to:"),
-                        React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: failCause ? 8 : 0 } }, STEPS.filter(s => STEPS.indexOf(s) > curStep).map(s => (React.createElement(PlantButton, { key: s, onClick: () => handleStatusUpdate(prop.propId, s), className: "py-1 px-3" }, s)))),
-                        React.createElement("div", { style: { marginTop: 8 } },
-                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginBottom: 4 }) }, "Or mark as failed:"),
-                            React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 } }, PROP_FAIL_CAUSES.map(c => (React.createElement("button", { key: c, type: "button", onClick: () => setFailCause(failCause === c ? '' : c), style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, padding: '3px 8px', border: `2px solid ${failCause === c ? '#601008' : theme.rowBorder}`, background: failCause === c ? '#6A1818' : 'transparent', color: failCause === c ? '#FFD0D0' : theme.txtS, cursor: 'pointer' }) }, c)))),
-                            failCause && (React.createElement(React.Fragment, null,
-                                React.createElement("textarea", { value: failDetail, onChange: e => setFailDetail(e.target.value), rows: 2, placeholder: "What happened? (optional)", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, marginBottom: 6 }) }),
-                                React.createElement(PlantButton, { onClick: () => handleStatusUpdate(prop.propId, 'Failed'), className: "py-1 px-3" }, "Confirm Failed \uD83D\uDC80")))))),
+                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', color: '#D0C0FF' }) }, "💰 Sold" + (prop.priceSold ? ` for ${prop.priceSold}` : '') + (prop.soldDate ? ` on ${prop.soldDate}` : ''))),
+                    !isDone && React.createElement("div", { style: { marginBottom: 12 } },
+                        /* Status dropdown row */
+                        React.createElement("div", { style: { border: `2px solid ${theme.cardBorder}`, marginBottom: 10 } },
+                            React.createElement("div", { style: { padding: '10px', background: theme.rowBg } },
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: theme.txtS, marginBottom: 8 }) }, "📈 UPDATE STATUS"),
+                                React.createElement("div", { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+                                    React.createElement("select", {
+                                        value: selectedStatus,
+                                        onChange: function(e) { setSelectedStatus(e.target.value); setShowStatusPicker(!!e.target.value); setShowGraduate(false); setShowSell(false); setShowPhotoPrompt(null); setEditPropId(null); },
+                                        className: "border-4 px-2 py-1.5",
+                                        style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', flex: 1, borderColor: theme.cardBorder, color: selectedStatus ? theme.txtP : theme.txtS, background: theme.cardBg })
+                                    },
+                                        React.createElement("option", { value: '' }, '— select new status —'),
+                                        availableStatuses.map(function(s) { return React.createElement("option", { key: s, value: s }, s === 'Failed' ? '💀 Failed' : s); })
+                                    ),
+                                    selectedStatus && selectedStatus !== 'Failed' && React.createElement(PlantButton, {
+                                        onClick: function() { handleStatusUpdate(prop.propId, selectedStatus); setSelectedStatus(''); },
+                                        className: "py-1 px-3", style: { flexShrink: 0 }
+                                    }, '✓ Confirm')
+                                )
+                            ),
+                            /* Fail cause section */
+                            showStatusPicker && selectedStatus === 'Failed' && React.createElement("div", { style: { padding: '10px', borderTop: `2px solid ${theme.rowBorder}`, background: theme.rowBg } },
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, marginBottom: 6 }) }, "What went wrong?"),
+                                React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 } }, PROP_FAIL_CAUSES.map(function(c) {
+                                    return React.createElement("button", { key: c, type: "button", onClick: function() { setFailCause(failCause === c ? '' : c); },
+                                        style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, padding: '3px 8px', border: `2px solid ${failCause === c ? '#601008' : theme.rowBorder}`, background: failCause === c ? '#6A1818' : 'transparent', color: failCause === c ? '#FFD0D0' : theme.txtS, cursor: 'pointer' })
+                                    }, c);
+                                })),
+                                failCause && React.createElement(React.Fragment, null,
+                                    React.createElement("textarea", { value: failDetail, onChange: function(e){ setFailDetail(e.target.value); }, rows: 2, placeholder: "What happened? (optional)", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, marginBottom: 6 }) }),
+                                    React.createElement(PlantButton, { onClick: function() { handleStatusUpdate(prop.propId, 'Failed'); setSelectedStatus(''); } }, "Confirm Failed 💀")
+                                )
+                            ),
+                            /* Photo prompt after status update */
+                            showPhotoPrompt === prop.propId && React.createElement("div", { style: { padding: '10px', borderTop: `2px solid ${theme.rowBorder}`, background: 'rgba(40,120,40,0.08)' } },
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.btnP.bg, marginBottom: 8 }) }, "📸 Status updated! Add a progress photo?"),
+                                React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                                    React.createElement(PlantButton, { variant: "secondary", onClick: function() { if (propPhotoRef.current) { propPhotoRef.current.dataset.propid = prop.propId; propPhotoRef.current.click(); } setShowPhotoPrompt(null); }, className: "py-1 px-3" }, "📸 Add Photo"),
+                                    React.createElement("button", { type: "button", onClick: function() { setShowPhotoPrompt(null); }, style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }) }, "Skip")
+                                )
+                            )
+                        ),
+                        /* Secondary actions: Graduate + Sell */
+                        React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 8 } },
+                            prop.status === 'Potted Up' && React.createElement(PlantButton, { variant: "secondary",
+                                onClick: function() { setShowGraduate(function(v){ return !v; }); setShowSell(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); },
+                                className: "py-1 px-3" }, "🎓 Graduate"),
+                            React.createElement("button", { type: "button",
+                                onClick: function() { setShowSell(function(v){ return !v; }); setShowGraduate(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setSellPrice(''); setSellStatus(null); },
+                                style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, padding: '5px 14px', border: '2px solid #4A2A88', background: showSell ? '#2A1048' : 'transparent', color: showSell ? '#D0C0FF' : '#9080C0', cursor: 'pointer' })
+                            }, "💰 Sell")
+                        ),
+                        /* Sell form */
+                        showSell && React.createElement("div", { style: { border: '2px solid #4A2A88', padding: 10, marginBottom: 10, background: '#0E0820' } },
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#D0C0FF', marginBottom: 8 }) }, "LOG SALE"),
+                            sellStatus && React.createElement("div", { className: "mb-2" }, React.createElement(StatusMessage, { type: sellStatus.type, message: sellStatus.message })),
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: '#A090D0', marginBottom: 4 }) }, "Price sold (optional)"),
+                            React.createElement("input", { value: sellPrice, onChange: function(e){ setSellPrice(e.target.value); }, placeholder: "e.g. £25 or $40", className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: '#D0C0FF', borderColor: '#4A2A88', background: '#1A0A30', marginBottom: 8 }) }),
+                            React.createElement(PlantButton, { onClick: function() { handleSell(prop.propId); }, className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, "💰 Confirm Sale")))
                     showGraduate && !isDone && (React.createElement("div", { style: { border: `2px solid ${theme.btnP.border}`, padding: 10, marginBottom: 12, background: theme.rowBg } },
                         React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: theme.txtP, marginBottom: 8 }) }, "GRADUATE TO SPECIMEN"),
                         gradStatus && React.createElement("div", { className: "mb-2" },
