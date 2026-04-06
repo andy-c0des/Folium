@@ -11979,10 +11979,12 @@ function PlantScreen({ uid }) {
         var today = todayStr();
         setPlant(function(prev) {
             if (!prev) return prev;
+            var interval = prev.waterEveryDays || prev.everyDays;
+            var nextD = addDays(today, interval) || today; // fall back to today so it's no longer overdue
             return Object.assign({}, prev, {
                 lastWatered: today,
-                nextDue: addDays(today, prev.everyDays) || prev.nextDue,
-                due: addDays(today, prev.everyDays) || prev.nextDue,
+                nextDue: nextD,
+                due: nextD,
             });
         });
         setTimeline(function(prev) { return [{ action: 'WATER', ts: today, details: note }].concat(prev || []); });
@@ -11991,7 +11993,7 @@ function PlantScreen({ uid }) {
         setTimeout(() => setMsg(null), 1300);
         try {
             await quickLog(plant.uid, { water: true, fertilize: false, repot: false, notes: note });
-            await loadCurrent();
+            if (refreshHome) refreshHome().catch(() => {});
         }
         catch (_a) {
             setMsg({ type: 'error', text: 'Sync failed' });
@@ -12006,12 +12008,14 @@ function PlantScreen({ uid }) {
         var today = todayStr();
         setPlant(function(prev) {
             if (!prev) return prev;
+            var interval = prev.waterEveryDays || prev.everyDays;
+            var nextD = addDays(today, interval) || today;
             return Object.assign({}, prev, {
                 lastFertilized: today,
                 nextFertDue: addDays(today, prev.fertilizeEveryDays) || prev.nextFertDue,
                 lastWatered: today,
-                nextDue: addDays(today, prev.everyDays) || prev.nextDue,
-                due: addDays(today, prev.everyDays) || prev.nextDue,
+                nextDue: nextD,
+                due: nextD,
             });
         });
         setTimeline(function(prev) { return [{ action: 'WATERED+FERTILIZED', ts: today, details: note }].concat(prev || []); });
@@ -12020,7 +12024,7 @@ function PlantScreen({ uid }) {
         setTimeout(() => setMsg(null), 1300);
         try {
             await quickLog(plant.uid, { water: true, fertilize: true, repot: false, notes: note });
-            await loadCurrent();
+            if (refreshHome) refreshHome().catch(() => {});
         }
         catch (_a) {
             setMsg({ type: 'error', text: 'Sync failed' });
