@@ -3838,13 +3838,13 @@ const PROP_TYPES = [
     'Stolon / runner', 'Basal shoot', 'Crown division'
 ];
 const PROP_SUBSTRATES = [
-    'Water', 'Sphagnum moss', 'LECA', 'Lechuza Pon', 'Perlite', 'Pumice',
+    'Water', 'Sphagnum moss', 'Semi-hydro (LECA)', 'Lechuza Pon', 'Perlite', 'Pumice',
     'Coco coir', 'Dry potting mix', 'Moist potting mix', 'Aroid mix',
     'Fluval Stratum', 'Sand', 'Bark', 'Agar', 'Custom mix'
 ];
 // Substrates valid for semihydro / passive hydroponics only
 const SEMIHYDRO_SUBSTRATES = [
-    'LECA', 'Lechuza Pon', 'Perlite', 'Pumice', '100% Perlite', 'Fluval Stratum', 'Hydro mix (custom)'
+    'Semi-hydro (LECA)', 'Lechuza Pon', 'Perlite', 'Pumice', '100% Perlite', 'Fluval Stratum', 'Hydro mix (custom)'
 ];
 // Substrates for traditional substrate-in-pot grows
 const SOIL_SUBSTRATES = [
@@ -3939,7 +3939,7 @@ const SUBSTRATE_PROPS = {
     'Moist potting mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
     'Aroid mix': { wh: 4, aer: 7, wick: 4, decomp: 3 },
     'Perlite': { wh: 2, aer: 9, wick: 2, decomp: 0 },
-    'LECA': { wh: 3, aer: 8, wick: 5, decomp: 0 },
+    'Fluval Stratum': { wh: 4, aer: 7, wick: 4, decomp: 1 },
     'Semi-hydro (LECA)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
     'Semi-hydro (PON)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
     'Mineral mix': { wh: 2, aer: 9, wick: 2, decomp: 0 },
@@ -8496,7 +8496,10 @@ function MyPlantsScreen({ openTab, prefill }) {
         const seen = new Set();
         (plants || []).forEach(function(p) {
             var s = String(p.substrate || p.medium || '').trim();
-            if (s) seen.add(s);
+            if (!s) return;
+            // Collapse any custom mix encoding to a single display value
+            if (s.startsWith('custom-soil:') || s.startsWith('custom-pon:')) { seen.add('Custom mix'); return; }
+            seen.add(s);
         });
         return Array.from(seen).sort();
     }, [plants]);
@@ -8509,7 +8512,8 @@ function MyPlantsScreen({ openTab, prefill }) {
             }
             if (substrateFilter) {
                 var s = String(p.substrate || p.medium || '').trim();
-                if (s !== substrateFilter) return false;
+                var normalized = (s.startsWith('custom-soil:') || s.startsWith('custom-pon:')) ? 'Custom mix' : s;
+                if (normalized !== substrateFilter) return false;
             }
             return true;
         });
