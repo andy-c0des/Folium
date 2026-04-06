@@ -5842,28 +5842,28 @@ function HomeScreen() {
                     className: "header-nav-btn hover-lift",
                     style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
                 },
-                    React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
+                    React.createElement(PixelNavIcon, { id: 'my-plants', darkColor: '#B8D880', lightColor: '#E8FFB8', size: 16 }),
                     React.createElement("span", null, "My Plants"),
                     totalCount != null && React.createElement("span", { className: "nav-badge", style: { borderColor: '#E8F4D8', color: '#E8F4D8', background: 'rgba(0,0,0,0.15)' } }, totalCount)),
                 React.createElement("button", { type: "button", onClick: () => navigate('watering'),
                     className: "header-nav-btn hover-lift relative",
                     style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
                 },
-                    React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCA7"),
+                    React.createElement(PixelNavIcon, { id: 'watering', darkColor: '#B8D880', lightColor: '#E8FFB8', size: 16 }),
                     React.createElement("span", null, "Log Watering"),
                     dueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '10px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, dueNow.length)),
                 React.createElement("button", { type: "button", onClick: () => navigate('progress-updates'),
                     className: "header-nav-btn hover-lift relative",
                     style: { borderColor: '#5A8A38', background: '#4A7A28', color: '#E8F4D8', boxShadow: '0 2px 0 #3A6A18' }
                 },
-                    React.createElement("span", { className: "nav-icon" }, "\uD83D\uDCCA"),
+                    React.createElement(PixelNavIcon, { id: 'progress-updates', darkColor: '#B8D880', lightColor: '#E8FFB8', size: 16 }),
                     React.createElement("span", null, "Progress Update"),
                     progressDueNow.length > 0 && React.createElement("span", { className: "absolute -top-2 -right-2 border-2 border-white px-1.5 py-0.5 urgent-pulse", style: Object.assign({ background: 'var(--c-urgent)' }, pxS, { fontSize: '10px', color: '#fff', fontWeight: 900, lineHeight: 1.2 }) }, progressDueNow.length)),
                 React.createElement("button", { type: "button", onClick: () => navigate('add'),
                     className: "header-nav-btn hover-lift",
                     style: { borderColor: '#8AA868', background: '#B8CCA0', color: '#2D5016', boxShadow: '0 2px 0 #7A9858' }
                 },
-                    React.createElement("span", { className: "nav-icon" }, "\u2795"),
+                    React.createElement(PixelNavIcon, { id: 'add', darkColor: '#2A5016', lightColor: '#5A8830', size: 16 }),
                     React.createElement("span", null, "Add Plant"))),
             React.createElement(ThemePicker, null));
     };
@@ -10627,28 +10627,30 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Search collection or enter name:"),
                         React.createElement(SpecimenSearchInput, { placeholder: 'Search scion plant\u2026', value: form.scionUID || '', onChange: function(uid, plant) { setForm(function(p) { return Object.assign({}, p, { scionUID: uid ? String(uid) : '', scionGenus: plant && plant.genus ? plant.genus : p.scionGenus, scionSpecies: plant && (plant.taxon || plant.species) ? (plant.taxon || plant.species) : p.scionSpecies }); }); }, theme: theme, pxS: pxS }),
                         form.scionGenus && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, marginTop: 3 }) }, '\uD83C\uDF3F ' + form.scionGenus + (form.scionSpecies ? ' ' + form.scionSpecies : '') + ' \u00B7 auto-filled'),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 } },
-                            React.createElement("div", null,
-                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Genus"),
-                                React.createElement("input", { type: "text", value: form.scionGenus || '', onChange: function(e) { setForm(function(p) { return Object.assign({}, p, { scionGenus: e.target.value }); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
-                            React.createElement("div", null,
-                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Species"),
-                                React.createElement("input", { type: "text", value: form.scionSpecies || '', onChange: function(e) { setForm(function(p) { return Object.assign({}, p, { scionSpecies: e.target.value }); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
-                        )
+                        React.createElement(GenusAutocompleteInput, {
+                            genusValue: form.scionGenus || '',
+                            speciesValue: form.scionSpecies || '',
+                            onGenusChange: function(v) { setForm(function(p) { return Object.assign({}, p, { scionGenus: v }); }); },
+                            onSpeciesChange: function(v) { setForm(function(p) { return Object.assign({}, p, { scionSpecies: v }); }); },
+                            theme: theme, pxS: pxS,
+                            genusPlaceholder: 'e.g. Monstera',
+                            speciesPlaceholder: 'e.g. deliciosa'
+                        })
                     ),
                     React.createElement("div", { style: { padding: '8px 10px', border: '2px solid ' + theme.rowBorder, marginBottom: 8, borderLeft: '4px solid #5A3808' } },
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#5A3808', marginBottom: 6 }) }, "\uD83E\uDEB5 Rootstock (bottom / host)"),
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Search collection or enter name:"),
                         React.createElement(SpecimenSearchInput, { placeholder: 'Search rootstock plant\u2026', value: form.rootstockUID || '', onChange: function(uid, plant) { setForm(function(p) { return Object.assign({}, p, { rootstockUID: uid ? String(uid) : '', rootstockGenus: plant && plant.genus ? plant.genus : p.rootstockGenus, rootstockSpecies: plant && (plant.taxon || plant.species) ? (plant.taxon || plant.species) : p.rootstockSpecies }); }); }, theme: theme, pxS: pxS }),
                         form.rootstockGenus && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, marginTop: 3 }) }, '\uD83E\uDEB5 ' + form.rootstockGenus + (form.rootstockSpecies ? ' ' + form.rootstockSpecies : '') + ' \u00B7 auto-filled'),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 } },
-                            React.createElement("div", null,
-                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Genus"),
-                                React.createElement("input", { type: "text", value: form.rootstockGenus || '', onChange: function(e) { setForm(function(p) { return Object.assign({}, p, { rootstockGenus: e.target.value }); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
-                            React.createElement("div", null,
-                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Species"),
-                                React.createElement("input", { type: "text", value: form.rootstockSpecies || '', onChange: function(e) { setForm(function(p) { return Object.assign({}, p, { rootstockSpecies: e.target.value }); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
-                        )
+                        React.createElement(GenusAutocompleteInput, {
+                            genusValue: form.rootstockGenus || '',
+                            speciesValue: form.rootstockSpecies || '',
+                            onGenusChange: function(v) { setForm(function(p) { return Object.assign({}, p, { rootstockGenus: v }); }); },
+                            onSpeciesChange: function(v) { setForm(function(p) { return Object.assign({}, p, { rootstockSpecies: v }); }); },
+                            theme: theme, pxS: pxS,
+                            genusPlaceholder: 'e.g. Gymnocalycium',
+                            speciesPlaceholder: 'e.g. mihanovichii'
+                        })
                     ),
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Graft Technique"),
@@ -16077,44 +16079,110 @@ function DevScreen() {
 }
 
 
+function PixelNavIcon({ id, darkColor, lightColor, size }) {
+    var d = darkColor || '#1E3A08';
+    var l = lightColor || '#5A8820';
+    var s = size || 22;
+    function r(x, y, w, h, fill) {
+        return React.createElement('rect', { key: x+','+y, x: x, y: y, width: w, height: h, fill: fill || d });
+    }
+    var content = [];
+    if (id === 'home') {
+        content = [
+            r(10,0,3,6),          // chimney
+            r(7,2,2,1),           // roof peak
+            r(5,3,6,1),           // roof row 2
+            r(3,4,10,1),          // roof row 3
+            r(1,5,14,2),          // eave
+            r(2,7,12,8),          // body
+            r(6,11,4,4,l),        // door (light accent)
+        ];
+    } else if (id === 'my-plants') {
+        content = [
+            r(7,5,2,10),          // stem
+            r(1,6,6,1),           // left leaf top
+            r(1,7,7,1),           // left leaf mid
+            r(2,8,5,1),           // left leaf bot
+            r(8,2,7,1),           // right leaf top
+            r(8,3,7,1),           // right leaf mid
+            r(9,4,5,1),           // right leaf bot
+            r(2,7,3,1,l),         // left vein (light)
+            r(9,3,3,1,l),         // right vein (light)
+        ];
+    } else if (id === 'watering') {
+        content = [
+            r(7,1,2,2),           // drop tip
+            r(6,3,4,1),
+            r(5,4,6,1),
+            r(4,5,8,3),           // widest
+            r(4,8,8,2),
+            r(5,10,6,2),
+            r(6,12,4,1),
+            r(7,13,2,1),          // bottom point
+            r(5,5,2,3,l),         // highlight
+        ];
+    } else if (id === 'progress-updates') {
+        content = [
+            r(1,14,14,2),         // base line
+            r(2,11,3,3),          // bar 1 short
+            r(6,7,3,7),           // bar 2 mid
+            r(10,3,3,11),         // bar 3 tall
+            r(2,11,3,1,l),        // bar 1 top highlight
+            r(6,7,3,1,l),         // bar 2 top highlight
+            r(10,3,3,1,l),        // bar 3 top highlight
+        ];
+    } else if (id === 'add') {
+        content = [
+            r(2,6,12,4),          // horizontal bar
+            r(6,2,4,12),          // vertical bar
+            r(6,6,4,4,l),         // center intersection (light)
+        ];
+    }
+    return React.createElement('svg', {
+        viewBox: '0 0 16 16', width: s, height: s,
+        style: { display: 'block', imageRendering: 'pixelated', shapeRendering: 'crispEdges' }
+    }, content);
+}
+
 function BottomNav({ current, navigate, goBack }) {
     const { isMobile } = useScreenSize();
-    const theme = useTheme();
     if (!isMobile) return null;
+    const NAV_BG = '#C8D8A8';
+    const NAV_BORDER = '#8AA868';
     const tabs = [
-        { id: 'home',      icon: '🏠' },
-        { id: 'my-plants', icon: '🌿' },
-        { id: 'watering',  icon: '💧' },
-        { id: 'progress-updates', icon: '📊' },
-        { id: 'add',       icon: '➕' },
+        { id: 'home' },
+        { id: 'my-plants' },
+        { id: 'watering' },
+        { id: 'progress-updates' },
+        { id: 'add' },
     ];
     return React.createElement("div", {
         style: {
             position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
             display: 'flex', alignItems: 'center',
-            background: 'linear-gradient(180deg, ' + (theme.navBg || '#0C1808') + ' 0%, #0A0800 100%)',
-            borderTop: '3px solid ' + (theme.navBorder || '#182808'),
-            boxShadow: 'inset 0 2px 0 rgba(200,168,75,0.1), 0 -2px 0 rgba(0,0,0,0.5)',
+            background: NAV_BG,
+            borderTop: '3px solid ' + NAV_BORDER,
+            boxShadow: '0 -2px 8px rgba(0,0,0,0.18)',
             paddingBottom: 'max(4px, env(safe-area-inset-bottom))',
             minHeight: 52,
         }
     },
         tabs.map(function(t) {
             var active = current === t.id;
+            var darkC = active ? '#0A2004' : '#2A5010';
+            var lightC = active ? '#3A7010' : '#7AAA30';
             return React.createElement("button", {
                 key: t.id, type: "button", onClick: function() { navigate(t.id); },
                 style: {
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: active ? 'rgba(200,168,75,0.15)' : 'transparent',
-                    borderTop: active ? '3px solid ' + (theme.navActive || '#C8A84B') : '3px solid transparent',
-                    border: 'none', borderTopStyle: 'solid', borderTopWidth: 3,
-                    borderTopColor: active ? (theme.navActive || '#C8A84B') : 'transparent',
+                    background: active ? 'rgba(42,80,16,0.12)' : 'transparent',
+                    borderTop: 'none', borderBottom: active ? '3px solid #1A4008' : '3px solid transparent',
+                    border: 'none', borderBottomStyle: 'solid', borderBottomWidth: 3,
+                    borderBottomColor: active ? '#1A4008' : 'transparent',
                     cursor: 'pointer', padding: '8px 0', minHeight: 48,
-                    fontSize: '26px', lineHeight: 1,
-                    opacity: active ? 1 : 0.5,
                     transition: 'opacity 0.15s ease',
                 }
-            }, t.icon);
+            }, React.createElement(PixelNavIcon, { id: t.id, darkColor: darkC, lightColor: lightC, size: 26 }));
         })
     );
 }
