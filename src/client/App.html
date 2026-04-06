@@ -8904,7 +8904,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         React.createElement('div', { style: { background: '#060D04', border: '2px solid #2A4018', width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 0 } },
             React.createElement('div', { style: { background: 'linear-gradient(90deg,#0A1A06,#060D04)', padding: '12px 14px', borderBottom: '1px solid #1A3018', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
                 React.createElement('div', { style: { fontFamily:"'Press Start 2P',monospace", fontSize: 11, color: '#8AC868', letterSpacing: '0.08em' } }, '🌿 ADD LOCATION'),
-                React.createElement('button', { type: 'button', onClick: () => setLocModal(false), style: { background: 'transparent', border: 'none', color: '#5A7A48', cursor: 'pointer', fontFamily:"'Pixelify Sans',sans-serif", fontSize: 20, lineHeight: 1 } }, 'Γ£ò')
+                React.createElement('button', { type: 'button', onClick: () => setLocModal(false), style: { background: 'transparent', border: 'none', color: '#5A7A48', cursor: 'pointer', fontFamily:"'Pixelify Sans',sans-serif", fontSize: 20, lineHeight: 1 } }, '\u00D7')
             ),
             React.createElement('div', { style: { padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 } },
                 React.createElement('div', null,
@@ -8969,7 +8969,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 13, color: '#C8E8A8' } }, se.name || '(unnamed)'),
                                     React.createElement('div', { style: { fontFamily:"'Pixelify Sans',sans-serif", fontSize: 11, color: isOutdoor ? sunColorLoc(s) : '#7A9A68' } }, badge)
                                 ),
-                                React.createElement('button', { type: 'button', onClick: () => setSubEnvs(prev => prev.filter((_, i) => i !== idx)), style: { background: 'transparent', border: 'none', color: '#5A3A28', cursor: 'pointer', fontSize: 16 } }, 'Γ£ò')
+                                React.createElement('button', { type: 'button', onClick: () => setSubEnvs(prev => prev.filter((_, i) => i !== idx)), style: { background: 'transparent', border: 'none', color: '#5A3A28', cursor: 'pointer', fontSize: 16 } }, '\u00D7')
                             );
                         })
                     ),
@@ -9543,7 +9543,7 @@ function PlantKnowledgePanel({ plant, inline }) {
                         background: rc, color: '#fff',
                         marginRight: 6,
                     }) }, riskLabel(score)),
-                    React.createElement('span', { style: { fontSize: '13px', color: theme.txtS, flexShrink: 0 } }, isOpen ? 'Γû▓' : 'Γû╝')
+                    React.createElement('span', { style: { fontSize: '13px', color: theme.txtS, flexShrink: 0 } }, isOpen ? '\u25BC' : '\u25B6')
                 ),
 
                 isOpen && React.createElement('div', { style: {
@@ -9831,7 +9831,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
     return React.createElement('div', { style: { marginTop: 12, border: `3px solid #c0392b`, background: theme.cardBg } },
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `2px solid ${theme.rowBorder}`, background: 'rgba(192,57,43,0.08)' } },
             React.createElement('span', { style: Object.assign({}, px8S, { color: 'var(--c-urgent)' }) }, '🔬 DIAGNOSE'),
-            React.createElement('button', { type: 'button', onClick: () => { setOpen(false); setStep('symptoms'); setSelected([]); setAiResult(null); setChatHistory([]); setAiLoading(false); }, style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: theme.txtS } }, 'Γ£ò')),
+            React.createElement('button', { type: 'button', onClick: () => { setOpen(false); setStep('symptoms'); setSelected([]); setAiResult(null); setChatHistory([]); setAiLoading(false); }, style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: theme.txtS } }, '\u00D7')),
 
         React.createElement('div', { style: { padding: 14 } },
 
@@ -9965,8 +9965,8 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                         padding: '10px 4px 0',
                         position: 'relative',
                     }},
-                        React.createElement('div', { style: { position: 'absolute', top: 5, left: 6, fontSize: 11, opacity: 0.6, color: '#C8A84B' } }, 'Γ£ª'),
-                        React.createElement('div', { style: { position: 'absolute', top: 12, right: 5, fontSize: 8, opacity: 0.5, color: '#C8A84B' } }, 'Γ£º'),
+                        React.createElement('div', { style: { position: 'absolute', top: 5, left: 6, fontSize: 11, opacity: 0.6, color: '#C8A84B' } }, '\u250C'),
+                        React.createElement('div', { style: { position: 'absolute', top: 12, right: 5, fontSize: 8, opacity: 0.5, color: '#C8A84B' } }, '\u2518'),
                         React.createElement('div', { style: { position: 'absolute', top: 4, left: '50%', fontSize: 9, opacity: 0.4, color: '#C8A84B' } }, 'Γïå'),
                         React.createElement("span", { className: "nav-icon" }, "\uD83C\uDF3F"),
                         React.createElement('div', { style: {
@@ -10023,7 +10023,7 @@ immediateActions should be an array of strings (each is one numbered step). Empt
                                 fontFamily: "'Press Start 2P', cursive",
                                 fontSize: '14px', color: '#C8A84B',
                                 animation: 'blink-prompt 1.4s step-end infinite',
-                            }}, 'Γû╝')
+                            }}, '\u25B6')
                         )
                     )
                 )
@@ -10603,7 +10603,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const openProp = (props || []).find(p => p.propId === openPropId);
     const STEPS = ['Trying', 'Rooted', 'Potted Up'];
     function stepIdx(status) { const i = STEPS.indexOf(status); return i >= 0 ? i : (status === 'Graduated' ? 3 : (status === 'Failed' ? -1 : 0)); }
-    return (React.createElement("div", { style: { paddingTop: 4 } },
+    return (React.createElement("div", { style: { paddingTop: 24 } },
         React.createElement("div", { style: { marginBottom: 16 } },
             React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, "\uD83C\uDF31 Propagation Lab"),
             successRate !== null && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', color: theme.txtS }) },
@@ -10909,7 +10909,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                             !prop.hybridType && !isGraft && prop.parentUID && React.createElement("span", null,
                                 " \u00B7 Child of ",
                                 prop.parentUID))),
-                    React.createElement("span", { style: { color: theme.txtS, fontSize: 14 } }, isOpen ? 'Γû▓' : 'Γû╝')),
+                    React.createElement("span", { style: { color: theme.txtS, fontSize: 14 } }, isOpen ? '\u25BC' : '\u25B6')),
                 isOpen && (React.createElement("div", { style: { borderTop: `2px solid ${theme.rowBorder}`, padding: '12px' } },
                     /* ── PROGRESS STEPPER ── */
                     !isDone && (React.createElement("div", { style: { marginBottom: 12 } },
@@ -10938,7 +10938,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                         else { setEditPropId(prop.propId); setEditPropForm({ genus: prop.genus || '', species: prop.species || '', type: prop.type || prop.propType || '', substrate: prop.substrate || '', notes: prop.notes || '' }); }
                                     },
                                     style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, padding: '3px 10px', border: `2px solid ${isEditing ? '#aaa' : theme.btnP.border}`, background: isEditing ? 'transparent' : theme.btnP.bg, color: isEditing ? theme.txtS : theme.btnP.text, cursor: 'pointer' })
-                                }, isEditing ? 'Γ£ò Cancel' : '\u270F\uFE0F Edit')),
+                                }, isEditing ? '\u00D7 Cancel' : '\u270F\uFE0F Edit')),
                             /* display mode */
                             !isEditing && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', padding: '0' } },
                                 (isGraft
@@ -13794,7 +13794,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                     React.createElement('button', { type: 'button', onClick: function() { setCalOffset(function(o) { return o + 1; }); }, style: Object.assign({}, pxS, {
                         fontSize: '14px', fontWeight: 900, background: 'none', border: '2px solid #5C3010',
                         color: '#C8A84B', cursor: 'pointer', padding: '3px 10px', lineHeight: 1,
-                    }) }, 'Γû╢')
+                    }) }, '\u25B6')
                 ),
                 React.createElement(MonthGrid, {
                     year: displayMonth.getFullYear(),
@@ -14637,7 +14637,7 @@ function PhysicsStrip({ physics, plant, env, timeline, pxS, theme, onEditOpen, o
                     border: '1px solid rgba(255,255,255,0.2)',
                 }}, healthLabel)
             ),
-            React.createElement('span', { style: { fontSize: '13px', color: '#888' } }, expanded ? 'Γû▓' : 'Γû╝')
+            React.createElement('span', { style: { fontSize: '13px', color: '#888' } }, expanded ? '\u25BC' : '\u25B6')
         ),
 
         React.createElement(StatBar, { label: 'Water', icon: '💧', value: waterPct, max: 100, color: waterColor,
@@ -14915,7 +14915,7 @@ function WarningBadge({ plant }) {
             " warning",
             warnings.length > 1 ? 's' : '',
             " for this genus",
-            React.createElement("span", { style: { fontSize: '13px' } }, open ? 'Γû▓' : 'Γû╝')),
+            React.createElement("span", { style: { fontSize: '13px' } }, open ? '\u25BC' : '\u25B6')),
         open && (React.createElement("div", { style: { marginTop: 6, border: `2px solid ${theme.rowBorder}`, background: theme.rowBg } }, warnings.map((w, i) => {
             const meta = getDeathCauseMeta(w.cause);
             return (React.createElement("div", { key: w.id, style: {
@@ -15126,7 +15126,7 @@ function PhyloScreen({ inline }) {
                         border: '2px solid ' + theme.cardBorder, background: theme.rowBg, color: theme.txtS,
                         boxShadow: '0 2px 0 ' + theme.cardBorder,
                     })
-                }, clades.some(function(c) { return !collapsed['clade:' + c]; }) ? 'Γû╛ COLLAPSE ALL' : 'Γû╕ EXPAND ALL')
+                }, clades.some(function(c) { return !collapsed['clade:' + c]; }) ? '\u25B2 COLLAPSE ALL' : '\u25BC EXPAND ALL')
             ),
 
             !loading && plants.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '32px 0' } },
@@ -15176,7 +15176,7 @@ function PhyloScreen({ inline }) {
                         React.createElement('div', { onClick: function() { toggle(gKey); }, style: {
                             display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '4px 0'
                         }},
-                            React.createElement('span', { style: { fontSize: '11px', color: accentColor, opacity: 0.7, fontWeight: 900 } }, isGOpen ? 'Γû╛' : 'Γû╕'),
+                            React.createElement('span', { style: { fontSize: '11px', color: accentColor, opacity: 0.7, fontWeight: 900 } }, isGOpen ? '\u25B2' : '\u25BC'),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, fontStyle: 'italic' }) }, genus),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginLeft: 2 }) },
                                 plantList.length + ' owned' + (knownSpecies.length > 0 ? ' · ' + knownSpecies.length + ' spp known' : '')
@@ -15231,7 +15231,7 @@ function PhyloScreen({ inline }) {
                         React.createElement('div', { onClick: function() { toggle(fKey); }, style: {
                             display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', padding: '4px 0'
                         }},
-                            React.createElement('span', { style: { fontSize: '12px', color: accentColor, opacity: 0.8 } }, isFOpen ? 'Γû╛' : 'Γû╕'),
+                            React.createElement('span', { style: { fontSize: '12px', color: accentColor, opacity: 0.8 } }, isFOpen ? '\u25B2' : '\u25BC'),
                             React.createElement('span', { style: Object.assign({}, pxS, {
                                 fontSize: '12px', fontWeight: 900, color: accentColor,
                                 background: accentColor + '18', padding: '1px 6px',
@@ -15259,7 +15259,7 @@ function PhyloScreen({ inline }) {
                         React.createElement('div', { onClick: function() { toggle(oKey); }, style: {
                             display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', padding: '5px 0'
                         }},
-                            React.createElement('span', { style: { fontSize: '13px', color: accentColor } }, isOOpen ? 'Γû╛' : 'Γû╕'),
+                            React.createElement('span', { style: { fontSize: '13px', color: accentColor } }, isOOpen ? '\u25B2' : '\u25BC'),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 700, color: theme.txtP }) }, order),
                             React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
                                 families.length + (families.length !== 1 ? ' families' : ' family') + ' · ' + orderTotal + ' plants'
@@ -15291,7 +15291,7 @@ function PhyloScreen({ inline }) {
                                 React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
                                     orderCount + (orderCount !== 1 ? ' orders' : ' order') + ' · ' + count + (count !== 1 ? ' plants' : ' plant')
                                 ),
-                                React.createElement('span', { style: { fontSize: '11px', color: accentColor, fontWeight: 900 } }, isOpen ? 'Γû╛' : 'Γû╕')
+                                React.createElement('span', { style: { fontSize: '11px', color: accentColor, fontWeight: 900 } }, isOpen ? '\u25B2' : '\u25BC')
                             ),
                             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, opacity: 0.7, marginTop: 2 }) },
                                 CLADE_DESC[clade] || ''
