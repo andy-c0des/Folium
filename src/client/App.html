@@ -16714,7 +16714,7 @@ function SettingsScreen() {
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: HAS_GAS ? '#66BB6A' : '#8A7060', marginTop: 4 }) }, HAS_GAS
                     ? 'Your plants are reading from and writing to your Google Sheet.'
                     : 'Data is temporary. Connect your deployed script to persist data.')),
-            HAS_GAS && React.createElement("div", { style: { marginBottom: 16, padding: '10px 14px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 } },
+            React.createElement("div", { style: { marginBottom: 16, padding: '10px 14px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 } },
                 React.createElement("div", null,
                     React.createElement("div", { style: Object.assign({}, px8, { fontSize: '7px', color: theme.txtS, marginBottom: 4, letterSpacing: '0.1em' }) }, 'SIGNED IN AS'),
                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP }) }, (function() { try { return localStorage.getItem('plantos_username') || 'Unknown'; } catch(e) { return 'Unknown'; } })())
