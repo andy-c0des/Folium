@@ -7680,7 +7680,7 @@ function VariantSuggestions({ genus, species, onSelect, theme, pxS }) {
 
 function AddScreen({ prefill, openMode }) {
     const { goBack, navigate } = useNavigation();
-    const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem } = usePlantData();
+    const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem, addLocation } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '10px' : '13px' };
@@ -7707,6 +7707,9 @@ function AddScreen({ prefill, openMode }) {
     const [showOptional, setShowOptional] = useState(false);
     const [status, setStatus] = useState(null);
     const [nickname, setNickname] = useState('');
+    const [newLocInput, setNewLocInput] = useState('');
+    const [showNewLoc, setShowNewLoc] = useState(false);
+    const [newLocSaving, setNewLocSaving] = useState(false);
 
     const addPhysics = React.useMemo(() => {
         if (!location && !medium && !potMaterial) return null;
@@ -7772,11 +7775,11 @@ function AddScreen({ prefill, openMode }) {
         });
     }, [batchCount]);
     function requiredOk() {
-        return !!(String(genus || '').trim() && String(location || '').trim());
+        return !!(String(genus || '').trim());
     }
     async function submitSingle() {
         if (!requiredOk()) {
-            setStatus({ type: 'error', message: 'Genus + Location are required.' });
+            setStatus({ type: 'error', message: 'Genus is required.' });
             setTimeout(() => setStatus(null), 2200);
             return;
         }
@@ -7816,7 +7819,7 @@ function AddScreen({ prefill, openMode }) {
     }
     async function submitBatch() {
         if (!requiredOk()) {
-            setStatus({ type: 'error', message: 'Genus + Location are required for all plants.' });
+            setStatus({ type: 'error', message: 'Genus is required for all plants.' });
             setTimeout(() => setStatus(null), 2200);
             return;
         }
@@ -8203,10 +8206,39 @@ function AddScreen({ prefill, openMode }) {
                 theme, pxS
             }),
             React.createElement("div", { className: "mb-3" },
-                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Location *"),
-                React.createElement("select", { value: location, onChange: e => setLocation(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
-                    React.createElement("option", { value: "" }, "\u2014 Select \u2014"),
-                    (locations || []).map(loc => React.createElement("option", { key: loc, value: loc }, loc)))),
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 } },
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Location"),
+                    React.createElement("button", { type: "button", onClick: function() { setShowNewLoc(function(v) { return !v; }); setNewLocInput(''); },
+                        style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '13px', fontWeight: 700, color: theme.btnP.bg, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }
+                    }, showNewLoc ? '✕ Cancel' : '📍 + New location')
+                ),
+                React.createElement("select", { value: location, onChange: e => setLocation(e.target.value), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
+                    React.createElement("option", { value: "" }, "\u2014 None \u2014"),
+                    (locations || []).map(loc => React.createElement("option", { key: loc, value: loc }, loc))),
+                showNewLoc && React.createElement("div", { style: { display: 'flex', gap: 6, marginTop: 6 } },
+                    React.createElement("input", { value: newLocInput, onChange: e => setNewLocInput(e.target.value),
+                        placeholder: "e.g. Living room shelf", autoFocus: true,
+                        className: "flex-1 border-4 px-2 py-1", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }),
+                        onKeyDown: async function(e) {
+                            if (e.key !== 'Enter') return;
+                            var n = newLocInput.trim(); if (!n) return;
+                            setNewLocSaving(true);
+                            try { await addLocation(n); setLocation(n); setShowNewLoc(false); setNewLocInput(''); } catch(err) {}
+                            setNewLocSaving(false);
+                        }
+                    }),
+                    React.createElement("button", { type: "button", disabled: !newLocInput.trim() || newLocSaving,
+                        onClick: async function() {
+                            var n = newLocInput.trim(); if (!n) return;
+                            setNewLocSaving(true);
+                            try { await addLocation(n); setLocation(n); setShowNewLoc(false); setNewLocInput(''); } catch(err) {}
+                            setNewLocSaving(false);
+                        },
+                        style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '13px', fontWeight: 900, padding: '4px 12px',
+                            background: theme.btnP.bg, color: theme.btnP.text, border: '2px solid ' + theme.btnP.border,
+                            cursor: newLocInput.trim() ? 'pointer' : 'not-allowed', opacity: newLocInput.trim() ? 1 : 0.5 }
+                    }, newLocSaving ? '...' : 'Add')
+                )),
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 8px' } },
                 React.createElement("div", { style: { height: 2, flex: 1, background: theme.sep, opacity: 0.4 } }),
                 React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, letterSpacing: '0.08em', whiteSpace: 'nowrap' }) }, "\uD83E\uDEA4 PLACEMENT & SETUP"),
@@ -14937,7 +14969,7 @@ function EnvironmentsScreen() {
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, marginBottom: 14 }) },
                 'Set the light, humidity, and temperature for each spot. Plants inherit these conditions automatically.'
             ),
-            (locations || []).length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'No locations yet. Add some plants first.'),
+            (locations || []).length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'No locations yet. Use the \u{1F4CD} Location button on the Plants tab to add one.'),
             (locations || []).map(loc => React.createElement('div', { key: loc, style: { marginBottom: 10 } },
                 React.createElement('div', {
                     onClick: () => setEditLoc(editLoc === loc ? null : loc),
