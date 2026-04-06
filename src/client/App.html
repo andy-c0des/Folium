@@ -3842,24 +3842,16 @@ const PROP_TYPES = [
     'Offset / pup', 'Bulb', 'Bulbil', 'Seed', 'Air layer',
     'Stolon / runner', 'Basal shoot', 'Crown division'
 ];
-const PROP_SUBSTRATES = [
-    'Water', 'Sphagnum moss', 'Semi-hydro (LECA)', 'Lechuza Pon', 'Perlite', 'Pumice',
-    'Coco coir', 'Dry potting mix', 'Moist potting mix', 'Aroid mix',
-    'Fluval Stratum', 'Sand', 'Bark', 'Agar', 'Custom mix'
+// Single master substrate list — used everywhere so all dropdowns stay in sync
+const MASTER_SUBSTRATES = [
+    'Water', 'Sphagnum moss', 'Aroid mix', 'Moist potting mix', 'Dry potting mix',
+    'Coco coir', 'Semi-hydro (LECA)', 'Lechuza Pon', 'Perlite', '100% Perlite',
+    'Pumice', 'Fluval Stratum', 'Bark', 'Sand', 'Soil mix', 'Agar', 'Hydro mix (custom)', 'Custom mix'
 ];
-// Substrates valid for semihydro / passive hydroponics only
-const SEMIHYDRO_SUBSTRATES = [
-    'Semi-hydro (LECA)', 'Lechuza Pon', 'Perlite', 'Pumice', '100% Perlite', 'Fluval Stratum', 'Hydro mix (custom)'
-];
-// Substrates for traditional substrate-in-pot grows
-const SOIL_SUBSTRATES = [
-    'Aroid mix', 'Moist potting mix', 'Dry potting mix', 'Coco coir',
-    'Sphagnum moss', 'Bark', 'Sand', 'Pumice', 'Perlite', 'Fluval Stratum', 'Soil mix', 'Custom mix', 'Agar'
-];
-// Helper — get the right list based on growingMethod
-function substratesForMethod(growingMethod) {
-    return growingMethod === 'semihydro' ? SEMIHYDRO_SUBSTRATES : SOIL_SUBSTRATES;
-}
+const PROP_SUBSTRATES      = MASTER_SUBSTRATES;
+const SEMIHYDRO_SUBSTRATES = MASTER_SUBSTRATES;
+const SOIL_SUBSTRATES      = MASTER_SUBSTRATES;
+function substratesForMethod() { return MASTER_SUBSTRATES; }
 const PROP_STATUSES = ['Trying', 'Rooted', 'Potted Up', 'Graduated', 'Failed', 'Sold'];
 const PROP_FAIL_CAUSES = [
     'Rotted', 'Dried out', 'No roots formed', 'Pests',
@@ -9079,7 +9071,6 @@ function MyPlantsScreen({ openTab, prefill }) {
                             React.createElement("select", { value: isCustomMix(edit.substrate) ? 'Custom soil mix' : (edit.substrate || ''), onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { setEdit(function(prev) { return Object.assign({}, prev, { substrate: encodeCustomMix([{ ingredient: SOIL_MIX_INGREDIENTS[0], parts: 1 }], false) }); }); } else { setEdit(function(prev) { return Object.assign({}, prev, { substrate: v }); }); } }, className: "w-full border-4 px-2 py-1.5 mt-1", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                                 React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                                 PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                                React.createElement("option", { value: "Soil mix" }, "Soil mix"),
                                 React.createElement("option", { value: "Custom soil mix" }, "\uD83C\uDF31 Custom soil mix...")),
                             isCustomMix(edit.substrate) && React.createElement(CustomMixBuilder, { value: edit.substrate, onChange: function(enc) { setEdit(function(prev) { return Object.assign({}, prev, { substrate: enc }); }); }, growingMethod: 'substrate', pxS: pxS, theme: theme })),
                         React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
@@ -9223,7 +9214,6 @@ function MyPlantsScreen({ openTab, prefill }) {
                             React.createElement("select", { value: isCustomMix(edit.substrate) ? 'Custom soil mix' : (edit.substrate || ''), onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { setEdit(function(prev) { return Object.assign({}, prev, { substrate: encodeCustomMix([{ ingredient: SOIL_MIX_INGREDIENTS[0], parts: 1 }], false) }); }); } else { setEdit(function(prev) { return Object.assign({}, prev, { substrate: v }); }); } }, className: "w-full border-4 px-2 py-1.5 mt-1", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                                 React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                                 PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                                React.createElement("option", { value: "Soil mix" }, "Soil mix"),
                                 React.createElement("option", { value: "Custom soil mix" }, "\uD83C\uDF31 Custom soil mix...")),
                             isCustomMix(edit.substrate) && React.createElement(CustomMixBuilder, { value: edit.substrate, onChange: function(enc) { setEdit(function(prev) { return Object.assign({}, prev, { substrate: enc }); }); }, growingMethod: 'substrate', pxS: pxS, theme: theme }),
                         React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
@@ -9343,6 +9333,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                 (activeTab === 'props' || activeTab === 'grafts')
                     ? React.createElement(PlantButton, { onClick: () => setPropFormOpen(v => !v) }, propFormOpen ? '\u2715 Cancel' : activeTab === 'grafts' ? '\uD83D\uDD17 New Graft' : '\uD83C\uDF31 New Prop')
                     : React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back"),
+                activeTab === 'plants' && React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3", onClick: openLocModal }, "\uD83D\uDCCD Location"),
                 React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3", onClick: () => navigate('archive') }, "\uD83E\uDEA6 Archive")))));
 }
 
@@ -12579,7 +12570,6 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 React.createElement("select", { value: isCustomMix(repotSub) ? ((plant && plant.growingMethod) === 'semihydro' ? 'Custom PON mix' : 'Custom soil mix') : repotSub, onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { var sh = (plant && plant.growingMethod) === 'semihydro'; setRepotSub(encodeCustomMix([{ ingredient: (sh ? PON_MIX_INGREDIENTS : SOIL_MIX_INGREDIENTS)[0], parts: 1 }], sh)); } else { setRepotSub(v); } }, className: "w-full border-4 px-3 py-2 mt-1", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
                                     React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                                     PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                                    React.createElement("option", { value: "Soil mix" }, "Soil mix"),
                                     React.createElement("option", { value: (plant && plant.growingMethod) === 'semihydro' ? 'Custom PON mix' : 'Custom soil mix' }, (plant && plant.growingMethod) === 'semihydro' ? '\uD83E\uDEA8 Custom PON mix...' : '\uD83C\uDF31 Custom soil mix...')),
                                 isCustomMix(repotSub) && React.createElement(CustomMixBuilder, { value: repotSub, onChange: setRepotSub, growingMethod: (plant && plant.growingMethod) || 'substrate', pxS: pxS, theme: theme }),
                             React.createElement("div", { className: "flex gap-2 pt-2" },
@@ -16690,6 +16680,13 @@ function SettingsScreen() {
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: HAS_GAS ? '#66BB6A' : '#8A7060', marginTop: 4 }) }, HAS_GAS
                     ? 'Your plants are reading from and writing to your Google Sheet.'
                     : 'Data is temporary. Connect your deployed script to persist data.')),
+            HAS_GAS && React.createElement("div", { style: { marginBottom: 16, padding: '10px 14px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 } },
+                React.createElement("div", null,
+                    React.createElement("div", { style: Object.assign({}, px8, { fontSize: '7px', color: theme.txtS, marginBottom: 4, letterSpacing: '0.1em' }) }, 'SIGNED IN AS'),
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP }) }, (function() { try { return localStorage.getItem('plantos_username') || 'Unknown'; } catch(e) { return 'Unknown'; } })())
+                ),
+                React.createElement(PlantButton, { block: false, variant: 'ghost', onClick: function() { if (window.plantosLogout) window.plantosLogout(); } }, '\uD83D\uDD12 Sign Out')
+            ),
             React.createElement(Section, { title: "\uD83D\uDD17 CONNECT TO GOOGLE SHEET" },
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginBottom: 10, lineHeight: 1.6 }) },
                     "To connect Folium to your data:",
@@ -16742,10 +16739,6 @@ function SettingsScreen() {
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: HAS_GAS ? '#4CAF50' : '#FF9800' }) }, HAS_GAS ? 'LIVE' : 'DEMO')),
                 React.createElement(Row, { label: "Locations", sublabel: `${(locations || []).length} defined` },
                     React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => navigate('locations') }, "Manage \>")),
-            HAS_GAS && React.createElement("div", { style: { borderTop: '2px solid ' + theme.cardBorder, marginTop: 14, paddingTop: 14 } },
-                React.createElement("div", { style: Object.assign({}, px8, { fontSize: '7px', color: theme.txtS, marginBottom: 8, letterSpacing: '0.1em' }) }, 'ACCOUNT'),
-                React.createElement(PlantButton, { block: true, variant: 'ghost', onClick: function() { if (window.plantosLogout) window.plantosLogout(); } }, '\uD83D\uDD12 Sign Out')
-            ),
             React.createElement("div", { style: { borderTop: '2px solid ' + theme.cardBorder, marginTop: 14, paddingTop: 14 } },
                 React.createElement("div", { style: Object.assign({}, px8, { fontSize: '7px', color: theme.txtS, marginBottom: 8, letterSpacing: '0.1em' }) }, 'DEVELOPER'),
                 React.createElement(PlantButton, { block: true, variant: 'ghost', onClick: function() { navigate('dev'); } }, 'Dev Tools')
