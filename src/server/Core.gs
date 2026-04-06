@@ -75,7 +75,12 @@ function plantosSetSetting_(key, value) {
 
 function plantosGetSS_()              { return SpreadsheetApp.getActiveSpreadsheet(); }
 function plantosGetSheet_(name)       { const sh = plantosGetSS_().getSheetByName(name); if (!sh) throw new Error('Missing sheet: ' + name); return sh; }
-function plantosGetInventorySheet_()  { return plantosGetSheet_(PLANTOS_BACKEND_CFG.INVENTORY_SHEET); }
+function plantosGetInventorySheet_()  {
+  var sheetName = (_currentUser && !_currentUser.isAdmin && _currentUser.inventorySheet)
+    ? _currentUser.inventorySheet
+    : PLANTOS_BACKEND_CFG.INVENTORY_SHEET;
+  return plantosGetSheet_(sheetName);
+}
 
 function plantosReadInventory_() {
   const sh = plantosGetInventorySheet_();

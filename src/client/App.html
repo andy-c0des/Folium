@@ -2278,6 +2278,7 @@ function gasCall(fn, ...args) {
         .then(function(res) {
             if (res && res.error === 'Unauthorized') {
                 localStorage.removeItem('plantos_auth_token');
+                localStorage.removeItem('plantos_username');
                 window.dispatchEvent(new CustomEvent('plantos:unauthorized'));
                 reject(new Error('Unauthorized')); return;
             }
@@ -17137,54 +17138,66 @@ function GasBannerTip() {
 const PLANTOS_VERSION = '5.7';
 
 function LoginScreen({ onLogin }) {
+    const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState('');
-    const inputRef = React.useRef(null);
-    React.useEffect(function() { if (inputRef.current) inputRef.current.focus(); }, []);
+    const usernameRef = React.useRef(null);
+    React.useEffect(function() { if (usernameRef.current) usernameRef.current.focus(); }, []);
 
     async function handleSubmit(e) {
         if (e) e.preventDefault();
-        if (!password.trim() || loading) return;
+        if (!username.trim() || !password.trim() || loading) return;
         setLoading(true); setError('');
         try {
-            const res = await gasCall('plantosValidateToken', password);
-            if (res && res.ok) {
-                localStorage.setItem('plantos_auth_token', password);
+            const res = await gasCall('plantosLogin', username.trim(), password);
+            if (res && res.ok && res.token) {
+                localStorage.setItem('plantos_auth_token', res.token);
+                localStorage.setItem('plantos_username', res.username || username.trim());
                 onLogin();
             } else {
-                setError('Incorrect password. Try again.');
+                setError((res && res.error) || 'Invalid username or password');
                 setPassword('');
-                if (inputRef.current) inputRef.current.focus();
             }
         } catch(e) {
-            setError(e.message && e.message.includes('timed out') ? 'Connection timed out — GAS may be cold-starting. Try again.' : 'Connection failed. Check your network.');
+            setError(e.message && e.message.includes('timed out') ? 'Connection timed out — try again.' : 'Connection failed. Check your network.');
         } finally { setLoading(false); }
     }
 
     const px8 = { fontFamily: "'Press Start 2P', monospace" };
     const pxS = { fontFamily: "'Pixelify Sans', cursive" };
+    const inputStyle = Object.assign({}, pxS, { fontSize: 16, padding: '10px 14px', background: '#111E13', border: '3px solid #2A4A20', color: '#C8D8A8', width: '100%', outline: 'none', boxSizing: 'border-box' });
     return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0A150C', padding: 24 } },
         React.createElement('div', { style: { width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', alignItems: 'center' } },
             React.createElement('div', { style: { fontSize: 52, marginBottom: 12 } }, '\uD83C\uDF3F'),
             React.createElement('div', { style: Object.assign({}, px8, { fontSize: 16, color: '#C8D8A8', marginBottom: 6, letterSpacing: '0.05em' }) }, 'FOLIUM'),
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: 15, color: '#5A7A4A', marginBottom: 40 }) }, 'Plant Collection Manager'),
             React.createElement('form', { onSubmit: handleSubmit, style: { width: '100%', display: 'flex', flexDirection: 'column', gap: 10 } },
-                React.createElement('div', { style: Object.assign({}, px8, { fontSize: 9, color: '#6A8A5A', marginBottom: 2, letterSpacing: '0.1em' }) }, '\uD83D\uDD12 PASSWORD'),
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: 9, color: '#6A8A5A', marginBottom: 2, letterSpacing: '0.1em' }) }, '\uD83D\uDC64 USERNAME'),
                 React.createElement('input', {
-                    ref: inputRef,
+                    ref: usernameRef,
+                    type: 'text',
+                    value: username,
+                    autoComplete: 'username',
+                    onChange: function(e) { setUsername(e.target.value); setError(''); },
+                    disabled: loading,
+                    style: Object.assign({}, inputStyle, error ? { borderColor: '#8B1A1A' } : {})
+                }),
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: 9, color: '#6A8A5A', marginBottom: 2, marginTop: 4, letterSpacing: '0.1em' }) }, '\uD83D\uDD12 PASSWORD'),
+                React.createElement('input', {
                     type: 'password',
                     value: password,
+                    autoComplete: 'current-password',
                     onChange: function(e) { setPassword(e.target.value); setError(''); },
                     placeholder: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
                     disabled: loading,
-                    style: Object.assign({}, pxS, { fontSize: 18, padding: '10px 14px', background: '#111E13', border: '3px solid ' + (error ? '#8B1A1A' : '#2A4A20'), color: '#C8D8A8', width: '100%', outline: 'none', boxSizing: 'border-box', opacity: loading ? 0.6 : 1 })
+                    style: Object.assign({}, inputStyle, error ? { borderColor: '#8B1A1A' } : {})
                 }),
                 error && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: 13, color: '#FF7070', padding: '6px 10px', border: '2px solid #5A0A0A', background: '#1A0505' }) }, error),
                 React.createElement('button', {
                     type: 'submit',
-                    disabled: loading || !password.trim(),
-                    style: Object.assign({}, px8, { fontSize: 10, padding: '13px 24px', background: (loading || !password.trim()) ? '#1A2A1A' : '#1E4A14', color: (loading || !password.trim()) ? '#4A6A3A' : '#B8D89A', border: '3px solid ' + ((loading || !password.trim()) ? '#2A3A2A' : '#3A7A20'), cursor: (loading || !password.trim()) ? 'default' : 'pointer', width: '100%', marginTop: 4, letterSpacing: '0.05em' })
+                    disabled: loading || !username.trim() || !password.trim(),
+                    style: Object.assign({}, px8, { fontSize: 10, padding: '13px 24px', background: (loading || !username.trim() || !password.trim()) ? '#1A2A1A' : '#1E4A14', color: (loading || !username.trim() || !password.trim()) ? '#4A6A3A' : '#B8D89A', border: '3px solid ' + ((loading || !username.trim() || !password.trim()) ? '#2A3A2A' : '#3A7A20'), cursor: (loading || !username.trim() || !password.trim()) ? 'default' : 'pointer', width: '100%', marginTop: 4, letterSpacing: '0.05em' })
                 }, loading ? 'CONNECTING...' : '\u25B6 ENTER')
             ),
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: 12, color: '#3A5A2A', marginTop: 32, textAlign: 'center' }) }, 'v3 \u00B7 Folium')
@@ -17194,6 +17207,7 @@ function LoginScreen({ onLogin }) {
 
 window.plantosLogout = function() {
     localStorage.removeItem('plantos_auth_token');
+    localStorage.removeItem('plantos_username');
     window.dispatchEvent(new CustomEvent('plantos:unauthorized'));
 };
 
