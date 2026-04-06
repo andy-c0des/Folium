@@ -695,7 +695,6 @@
 </head>
 <body>
 <div class="crt-overlay" aria-hidden="true"></div>
-<div id="andy-version" style="position:fixed;top:8px;right:12px;color:#ff4444;font-family:monospace;font-size:11px;z-index:99999;pointer-events:none;opacity:0.85;"></div>
 <div id="root">
   <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1A2C1E;color:#C8A84B;font-family:monospace;font-size:12px;flex-direction:column;gap:12px;">
     <div style="font-size:32px">🌿</div>
@@ -7692,7 +7691,7 @@ function VariantSuggestions({ genus, species, onSelect, theme, pxS }) {
 
 function AddScreen({ prefill, openMode }) {
     const { goBack, navigate } = useNavigation();
-    const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem, addLocation } = usePlantData();
+    const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem, addLocation, uploadPlantPhoto } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '10px' : '13px' };
@@ -7757,6 +7756,13 @@ function AddScreen({ prefill, openMode }) {
     const [wishlistLoading, setWishlistLoading] = useState(false);
     const [wishlistStatus, setWishlistStatus] = useState(null);
     const [editingWishId, setEditingWishId] = useState(null);
+    // — Plant photo (Add Plant form) —
+    const [plantPhotoFile, setPlantPhotoFile] = useState(null);
+    const [plantPhotoPreview, setPlantPhotoPreview] = useState('');
+    const [plantPhotoExifDate, setPlantPhotoExifDate] = useState('');
+    const [plantPhotoManualDate, setPlantPhotoManualDate] = useState('');
+    const [plantPhotoCaption, setPlantPhotoCaption] = useState('');
+    const plantPhotoRef = React.useRef(null);
     // Load wishlist when entering wishlist tab
     useEffect(() => {
         if (mode !== 'wishlist') return;
@@ -7786,6 +7792,22 @@ function AddScreen({ prefill, openMode }) {
             return next.slice(0, batchCount);
         });
     }, [batchCount]);
+    async function handlePlantPhotoPicked(e) {
+        const file = e.target.files && e.target.files[0];
+        if (e.target) e.target.value = '';
+        if (!file) return;
+        try {
+            const preview = await readFileAsDataUrl(file);
+            setPlantPhotoFile(file);
+            setPlantPhotoPreview(preview);
+            const exifDate = await readExifDate(file);
+            setPlantPhotoExifDate(exifDate || '');
+            setPlantPhotoManualDate(exifDate || '');
+        } catch(err) {
+            setPlantPhotoFile(null);
+            setPlantPhotoPreview('');
+        }
+    }
     function requiredOk() {
         return !!(String(genus || '').trim());
     }
@@ -7818,6 +7840,13 @@ function AddScreen({ prefill, openMode }) {
             };
             let res; try { res = await createPlant(payload); } catch(e) { setStatus({ type: 'error', msg: 'GAS error: ' + (e&&e.message||String(e)) }); return; }
             const uid = res && res.uid ? String(res.uid) : '';
+            if (uid && plantPhotoFile) {
+                try {
+                    setStatus({ type: 'loading', message: 'Uploading photo...' });
+                    const dataUrl = await compressImageToJpegDataUrl(plantPhotoFile, 1600, 0.82);
+                    await uploadPlantPhoto(uid, dataUrl, plantPhotoFile.name || 'photo.jpg');
+                } catch(photoErr) { /* non-fatal */ }
+            }
             setStatus({ type: 'success', message: 'Added ✓' });
             setTimeout(() => { setStatus(null); if (uid)
                 navigate('plant', { uid });
@@ -8418,6 +8447,22 @@ function AddScreen({ prefill, openMode }) {
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Infra Epithet"),
                         React.createElement("input", { value: infraEpithet, onChange: e => setInfraEpithet(e.target.value), placeholder: "e.g. ilsemanii", className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })))
             ),
+            !isBatch && React.createElement("div", { className: "mb-3", style: { border: '2px solid ' + theme.rowBorder, padding: '10px 12px' } },
+                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS, marginBottom: 4 }) }, "\uD83D\uDCF8 Plant Photo"),
+                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 6, opacity: 0.8 }) }, "optional \u2014 date auto-read from photo metadata"),
+                !plantPhotoPreview
+                    ? React.createElement("button", { type: "button", onClick: () => plantPhotoRef.current && plantPhotoRef.current.click(), style: Object.assign({}, pxS, { fontSize: '12px', border: '2px dashed ' + theme.cardBorder, background: 'none', color: theme.txtS, padding: '10px 16px', cursor: 'pointer', width: '100%', textAlign: 'center' }) }, "+ Choose Photo")
+                    : React.createElement("div", null,
+                        React.createElement("img", { src: plantPhotoPreview, alt: "Preview", style: { maxWidth: '100%', maxHeight: 130, display: 'block', marginBottom: 8, border: '2px solid ' + theme.cardBorder, objectFit: 'cover' } }),
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 } },
+                            React.createElement("div", null,
+                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 2 }) }, plantPhotoExifDate ? "\uD83D\uDCC5 Date (from photo)" : "\uD83D\uDCC5 Photo Date"),
+                                React.createElement("input", { type: "date", value: plantPhotoManualDate, onChange: e => setPlantPhotoManualDate(e.target.value), className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
+                            React.createElement("div", null,
+                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 2 }) }, "Caption"),
+                                React.createElement("input", { value: plantPhotoCaption, onChange: e => setPlantPhotoCaption(e.target.value), placeholder: "e.g. Unboxing day", className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
+                        React.createElement("button", { type: "button", onClick: () => { setPlantPhotoFile(null); setPlantPhotoPreview(''); setPlantPhotoExifDate(''); setPlantPhotoManualDate(''); setPlantPhotoCaption(''); }, style: Object.assign({}, pxS, { fontSize: '11px', background: 'none', border: 'none', color: theme.txtS, cursor: 'pointer', textDecoration: 'underline', opacity: 0.7, padding: 0 }) }, "\u2715 Remove photo")),
+                React.createElement("input", { ref: plantPhotoRef, type: "file", accept: "image/*", style: { display: 'none' }, onChange: handlePlantPhotoPicked })),
             React.createElement("div", { className: "flex gap-2 mt-2" },
                 React.createElement(PlantButton, { onClick: isBatch ? submitBatch : submitSingle }, isBatch ? ('\u2705 Add ' + batchCount + ' Plants') : '\u2705 Add Plant'),
                 React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back"))))));
@@ -10379,6 +10424,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const [noteText, setNoteText] = useState('');
     const propPhotoRef = useRef(null);
     const [propPhotoMsg, setPropPhotoMsg] = useState(null);
+    const [pendingPropPhoto, setPendingPropPhoto] = useState(null); // { propId, file, preview, exifDate, manualDate, caption }
     const [showStatusPicker, setShowStatusPicker] = useState(false);
     const [failCause, setFailCause] = useState('');
     const [failDetail, setFailDetail] = useState('');
@@ -10580,15 +10626,28 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     }
     async function handlePropPhotoPicked(propId, e) {
         const file = e.target.files && e.target.files[0];
-        e.target.value = '';
+        if (e.target) e.target.value = '';
         if (!file) return;
+        try {
+            const preview = await readFileAsDataUrl(file);
+            const exifDate = await readExifDate(file);
+            setPendingPropPhoto({ propId, file, preview, exifDate: exifDate || '', manualDate: exifDate || '', caption: noteText.trim() });
+        } catch(err) {
+            setPropPhotoMsg({ type: 'error', text: 'Could not read photo.' });
+            setTimeout(() => setPropPhotoMsg(null), 3000);
+        }
+    }
+    async function submitPendingPropPhoto() {
+        if (!pendingPropPhoto) return;
+        const { propId, file, manualDate, caption } = pendingPropPhoto;
         setPropPhotoMsg({ type: 'loading', text: 'Uploading photo...' });
+        setPendingPropPhoto(null);
         try {
             const dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
             const res = await uploadPropPhoto(propId, dataUrl, file.name || 'photo.jpg');
             if (res && res.ok) {
-                const caption = noteText.trim() || 'Progress photo';
-                await addPropNote(propId, caption, res.thumbUrl || res.viewUrl || dataUrl);
+                const noteCaption = caption || ('Progress photo' + (manualDate ? ' \u2014 ' + manualDate : ''));
+                await addPropNote(propId, noteCaption, res.thumbUrl || res.viewUrl || dataUrl);
                 setNoteText('');
                 setPropPhotoMsg({ type: 'success', text: 'Photo saved! \uD83D\uDCF8' });
                 getPropTimeline(propId).then(t => setTimeline(t || []));
@@ -11230,6 +11289,19 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         propPhotoMsg && React.createElement("div", { style: { marginTop: 4 } },
                             React.createElement(StatusMessage, { type: propPhotoMsg.type, message: propPhotoMsg.text })))),
                     React.createElement("input", { ref: propPhotoRef, type: "file", accept: "image/*", style: { display: 'none' }, onChange: e => { const pid = propPhotoRef.current && propPhotoRef.current.dataset.propid; if (pid) handlePropPhotoPicked(pid, e); } }),
+                    pendingPropPhoto && pendingPropPhoto.propId === prop.propId && React.createElement("div", { style: { border: '2px solid ' + theme.cardBorder, padding: 10, marginBottom: 10, background: theme.rowBg } },
+                        React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: theme.txtP, marginBottom: 8, fontSize: '11px' }) }, "CONFIRM PHOTO"),
+                        React.createElement("img", { src: pendingPropPhoto.preview, alt: "Photo preview", style: { maxWidth: '100%', maxHeight: 130, display: 'block', marginBottom: 8, border: '2px solid ' + theme.cardBorder, objectFit: 'cover' } }),
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 } },
+                            React.createElement("div", null,
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', color: theme.txtS, marginBottom: 2 }) }, pendingPropPhoto.exifDate ? "\uD83D\uDCC5 Date (from photo)" : "\uD83D\uDCC5 Photo Date"),
+                                React.createElement("input", { type: "date", value: pendingPropPhoto.manualDate, onChange: e => setPendingPropPhoto(prev => Object.assign(Object.assign({}, prev), { manualDate: e.target.value })), className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
+                            React.createElement("div", null,
+                                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', color: theme.txtS, marginBottom: 2 }) }, "Caption"),
+                                React.createElement("input", { value: pendingPropPhoto.caption, onChange: e => setPendingPropPhoto(prev => Object.assign(Object.assign({}, prev), { caption: e.target.value })), placeholder: "e.g. First roots!", className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
+                        React.createElement("div", { style: { display: 'flex', gap: 6 } },
+                            React.createElement(PlantButton, { onClick: submitPendingPropPhoto, className: "py-1 px-3" }, "\uD83D\uDCF8 Upload"),
+                            React.createElement(PlantButton, { variant: "ghost", onClick: () => setPendingPropPhoto(null), className: "py-1 px-3" }, "Cancel"))),
                     React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: theme.txtP, marginBottom: 6 }) }, "DIARY"),
                     React.createElement("div", { style: { maxHeight: 200, overflowY: 'auto' } },
                         (timeline || []).length === 0 && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "No entries yet."),
@@ -11520,6 +11592,81 @@ function BatchFertilizeScreen() {
                     React.createElement(PlantButton, { variant: "secondary", onClick: submit }, "\uD83C\uDF3E Apply"),
                     React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Cancel")))),
             !selectedLoc && React.createElement("div", { className: "mt-2", style: { fontFamily: "'Pixelify Sans', cursive", color: '#2C1000' } }, "Select a location to log multiple fertilizing."))));
+}
+// Reads DateTimeOriginal from JPEG EXIF → returns "YYYY-MM-DD" or null
+function readExifDate(file) {
+    return new Promise(resolve => {
+        if (!file || !file.type.includes('jpeg') && !file.type.includes('jpg') && !file.name.toLowerCase().match(/\.jpe?g$/)) {
+            resolve(null); return;
+        }
+        const fr = new FileReader();
+        fr.onload = function(ev) {
+            try {
+                const buf = ev.target.result;
+                const view = new DataView(buf);
+                if (view.getUint16(0) !== 0xFFD8) { resolve(null); return; }
+                let off = 2;
+                while (off < buf.byteLength - 4) {
+                    const marker = view.getUint16(off);
+                    const segLen = view.getUint16(off + 2);
+                    if (marker === 0xFFE1) {
+                        // Check for "Exif\0\0"
+                        const hdr = String.fromCharCode(view.getUint8(off+4),view.getUint8(off+5),view.getUint8(off+6),view.getUint8(off+7));
+                        if (hdr === 'Exif') {
+                            const ts = off + 10; // TIFF header start
+                            const le = view.getUint16(ts) === 0x4949; // little-endian?
+                            const ifd0off = view.getUint32(ts + 4, le);
+                            const ifd0 = ts + ifd0off;
+                            const nEntries = view.getUint16(ifd0, le);
+                            // Look for ExifIFD pointer (0x8769) in IFD0
+                            let exifIFD = null;
+                            for (let i = 0; i < nEntries; i++) {
+                                const e = ifd0 + 2 + i * 12;
+                                if (e + 12 > buf.byteLength) break;
+                                const tag = view.getUint16(e, le);
+                                if (tag === 0x8769) { exifIFD = ts + view.getUint32(e + 8, le); break; }
+                            }
+                            // Search given IFD for DateTimeOriginal (0x9003)
+                            const findDate = (ifdStart) => {
+                                try {
+                                    if (ifdStart < 0 || ifdStart + 2 > buf.byteLength) return null;
+                                    const n = view.getUint16(ifdStart, le);
+                                    for (let i = 0; i < n; i++) {
+                                        const e = ifdStart + 2 + i * 12;
+                                        if (e + 12 > buf.byteLength) break;
+                                        if (view.getUint16(e, le) === 0x9003) {
+                                            const valOff = view.getUint32(e + 8, le);
+                                            let s = '';
+                                            for (let c = 0; c < 19; c++) {
+                                                const idx = ts + valOff + c;
+                                                if (idx >= buf.byteLength) break;
+                                                const ch = view.getUint8(idx);
+                                                if (!ch) break;
+                                                s += String.fromCharCode(ch);
+                                            }
+                                            // Format: "2024:01:15 10:30:45"
+                                            const m = s.match(/^(\d{4}):(\d{2}):(\d{2})/);
+                                            return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+                                        }
+                                    }
+                                } catch(ex) {}
+                                return null;
+                            };
+                            const d = exifIFD ? findDate(exifIFD) : null;
+                            resolve(d || findDate(ifd0));
+                            return;
+                        }
+                    }
+                    if (marker === 0xFFDA) break; // SOS — no more metadata
+                    if (segLen < 2) break;
+                    off += 2 + segLen;
+                }
+                resolve(null);
+            } catch(ex) { resolve(null); }
+        };
+        fr.onerror = () => resolve(null);
+        fr.readAsArrayBuffer(file);
+    });
 }
 function readFileAsDataUrl(file) {
     return new Promise((resolve, reject) => {
@@ -17329,8 +17476,6 @@ if (_rootEl) {
   ReactDOM.createRoot(_rootEl).render(
     React.createElement(AppErrorBoundary, null, React.createElement(PlantOSApp, null))
   );
-  const _vEl = document.getElementById('andy-version');
-  if (_vEl) _vEl.textContent = 'andys version ' + PLANTOS_VERSION;
 }
 
 </script>
