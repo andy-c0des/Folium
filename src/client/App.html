@@ -10415,6 +10415,12 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             if (crossCheck.warn) setCrossWarning(crossCheck.warn);
             else setCrossWarning(null);
         }
+        else if (form.isGraft) {
+            if (!String(form.scionGenus || '').trim()) {
+                setFormStatus({ type: 'error', message: 'Scion genus is required.' });
+                return;
+            }
+        }
         else {
             if (!form.genus.trim() || !form.propType) {
                 setFormStatus({ type: 'error', message: 'Genus and prop type are required.' });
