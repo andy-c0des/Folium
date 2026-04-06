@@ -739,6 +739,10 @@ React.createElement = function(type, props) {
 const BOOT = window.PLANTOS_BOOT || {};
 const HAS_GAS = !!(window.google && google.script && google.script.run);
 // PLANTOS_API_URL is provided by config.js (loaded separately)
+// HAS_API = true when running via GitHub Pages / REST mode with a configured API URL
+const HAS_API = !HAS_GAS && !!(typeof PLANTOS_API_URL !== 'undefined' && PLANTOS_API_URL);
+// IS_CONNECTED = true in either GAS-iframe mode or REST/API mode
+const IS_CONNECTED = HAS_GAS || HAS_API;
 const DEMO_MODE = false;
 const pxS = { fontFamily: "'Pixelify Sans', cursive" };
 const px8 = { fontFamily: "'Press Start 2P', cursive" };
@@ -16899,10 +16903,10 @@ function SettingsScreen() {
     return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '700px' : '600px', margin: '0 auto' } },
         React.createElement(PlantCard, { title: "\u2699\uFE0F SETTINGS" },
             React.createElement("div", { style: { marginBottom: 16, padding: '10px 14px',
-                    background: HAS_GAS ? '#1B5E20' : DEMO_MODE ? '#4A2000' : '#0D1B2A',
-                    border: `3px solid ${HAS_GAS ? '#4CAF50' : '#7A5528'}` } },
-                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: HAS_GAS ? '#A5D6A7' : '#C09060' }) }, HAS_GAS ? '🟢 Connected to Google Apps Script' : '🟡 Demo Mode — no sheet connected'),
-                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: HAS_GAS ? '#66BB6A' : '#8A7060', marginTop: 4 }) }, HAS_GAS
+                    background: IS_CONNECTED ? '#1B5E20' : '#0D1B2A',
+                    border: `3px solid ${IS_CONNECTED ? '#4CAF50' : '#7A5528'}` } },
+                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: IS_CONNECTED ? '#A5D6A7' : '#C09060' }) }, IS_CONNECTED ? (HAS_GAS ? '🟢 Connected to Google Apps Script' : '🟢 Connected via API') : '🟡 Demo Mode — no sheet connected'),
+                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: IS_CONNECTED ? '#66BB6A' : '#8A7060', marginTop: 4 }) }, IS_CONNECTED
                     ? 'Your plants are reading from and writing to your Google Sheet.'
                     : 'Data is temporary. Connect your deployed script to persist data.')),
             React.createElement("div", { style: { marginBottom: 16, padding: '10px 14px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 } },
@@ -16963,8 +16967,8 @@ function SettingsScreen() {
             React.createElement(Section, { title: "\u2139\uFE0F ABOUT" },
                 React.createElement(Row, { label: "Version", sublabel: "Folium v5.7" },
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "v5.7")),
-                React.createElement(Row, { label: "Mode", sublabel: HAS_GAS ? 'Live — connected to sheet' : 'Demo — no persistence' },
-                    React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: HAS_GAS ? '#4CAF50' : '#FF9800' }) }, HAS_GAS ? 'LIVE' : 'DEMO')),
+                React.createElement(Row, { label: "Mode", sublabel: IS_CONNECTED ? (HAS_GAS ? 'Live — GAS iframe' : 'Live — REST API') : 'Demo — no persistence' },
+                    React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: IS_CONNECTED ? '#4CAF50' : '#FF9800' }) }, IS_CONNECTED ? 'LIVE' : 'DEMO')),
                 React.createElement(Row, { label: "Locations", sublabel: `${(locations || []).length} defined` },
                     React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => navigate('locations') }, "Manage \>")),
             React.createElement("div", { style: { borderTop: '2px solid ' + theme.cardBorder, marginTop: 14, paddingTop: 14 } },
