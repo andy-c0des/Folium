@@ -8868,7 +8868,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         setAddingLoc(false);
     }
     function TabBar() {
-        return (React.createElement("div", { className: "plant-tab-bar", style: { borderBottomColor: theme.cardBorder, marginBottom: 14 } }, [['plants', '\uD83C\uDF3F Plants'], ['props', '\uD83C\uDF31 Props'], ['phylo', '\uD83E\uddEC Phylo']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setActiveTab(id), className: "plant-tab" + (activeTab === id ? " active" : ""), style: { color: activeTab === id ? theme.btnP.bg : theme.txtS, fontSize: isSmall ? '11px' : '13px' } }, label)))));
+        return (React.createElement("div", { className: "plant-tab-bar", style: { borderBottomColor: theme.cardBorder, marginBottom: 14 } }, [['plants', '\uD83C\uDF3F Plants'], ['props', '\uD83C\uDF31 Props'], ['grafts', '\uD83D\uDD17 Grafts'], ['phylo', '\uD83E\uddEC Phylo']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setActiveTab(id), className: "plant-tab" + (activeTab === id ? " active" : ""), style: { color: activeTab === id ? theme.btnP.bg : theme.txtS, fontSize: isSmall ? '11px' : '13px' } }, label)))));
     }
     const locModalEl = locModal && React.createElement('div', {
         style: {
@@ -9332,10 +9332,11 @@ function MyPlantsScreen({ openTab, prefill }) {
                             )));
                     })))))))),
             activeTab === 'props' && React.createElement(PropsSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen }),
+            activeTab === 'grafts' && React.createElement(PropsSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen, defaultPropTab: 'graft' }),
             activeTab === 'phylo' && React.createElement(PhyloScreen, { inline: true }),
             React.createElement("div", { className: "mt-4 flex gap-2" },
-                activeTab === 'props'
-                    ? React.createElement(PlantButton, { onClick: () => setPropFormOpen(v => !v) }, propFormOpen ? '\u2715 Cancel' : '\uD83C\uDF31 New Prop')
+                (activeTab === 'props' || activeTab === 'grafts')
+                    ? React.createElement(PlantButton, { onClick: () => setPropFormOpen(v => !v) }, propFormOpen ? '\u2715 Cancel' : activeTab === 'grafts' ? '\uD83D\uDD17 New Graft' : '\uD83C\uDF31 New Prop')
                     : React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back"),
                 React.createElement(PlantButton, { block: false, variant: "ghost", className: "px-3", onClick: () => navigate('archive') }, "\uD83E\uDEA6 Archive")))));
 }
@@ -10266,7 +10267,7 @@ function GenusAutocompleteInput({ genusValue, speciesValue, onGenusChange, onSpe
                     style: Object.assign({ color: theme.txtP }, item) }, sp)))));
 }
 
-function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowForm }) {
+function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowForm, defaultPropTab }) {
     const { getProps, getPropTimeline, createProp, updatePropStatus, updateProp, addPropNote, uploadPropPhoto, graduateProp, sellProp, getPlant } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
@@ -10292,7 +10293,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         parentUID: (prefill && prefill.parentUID) || '',
         notes: '',
         hybridType: false,
-        isGraft: false,
+        isGraft: defaultPropTab === 'graft',
         scionUID: '', scionGenus: '', scionSpecies: '',
         rootstockUID: '', rootstockGenus: '', rootstockSpecies: '',
         graftTechnique: 'Approach graft',
@@ -10328,7 +10329,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const [selectedStatus, setSelectedStatus] = useState('');
     const [showPhotoPrompt, setShowPhotoPrompt] = useState(null);
     const [filterStatus, setFilterStatus] = useState('active'); // 'active' | 'all'
-    const [propTab, setPropTab] = useState('all'); // 'all' | 'cutting' | 'seed' | 'hybrid' | 'graft'
+    const [propTab, setPropTab] = useState(defaultPropTab || 'all'); // 'all' | 'cutting' | 'seed' | 'hybrid' | 'graft'
     const [parentInCollection, setParentInCollection] = useState(
         prefill && prefill.parentUID ? true : null
     );
