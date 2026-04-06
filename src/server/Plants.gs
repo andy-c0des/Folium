@@ -370,3 +370,55 @@ function plantosGetAllPlantsLite() {
     meta: { sheetRows: values.length - 1, returned: out.length, skipped: skipped, errored: errors.length, ms: Date.now() - t0, lite: true }
   };
 }
+
+/* ==================== WISHLIST ==================== */
+const PLANTOS_WISHLIST_KEY = 'PLANTOS_WISHLIST';
+
+function plantosGetWishlist() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(PLANTOS_WISHLIST_KEY);
+    var list = [];
+    try { list = raw ? JSON.parse(raw) : []; } catch(e) {}
+    return { ok: true, wishlist: list };
+  } catch(e) {
+    return { ok: false, error: e && e.message ? e.message : String(e), wishlist: [] };
+  }
+}
+
+function plantosAddToWishlist(item) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(PLANTOS_WISHLIST_KEY);
+    var list = [];
+    try { list = raw ? JSON.parse(raw) : []; } catch(e) {}
+    var entry = {
+      wishlistId: 'WL' + Date.now() + String(Math.floor(Math.random() * 1000)),
+      genus:        String(item.genus        || '').trim(),
+      taxon:        String(item.taxon        || '').trim(),
+      classification: String(item.classification || '').trim(),
+      cultivar:     String(item.cultivar     || '').trim(),
+      infraRank:    String(item.infraRank    || '').trim(),
+      infraEpithet: String(item.infraEpithet || '').trim(),
+      hybridNote:   String(item.hybridNote   || '').trim(),
+      notes:        String(item.notes        || '').trim(),
+      dateAdded: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+    };
+    list.unshift(entry);
+    PropertiesService.getScriptProperties().setProperty(PLANTOS_WISHLIST_KEY, JSON.stringify(list));
+    return { ok: true, item: entry, wishlist: list };
+  } catch(e) {
+    return { ok: false, error: e && e.message ? e.message : String(e) };
+  }
+}
+
+function plantosRemoveFromWishlist(wishlistId) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(PLANTOS_WISHLIST_KEY);
+    var list = [];
+    try { list = raw ? JSON.parse(raw) : []; } catch(e) {}
+    list = list.filter(function(i) { return i.wishlistId !== String(wishlistId); });
+    PropertiesService.getScriptProperties().setProperty(PLANTOS_WISHLIST_KEY, JSON.stringify(list));
+    return { ok: true, wishlist: list };
+  } catch(e) {
+    return { ok: false, error: e && e.message ? e.message : String(e) };
+  }
+}

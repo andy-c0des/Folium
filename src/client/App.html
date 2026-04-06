@@ -5410,6 +5410,15 @@ function PlantDataProvider({ children }) {
         getArchive, archivePlant, updateArchiveNote, demoArchive, demoProps,
         createBatch, demoPlants, getOffspring, getAllPlants,
         patchSharedPlant, getSharedPatch, clearSharedPatch, removeProgressDue,
+        getWishlist: (function() {
+            var _demoWishlist = [];
+            return function() { return Promise.resolve(_demoWishlist.slice()); };
+        }()),
+        addToWishlist: function(item) {
+            var entry = Object.assign({}, item, { wishlistId: 'WL' + Date.now(), dateAdded: new Date().toISOString().slice(0,10) });
+            return Promise.resolve({ ok: true, item: entry });
+        },
+        removeFromWishlist: function() { return Promise.resolve({ ok: true }); },
     } : {
         locations, homeData, refreshHome, removeProgressDue, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
@@ -5445,6 +5454,9 @@ function PlantDataProvider({ children }) {
         demoArchive: [], demoProps: [],
         createBatch, demoPlants: [], getOffspring, getAllPlants,
         patchSharedPlant, getSharedPatch, clearSharedPatch,
+        getWishlist: () => gasCall('plantosGetWishlist').then(r => (r && r.wishlist) ? r.wishlist : []).catch(() => []),
+        addToWishlist: (item) => gasCall('plantosAddToWishlist', item),
+        removeFromWishlist: (wishlistId) => gasCall('plantosRemoveFromWishlist', wishlistId),
     };
     return React.createElement(PlantDataContext.Provider, { value: ctxValue }, children);
 }
@@ -7595,13 +7607,13 @@ function VariantSuggestions({ genus, species, onSelect, theme, pxS }) {
     );
 }
 
-function AddScreen() {
+function AddScreen({ prefill, openMode }) {
     const { goBack, navigate } = useNavigation();
-    const { locations, createPlant, createBatch, createProp, demoPlants } = usePlantData();
+    const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '14px' };
-    const [mode, setMode] = useState('single');
+    const [mode, setMode] = useState(openMode || 'single');
     const [genus, setGenus] = useState('');
     const [taxon, setTaxon] = useState('');
     const [location, setLocation] = useState('');
@@ -7644,6 +7656,39 @@ function AddScreen() {
     const [propRootstockGenus, setPropRootstockGenus] = useState('');
     const [propRootstockSpecies, setPropRootstockSpecies] = useState('');
     const [propGraftTechnique, setPropGraftTechnique] = useState('Approach graft');
+    // — Wishlist state —
+    const [wishGenus, setWishGenus] = useState('');
+    const [wishTaxon, setWishTaxon] = useState('');
+    const [wishClassification, setWishClassification] = useState('');
+    const [wishCultivar, setWishCultivar] = useState('');
+    const [wishInfraRank, setWishInfraRank] = useState('');
+    const [wishInfraEpithet, setWishInfraEpithet] = useState('');
+    const [wishHybridNote, setWishHybridNote] = useState('');
+    const [wishNotes, setWishNotes] = useState('');
+    const [showWishTaxonomy, setShowWishTaxonomy] = useState(false);
+    const [wishlistItems, setWishlistItems] = useState([]);
+    const [wishlistLoading, setWishlistLoading] = useState(false);
+    const [wishlistStatus, setWishlistStatus] = useState(null);
+    // Load wishlist when entering wishlist tab
+    useEffect(() => {
+        if (mode !== 'wishlist') return;
+        setWishlistLoading(true);
+        getWishlist().then(function(items) {
+            setWishlistItems(Array.isArray(items) ? items : []);
+        }).catch(function() { setWishlistItems([]); }).finally(function() { setWishlistLoading(false); });
+    }, [mode]);
+    // Apply prefill when navigating from "Add to Collection"
+    useEffect(() => {
+        if (!prefill) return;
+        if (prefill.genus) setGenus(prefill.genus);
+        if (prefill.taxon) setTaxon(prefill.taxon);
+        if (prefill.classification) { /* classification auto-derives */ }
+        if (prefill.cultivar) setCultivar(prefill.cultivar);
+        if (prefill.infraRank) setInfraRank(prefill.infraRank);
+        if (prefill.infraEpithet) setInfraEpithet(prefill.infraEpithet);
+        if (prefill.hybridNote) setHybridNote(prefill.hybridNote);
+        if (prefill.cultivar || prefill.infraRank || prefill.infraEpithet || prefill.hybridNote) setShowOptional(true);
+    }, []);
     const previewUids = useNextUids(demoPlants, mode === 'batch' ? batchCount : 1);
     useEffect(() => {
         setNicknames(prev => {
@@ -7793,11 +7838,41 @@ function AddScreen() {
     ];
     const isBatch = mode === 'batch';
     const isProp  = mode === 'prop';
+    const isWishlist = mode === 'wishlist';
+    const allModes = [['single', '\uD83C\uDF3F Single'], ['batch', '\uD83E\uDEB4 Batch'], ['prop', '\uD83C\uDF31 Prop'], ['wishlist', '\u2B50 Wishlist']];
+    async function submitWish() {
+        const g = String(wishGenus || '').trim();
+        if (!g) { setWishlistStatus({ type: 'error', message: 'Genus is required.' }); setTimeout(() => setWishlistStatus(null), 2000); return; }
+        setWishlistStatus({ type: 'loading', message: 'Saving...' });
+        try {
+            const item = { genus: g, taxon: String(wishTaxon || '').trim(), classification: wishClassification, cultivar: String(wishCultivar || '').trim(), infraRank: wishInfraRank, infraEpithet: String(wishInfraEpithet || '').trim(), hybridNote: wishHybridNote, notes: String(wishNotes || '').trim() };
+            const res = await addToWishlist(item);
+            if (res && res.ok && res.item) { setWishlistItems(prev => [res.item, ...prev]); }
+            else if (res && res.wishlist) { setWishlistItems(res.wishlist); }
+            setWishGenus(''); setWishTaxon(''); setWishClassification(''); setWishCultivar(''); setWishInfraRank(''); setWishInfraEpithet(''); setWishHybridNote(''); setWishNotes(''); setShowWishTaxonomy(false);
+            setWishlistStatus({ type: 'success', message: 'Added \u2B50' });
+            setTimeout(() => setWishlistStatus(null), 2000);
+        } catch(e) { setWishlistStatus({ type: 'error', message: 'Failed to save.' }); setTimeout(() => setWishlistStatus(null), 2000); }
+    }
+    async function removeWishItem(wishlistId) {
+        try {
+            const res = await removeFromWishlist(wishlistId);
+            if (res && res.wishlist) { setWishlistItems(res.wishlist); }
+            else { setWishlistItems(prev => prev.filter(i => i.wishlistId !== wishlistId)); }
+        } catch(e) {}
+    }
+    function wishDisplayName(item) {
+        var parts = [item.genus, item.infraRank, item.taxon, item.infraEpithet].filter(Boolean);
+        var name = parts.join(' ');
+        if (item.cultivar) name += ' \u2018' + item.cultivar + '\u2019';
+        if (item.hybridNote === 'hybrid') name = '\u00D7 ' + name;
+        return name || item.genus || '(unnamed)';
+    }
     return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3' : isDesktop ? 'p-6' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '800px' : '680px', margin: '0 auto' } },
         React.createElement(PlantCard, { title: "ADD PLANT" },
             React.createElement("div", { style: { display: 'flex', gap: 0, marginBottom: 14, border: `3px solid ${theme.cardBorder}` } },
-                [['single', '🌿 Single'], ['batch', '🪴 Batch'], ['prop', '\uD83C\uDF31 Prop']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setMode(id), style: Object.assign(Object.assign({}, pxS), { flex: 1, padding: '10px 6px', fontSize: '12px', fontWeight: 900, cursor: 'pointer', border: 'none', borderRight: id !== 'prop' ? `3px solid ${theme.cardBorder}` : 'none', background: mode === id ? theme.btnP.bg : theme.cardBg, color: mode === id ? theme.btnP.text : theme.txtS }) }, label)))),
-            status && React.createElement("div", { className: "mb-3" },
+                allModes.map(function([id, label], idx) { return React.createElement("button", { key: id, type: "button", onClick: () => setMode(id), style: Object.assign(Object.assign({}, pxS), { flex: 1, padding: '10px 4px', fontSize: '11px', fontWeight: 900, cursor: 'pointer', border: 'none', borderRight: idx < allModes.length - 1 ? `3px solid ${theme.cardBorder}` : 'none', background: mode === id ? theme.btnP.bg : theme.cardBg, color: mode === id ? theme.btnP.text : theme.txtS }) }, label); })),
+            !isWishlist && status && React.createElement("div", { className: "mb-3" },
                 React.createElement(StatusMessage, { type: status.type, message: status.message })),
 
             isProp && React.createElement(React.Fragment, null,
@@ -7918,7 +7993,71 @@ function AddScreen() {
                 )
             ),
 
-            !isProp && React.createElement(React.Fragment, null,
+            isWishlist && React.createElement(React.Fragment, null,
+                wishlistStatus && React.createElement("div", { className: "mb-3" }, React.createElement(StatusMessage, { type: wishlistStatus.type, message: wishlistStatus.message })),
+                React.createElement("div", { style: { padding: '8px 12px', marginBottom: 12, background: theme.rowBg, borderLeft: '4px solid #C8A84B' } },
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtP, lineHeight: 1.6 }) }, "\u2B50 Add plants you want to your wishlist. When you acquire one, tap \u201CAdd to Collection\u201D to move it to your inventory.")),
+                React.createElement("div", { className: "mb-3" },
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS, marginBottom: 4 }) }, "Genus *"),
+                    React.createElement(TaxonAutocomplete, { value: wishGenus, onChange: setWishGenus,
+                        onSelectGenus: function(g) { setWishGenus(g); var fam = g && typeof getPlantFamily !== 'undefined' ? (getPlantFamily(g) || '') : ''; setWishClassification(fam); },
+                        placeholder: "e.g. Monstera", theme: theme, pxS: pxS })),
+                React.createElement("div", { className: "mb-3" },
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS, marginBottom: 4 }) }, "Species / Taxon"),
+                    React.createElement("input", { value: wishTaxon, onChange: e => setWishTaxon(e.target.value), placeholder: "e.g. deliciosa", className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
+                React.createElement("button", { type: "button", onClick: () => setShowWishTaxonomy(v => !v), style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginBottom: 8, opacity: 0.7 }) },
+                    showWishTaxonomy ? '\u25B2 Hide taxonomy details' : '\u25BC Taxonomy details (cultivar, infrarank\u2026)'),
+                showWishTaxonomy && React.createElement("div", { style: { border: '2px solid ' + theme.rowBorder, padding: '10px 12px', marginBottom: 12 }, className: "space-y-3" },
+                    React.createElement("div", { className: "grid grid-cols-2 gap-2" },
+                        React.createElement("div", null,
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Cultivar"),
+                            React.createElement("input", { value: wishCultivar, onChange: e => setWishCultivar(e.target.value), placeholder: "e.g. Thai Constellation", className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })),
+                        React.createElement("div", null,
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Hybrid?"),
+                            React.createElement("select", { value: wishHybridNote, onChange: e => setWishHybridNote(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) },
+                                React.createElement("option", { value: "" }, "\u2014 no \u2014"),
+                                React.createElement("option", { value: "hybrid" }, "\xD7 Hybrid"),
+                                React.createElement("option", { value: "intergeneric" }, "Intergeneric")))),
+                    React.createElement("div", { className: "grid grid-cols-2 gap-2" },
+                        React.createElement("div", null,
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Infra Rank"),
+                            React.createElement("select", { value: wishInfraRank, onChange: e => setWishInfraRank(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) },
+                                React.createElement("option", { value: "" }, "\u2014"),
+                                ['var.','subsp.','f.','cv.'].map(r => React.createElement("option", { key: r, value: r }, r)))),
+                        React.createElement("div", null,
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS }) }, "Infra Epithet"),
+                            React.createElement("input", { value: wishInfraEpithet, onChange: e => setWishInfraEpithet(e.target.value), placeholder: "e.g. ilsemanii", className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })))),
+                React.createElement("div", { className: "mb-3" },
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 800, color: theme.txtS, marginBottom: 4 }) }, "Notes"),
+                    React.createElement("textarea", { value: wishNotes, onChange: e => setWishNotes(e.target.value), placeholder: "Why you want it, where to source it\u2026", rows: 2, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, resize: 'vertical' }) })),
+                React.createElement("div", { className: "flex gap-2 mb-4" },
+                    React.createElement(PlantButton, { onClick: submitWish, disabled: !String(wishGenus || '').trim() }, '\u2B50 Add to Wishlist'),
+                    React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back")),
+                wishlistLoading && React.createElement(StatusMessage, { type: "loading", message: "Loading wishlist\u2026" }),
+                !wishlistLoading && wishlistItems.length === 0 && React.createElement("div", { style: { textAlign: 'center', padding: '20px 0', opacity: 0.5 } },
+                    React.createElement("div", { style: { fontSize: 28, marginBottom: 6 } }, '\u2B50'),
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) }, "Your wishlist is empty")),
+                !wishlistLoading && wishlistItems.length > 0 && React.createElement(React.Fragment, null,
+                    React.createElement("div", { style: { height: 2, background: theme.sep, marginBottom: 12, opacity: 0.4 } }),
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 8, letterSpacing: '0.06em' }) }, '\u2B50 YOUR WISHLIST (' + wishlistItems.length + ')'),
+                    React.createElement("div", { className: "space-y-2" },
+                        wishlistItems.map(function(item) {
+                            return React.createElement("div", { key: item.wishlistId, style: { border: '2px solid ' + theme.cardBorder, padding: '10px 12px', background: theme.rowBg, display: 'flex', flexDirection: 'column', gap: 6 } },
+                                React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start', gap: 8 } },
+                                    React.createElement("span", { style: { fontSize: 16, flexShrink: 0 } }, '\u2B50'),
+                                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900, fontStyle: 'italic' }) }, wishDisplayName(item)),
+                                        item.notes && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, item.notes),
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.6, marginTop: 2 }) }, 'Added ' + (item.dateAdded || ''))),
+                                    React.createElement("button", { type: 'button', onClick: () => removeWishItem(item.wishlistId), style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: theme.txtS, opacity: 0.5, flexShrink: 0, padding: '0 2px' }, title: 'Remove' }, '\u00D7')),
+                                React.createElement("button", { type: 'button',
+                                    onClick: () => navigate('add', { prefill: item, openMode: 'single' }),
+                                    style: Object.assign({}, pxS, { fontSize: '11px', padding: '7px 10px', cursor: 'pointer', border: '2px solid #2E5A1A', background: 'linear-gradient(180deg,#3A6A1A,#2A5008)', color: '#D0F0A8', fontWeight: 900, letterSpacing: '0.04em', boxShadow: '0 2px 0 #1A3A08', width: '100%', textAlign: 'center' })
+                                }, '\uD83C\uDF3F Add to Collection')
+                            );
+                        })))
+            ),
+            !isProp && !isWishlist && React.createElement(React.Fragment, null,
                 React.createElement(CommonNameSearch, {
                 theme, pxS,
                 onSelect: function(r) {
@@ -16638,7 +16777,7 @@ function AppContent() {
             case 'plant': return React.createElement(PlantScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '' });
             case 'watering': return React.createElement(WateringScreen, null);
             case 'quick-log': return React.createElement(WateringScreen, null);
-            case 'add': return React.createElement(AddScreen, null);
+            case 'add': return React.createElement(AddScreen, { prefill: (route.params && route.params.prefill) ? route.params.prefill : null, openMode: (route.params && route.params.openMode) ? route.params.openMode : null });
             case 'carl': navigate('progress-updates'); return null;
             case 'carl-chat': return React.createElement(CarlClassicScreen, null);
             case 'my-plants': return React.createElement(MyPlantsScreen, { openTab: (route.params && route.params.openTab) ? route.params.openTab : null, prefill: (route.params && route.params.prefill) ? route.params.prefill : null });
