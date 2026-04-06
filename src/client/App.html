@@ -11119,7 +11119,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                             sellStatus && React.createElement("div", { className: "mb-2" }, React.createElement(StatusMessage, { type: sellStatus.type, message: sellStatus.message })),
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: '#A090D0', marginBottom: 4 }) }, "Price sold (optional)"),
                             React.createElement("input", { value: sellPrice, onChange: function(e){ setSellPrice(e.target.value); }, placeholder: "e.g. £25 or $40", className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: '#D0C0FF', borderColor: '#4A2A88', background: '#1A0A30', marginBottom: 8 }) }),
-                            React.createElement(PlantButton, { onClick: function() { handleSell(prop.propId); }, className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, "💰 Confirm Sale")))
+                            React.createElement(PlantButton, { onClick: function() { handleSell(prop.propId); }, className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, "💰 Confirm Sale")))),
                     showGraduate && !isDone && (React.createElement("div", { style: { border: `2px solid ${theme.btnP.border}`, padding: 10, marginBottom: 12, background: theme.rowBg } },
                         React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: theme.txtP, marginBottom: 8 }) }, "GRADUATE TO SPECIMEN"),
                         gradStatus && React.createElement("div", { className: "mb-2" },
