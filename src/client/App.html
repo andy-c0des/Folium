@@ -4618,10 +4618,22 @@ function ThemeProvider({ children }) {
     return (React.createElement(PresetContext.Provider, { value: { presetId, setPresetId: setPreset } },
         React.createElement(ThemeContext.Provider, { value: theme }, children)));
 }
-function ThemePicker() {
+function ThemePicker({ inline }) {
     const { presetId, setPresetId } = usePreset();
     const theme = useTheme();
     const [open, setOpen] = useState(false);
+    const options = React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6 } }, CARD_PRESETS.map(p => (React.createElement("button", { key: p.id, type: "button", onClick: () => { setPresetId(p.id); setOpen(false); }, className: "btn-press", style: {
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 8px',
+            border: `3px solid ${p.id === presetId ? p.cardBorder : p.sep}`,
+            background: p.id === presetId ? p.btnP.bg : p.cardBg,
+            boxShadow: p.id === presetId ? `0 3px 0 ${p.cardBorder}` : 'none',
+            cursor: 'pointer',
+        } },
+        React.createElement("div", { style: { width: 14, height: 14, flexShrink: 0, background: p.swatch, border: `2px solid ${p.cardBorder}` } }),
+        React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: p.id === presetId ? p.btnP.text : p.txtP }) }, p.name),
+        p.id === presetId && React.createElement("span", { style: Object.assign(Object.assign({ marginLeft: 'auto' }, pxS), { fontSize: '12px', color: p.btnP.text }) }, "\u2713")))));
+    if (inline) return options;
     return (React.createElement("div", { style: { position: 'relative' } },
         React.createElement("button", { type: "button", onClick: () => setOpen(o => !o), className: "btn-press", title: "Change colour theme", style: {
                 width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -4639,21 +4651,7 @@ function ThemePicker() {
                 minWidth: 180, padding: '12px',
             } },
             React.createElement("div", { style: Object.assign(Object.assign({}, px8), { fontSize: '12px', color: theme.txtP, marginBottom: 10, letterSpacing: '0.08em' }) }, "COLOUR THEME"),
-            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6 } }, CARD_PRESETS.map(p => (React.createElement("button", { key: p.id, type: "button", onClick: () => { setPresetId(p.id); setOpen(false); }, className: "btn-press", style: {
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '6px 8px',
-                    border: `3px solid ${p.id === presetId ? p.cardBorder : p.sep}`,
-                    background: p.id === presetId ? p.btnP.bg : p.cardBg,
-                    boxShadow: p.id === presetId ? `0 3px 0 ${p.cardBorder}` : 'none',
-                    cursor: 'pointer',
-                } },
-                React.createElement("div", { style: {
-                        width: 14, height: 14, flexShrink: 0,
-                        background: p.swatch,
-                        border: `2px solid ${p.cardBorder}`,
-                    } }),
-                React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: p.id === presetId ? p.btnP.text : p.txtP }) }, p.name),
-                p.id === presetId && React.createElement("span", { style: Object.assign(Object.assign({ marginLeft: 'auto' }, pxS), { fontSize: '12px', color: p.btnP.text }) }, "\u2713")))))))));
+            options))));
 }
 const NavigationContext = createContext(undefined);
 function parseStartRouteFromBoot() {
@@ -5850,27 +5848,33 @@ function HomeScreen() {
     const { isMobile: _headerIsMobile } = useScreenSize();
     const Header = () => {
         var _hdrUser = (function() { try { return localStorage.getItem('plantos_username') || '?'; } catch(e) { return '?'; } })();
-        if (_headerIsMobile) return React.createElement("div", {
-            style: {
-                position: 'sticky', top: 0, zIndex: 50,
-                background: '#0D2010', borderBottom: '3px solid #1A4010',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '4px 12px', marginBottom: 10, width: '100%',
-            }
-        },
-            React.createElement("div", { style: { width: 38 } }),
-            React.createElement('img', {
-                src: LOGO_PNG, alt: 'Folium', onClick: () => navigate('home'),
-                style: { height: '40px', width: 'auto', cursor: 'pointer', display: 'block' }
-            }),
-            React.createElement("button", {
-                type: "button", onClick: () => navigate('settings'),
-                title: "Settings & Sign Out",
-                style: { width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.3)',
-                    cursor: 'pointer', flexShrink: 0 }
-            }, React.createElement(PixelNavIcon, { id: 'settings', darkColor: '#FFFFFF', lightColor: 'rgba(200,240,160,0.8)', size: 22 }))
-        );
+        if (_headerIsMobile) {
+            var _mPad = isSmall ? 12 : 16;
+            return React.createElement("div", {
+                style: {
+                    position: 'sticky', top: 0, zIndex: 50,
+                    background: '#0D2010', borderBottom: '3px solid #1A4010',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '4px 16px',
+                    marginLeft: -_mPad, marginRight: -_mPad, marginTop: -_mPad,
+                    width: 'calc(100% + ' + (_mPad * 2) + 'px)',
+                    marginBottom: 10,
+                }
+            },
+                React.createElement("div", { style: { width: 44 } }),
+                React.createElement('img', {
+                    src: LOGO_PNG, alt: 'Folium', onClick: () => navigate('home'),
+                    style: { height: '40px', width: 'auto', cursor: 'pointer', display: 'block' }
+                }),
+                React.createElement("button", {
+                    type: "button", onClick: () => navigate('settings'),
+                    title: "Settings & Sign Out",
+                    style: { width: 44, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.3)',
+                        cursor: 'pointer', flexShrink: 0, color: '#FFFFFF', fontSize: '20px' }
+                }, '\uD83D\uDC64')
+            );
+        }
         return React.createElement("div", {
             className: "sticky-header",
             style: { background: '#0D2010', borderColor: '#1A4010' }
@@ -5904,19 +5908,13 @@ function HomeScreen() {
                     style: { borderColor: 'rgba(180,230,140,0.5)', background: 'rgba(180,230,140,0.15)', color: '#FFFFFF', boxShadow: '0 2px 0 rgba(0,0,0,0.3)' }
                 },
                     React.createElement(PixelNavIcon, { id: 'add', darkColor: '#FFFFFF', lightColor: 'rgba(200,240,160,0.8)', size: 16 }),
-                    React.createElement("span", null, "Add Plant"))),
-            React.createElement("button", {
-                type: "button", onClick: () => navigate('settings'),
-                title: "Settings & Sign Out",
-                style: { flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-                    background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.3)',
-                    color: '#FFFFFF', padding: '5px 12px', cursor: 'pointer',
-                    fontFamily: 'var(--font-body)', fontWeight: 900, fontSize: 'var(--fs-small)',
-                    whiteSpace: 'nowrap' }
-            },
-                React.createElement(PixelNavIcon, { id: 'settings', darkColor: '#FFFFFF', lightColor: 'rgba(200,240,160,0.8)', size: 14 }),
-                React.createElement("span", null, _hdrUser)),
-            React.createElement(ThemePicker, null));
+                    React.createElement("span", null, "Add Plant")),
+                React.createElement("button", { type: "button", onClick: () => navigate('settings'),
+                    className: "header-nav-btn hover-lift",
+                    style: { borderColor: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', boxShadow: '0 2px 0 rgba(0,0,0,0.3)' }
+                },
+                    React.createElement("span", { style: { fontSize: 15 } }, '\uD83D\uDC64'),
+                    React.createElement("span", null, _hdrUser))));
     };
 
     if (isDesktop) {
@@ -16752,6 +16750,9 @@ function SettingsScreen() {
                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP }) }, (function() { try { return localStorage.getItem('plantos_username') || 'Unknown'; } catch(e) { return 'Unknown'; } })())
                 ),
                 React.createElement(PlantButton, { block: false, variant: 'ghost', onClick: function() { if (window.plantosLogout) window.plantosLogout(); } }, '\uD83D\uDD12 Sign Out')
+            ),
+            React.createElement(Section, { title: "\uD83C\uDFA8 COLOUR THEME" },
+                React.createElement(ThemePicker, { inline: true })
             ),
             React.createElement(Section, { title: "\uD83D\uDD17 CONNECT TO GOOGLE SHEET" },
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginBottom: 10, lineHeight: 1.6 }) },
