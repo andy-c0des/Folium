@@ -5869,10 +5869,16 @@ function HomeScreen() {
                 React.createElement("button", {
                     type: "button", onClick: () => navigate('settings'),
                     title: "Settings & Sign Out",
-                    style: { width: 44, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    style: { width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.3)',
-                        cursor: 'pointer', flexShrink: 0, color: '#FFFFFF', fontSize: '20px' }
-                }, '\uD83D\uDC64')
+                        cursor: 'pointer', flexShrink: 0 }
+                },
+                    React.createElement("div", { style: { width: 20, height: 20, borderRadius: '50%',
+                        background: 'rgba(180,230,140,0.25)', border: '1.5px solid rgba(180,230,140,0.7)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '11px', fontWeight: 900, color: 'rgba(200,240,160,1)',
+                        fontFamily: 'var(--font-body)' } }, _hdrUser.charAt(0).toUpperCase())
+                )
             );
         }
         return React.createElement("div", {
@@ -5910,10 +5916,18 @@ function HomeScreen() {
                     React.createElement(PixelNavIcon, { id: 'add', darkColor: '#FFFFFF', lightColor: 'rgba(200,240,160,0.8)', size: 16 }),
                     React.createElement("span", null, "Add Plant")),
                 React.createElement("button", { type: "button", onClick: () => navigate('settings'),
-                    className: "header-nav-btn hover-lift",
-                    style: { borderColor: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', boxShadow: '0 2px 0 rgba(0,0,0,0.3)' }
+                    className: "hover-lift",
+                    style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                        flex: '0 0 auto', padding: '4px 10px', border: '2px solid rgba(255,255,255,0.25)',
+                        background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', boxShadow: '0 2px 0 rgba(0,0,0,0.3)',
+                        cursor: 'pointer', whiteSpace: 'nowrap',
+                        fontFamily: 'var(--font-body)', fontWeight: 900, fontSize: 'var(--fs-ui)' }
                 },
-                    React.createElement("span", { style: { fontSize: 15 } }, '\uD83D\uDC64'),
+                    React.createElement("div", { style: { width: 18, height: 18, borderRadius: '50%',
+                        background: 'rgba(180,230,140,0.25)', border: '1.5px solid rgba(180,230,140,0.7)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '10px', fontWeight: 900, color: 'rgba(200,240,160,1)', flexShrink: 0,
+                        fontFamily: 'var(--font-body)' } }, _hdrUser.charAt(0).toUpperCase()),
                     React.createElement("span", null, _hdrUser))));
     };
 
@@ -16298,7 +16312,7 @@ function PixelNavIcon({ id, darkColor, lightColor, size }) {
     var l = lightColor || '#5A8820';
     var s = size || 22;
     function r(x, y, w, h, fill) {
-        return React.createElement('rect', { key: x+','+y, x: x, y: y, width: w, height: h, fill: fill || d });
+        return React.createElement('rect', { key: x+','+y+','+w+','+h, x: x, y: y, width: w, height: h, fill: fill || d });
     }
     var content = [];
     if (id === 'home') {
