@@ -10603,10 +10603,10 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const openProp = (props || []).find(p => p.propId === openPropId);
     const STEPS = ['Trying', 'Rooted', 'Potted Up'];
     function stepIdx(status) { const i = STEPS.indexOf(status); return i >= 0 ? i : (status === 'Graduated' ? 3 : (status === 'Failed' ? -1 : 0)); }
-    return (React.createElement("div", null,
-        React.createElement("div", { style: { marginBottom: 12 } },
-            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP }) }, "\uD83C\uDF31 Propagation Lab"),
-            successRate !== null && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
+    return (React.createElement("div", { style: { paddingTop: 4 } },
+        React.createElement("div", { style: { marginBottom: 16 } },
+            React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, "\uD83C\uDF31 Propagation Lab"),
+            successRate !== null && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', color: theme.txtS }) },
                 succeededCount,
                 "/",
                 resolvedCount,
@@ -10614,7 +10614,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                 React.createElement("span", { style: { fontWeight: 900, color: theme.btnP.bg } },
                     successRate,
                     "%"))),
-            resolvedCount === 0 && (props || []).length > 0 && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
+            resolvedCount === 0 && (props || []).length > 0 && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', color: theme.txtS }) },
                 (props || []).length,
                 " prop",
                 (props || []).length !== 1 ? 's' : '',
@@ -10836,8 +10836,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "e.g. 4 seeds set, germination in ~3 weeks...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })))),
             (form.hybridType || parentInCollection !== null) && React.createElement("div", { style: { marginTop: 8 } },
                 React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : form.isGraft ? '🔗 Record Graft' : '🌱 Start Prop')))),
-        (props || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 10 } }, [['active', 'Active'], ['all', 'All']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setFilterStatus(id), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, padding: '4px 10px', border: `2px solid ${filterStatus === id ? theme.btnP.border : theme.rowBorder}`, background: filterStatus === id ? theme.btnP.bg : 'transparent', color: filterStatus === id ? theme.btnP.text : theme.txtS, cursor: 'pointer' }) }, label))))),
-        !showForm && React.createElement('div', { style: { display: 'flex', gap: 4, marginBottom: 10, flexWrap: 'wrap' } },
+        (props || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 8 } }, [['active', 'Active'], ['all', 'All']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setFilterStatus(id), style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', fontWeight: 900, padding: '5px 12px', border: `2px solid ${filterStatus === id ? theme.btnP.border : theme.rowBorder}`, background: filterStatus === id ? theme.btnP.bg : 'transparent', color: filterStatus === id ? theme.btnP.text : theme.txtS, cursor: 'pointer' }) }, label))))),
+        !showForm && React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
             [
                 { id: 'all', label: '🌱 All' },
                 { id: 'cutting', label: '\u2702 Cuttings' },
