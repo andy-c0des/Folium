@@ -28,6 +28,7 @@ jobs:
           mkdir -p dist
           cp src/client/App.html dist/index.html
           cp src/client/config.js dist/config.js
+          cp src/client/logo.png dist/logo.png
 
       - uses: actions/configure-pages@v5
 
