@@ -296,10 +296,17 @@ function plantosCreateProp(payload) {
     generation: plantosSafeStr_(payload.generation || '').trim(),
     generationConfirmed: !!(payload.generationConfirmed),
     notes: plantosSafeStr_(payload.notes || '').trim(),
+    isGraft: !!(payload.isGraft),
+    scionGenus: plantosSafeStr_(payload.scionGenus || '').trim(),
+    scionSpecies: plantosSafeStr_(payload.scionSpecies || '').trim(),
+    rootstockGenus: plantosSafeStr_(payload.rootstockGenus || '').trim(),
+    rootstockSpecies: plantosSafeStr_(payload.rootstockSpecies || '').trim(),
+    graftTechnique: plantosSafeStr_(payload.graftTechnique || '').trim(),
   };
   props.unshift(prop);
   PropertiesService.getScriptProperties().setProperty(PLANTOS_PROPS_KEY, JSON.stringify(props));
-  plantosPropTimelineAppend_(propId, { action: 'CREATED', details: `${propType || 'Prop'} started` });
+  var createDetail = prop.isGraft ? ('Graft started — ' + (prop.graftTechnique || 'Graft')) : (propType || 'Prop') + ' started';
+  plantosPropTimelineAppend_(propId, { action: 'CREATED', details: createDetail });
   return { ok: true, propId };
 }
 

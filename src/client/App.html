@@ -4954,9 +4954,15 @@ function PlantDataProvider({ children }) {
                 nothospeciesEpithet: String(payload.nothospeciesEpithet || '').trim(),
                 generation: normalizeGeneration(payload.generation),
                 generationConfirmed: !!payload.generationConfirmed,
+                isGraft: !!payload.isGraft,
+                scionGenus: String(payload.scionGenus || '').trim(),
+                scionSpecies: String(payload.scionSpecies || '').trim(),
+                rootstockGenus: String(payload.rootstockGenus || '').trim(),
+                rootstockSpecies: String(payload.rootstockSpecies || '').trim(),
+                graftTechnique: String(payload.graftTechnique || '').trim(),
             };
             setDemoProps(prev => [...(prev || []), newProp]);
-            demoPushPropLog_(propId, 'CREATED', `Prop started — ${newProp.propType} in ${newProp.substrate}`);
+            demoPushPropLog_(propId, 'CREATED', newProp.isGraft ? `Graft started — ${newProp.graftTechnique || 'Graft'}` : `Prop started — ${newProp.propType} in ${newProp.substrate}`);
             return Promise.resolve({ ok: true, propId });
         }
         var gasPayload = Object.assign({}, payload);
@@ -10367,7 +10373,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         if (!statusOk) return false;
         if (propTab === 'all') return true;
         if (propTab === 'hybrid') return !!p.hybridType;
-        if (propTab === 'graft') return !!p.isGraft;
+        if (propTab === 'graft') return !!(p.isGraft || p.propType === 'Graft');
         if (propTab === 'seed') return !p.hybridType && !p.isGraft && p.propType && p.propType.toLowerCase().indexOf('seed') !== -1;
         if (propTab === 'cutting') return !p.hybridType && !p.isGraft && p.propType && (
             p.propType.toLowerCase().indexOf('cutting') !== -1 ||
@@ -10429,6 +10435,9 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         }
         setFormStatus({ type: 'loading', message: 'Creating...' });
         let payload = Object.assign(Object.assign({}, form), { startDate: form.startDate || new Date().toISOString().slice(0, 10) });
+        if (form.isGraft) {
+            payload = Object.assign(Object.assign({}, payload), { genus: form.scionGenus || '', species: form.scionSpecies || '', propType: 'Graft' });
+        }
         if (form.hybridType) {
             const mGenus = form.motherGenus.trim() || form.motherFreetext.trim();
             const fGenus = form.fatherGenus.trim() || form.fatherFreetext.trim();
@@ -10857,6 +10866,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             const isOpen = openPropId === prop.propId;
             const days = daysSince(prop.startDate);
             const sc = STATUS_COLORS[prop.status] || STATUS_COLORS['Trying'];
+            const isGraft = !!(prop.isGraft || prop.propType === 'Graft');
             const isFailed = prop.status === 'Failed';
             const isGraduated = prop.status === 'Graduated';
             const isSold = prop.status === 'Sold';
@@ -10867,12 +10877,12 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
                             prop.hybridType && React.createElement("span", { style: { fontSize: '14px' } }, "\uD83E\uDDEC"),
-                            prop.isGraft && React.createElement("span", { style: { fontSize: '14px' } }, "\uD83D\uDD17"),
+                            isGraft && React.createElement("span", { style: { fontSize: '14px' } }, "\uD83D\uDD17"),
                             React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: theme.txtP, fontStyle: prop.species ? 'italic' : 'normal' }) },
-                                prop.isGraft
+                                isGraft
                                     ? `${prop.scionGenus || prop.genus || '?'}${prop.scionSpecies ? ' ' + prop.scionSpecies : ''} \u00D7 ${prop.rootstockGenus || '?'}${prop.rootstockSpecies ? ' ' + prop.rootstockSpecies : ''}`
                                     : prop.hybridType && prop.nothogenus ? prop.nothogenus : prop.genus,
-                                !prop.isGraft && prop.species ? ` ${prop.species}` : ''),
+                                !isGraft && prop.species ? ` ${prop.species}` : ''),
                             statusBadge(prop.status),
                             prop.hybridType && prop.generation && (() => {
                                 const c = genBadgeColor(prop.generation);
@@ -10882,11 +10892,11 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 "\u2192 UID ",
                                 prop.graduatedUID))),
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
-                            prop.isGraft
-                                ? `${prop.graftTechnique || 'Graft'} · ${prop.startDate || ''}${days !== null ? ` · Day ${days}` : ''}`
+                            isGraft
+                                ? `${prop.graftTechnique || 'Graft'} · Day ${days !== null ? days : '?'}`
                                 : prop.hybridType
                                     ? `${prop.pollinationMethod || 'Hand pollinated'} · ${prop.crossDate || prop.startDate || ''}`
-                                    : `${prop.propType} · ${prop.substrate}${days !== null ? ` · Day ${days}` : ''}`,
+                                    : `${prop.propType}${prop.substrate ? ' · ' + prop.substrate : ''}${days !== null ? ` · Day ${days}` : ''}`,
                             prop.hybridType && prop.motherGenus && prop.fatherGenus && (React.createElement("span", null,
                                 " \u00B7 \u2640 ",
                                 prop.motherGenus,
@@ -10896,17 +10906,17 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 prop.fatherGenus,
                                 " ",
                                 prop.fatherSpecies || '')),
-                            !prop.hybridType && !prop.isGraft && prop.parentUID && React.createElement("span", null,
+                            !prop.hybridType && !isGraft && prop.parentUID && React.createElement("span", null,
                                 " \u00B7 Child of ",
                                 prop.parentUID))),
                     React.createElement("span", { style: { color: theme.txtS, fontSize: 14 } }, isOpen ? 'Γû▓' : 'Γû╝')),
                 isOpen && (React.createElement("div", { style: { borderTop: `2px solid ${theme.rowBorder}`, padding: '12px' } },
                     /* ── PROGRESS STEPPER ── */
                     !isDone && (React.createElement("div", { style: { marginBottom: 12 } },
-                        React.createElement("div", { style: { display: 'flex', gap: 0 } }, (prop.isGraft ? ['Trying', 'Callusing', 'Fused'] : STEPS).map((step, i) => {
+                        React.createElement("div", { style: { display: 'flex', gap: 0 } }, (isGraft ? ['Trying', 'Callusing', 'Fused'] : STEPS).map((step, i) => {
                             const done = i < curStep;
                             const active = i === curStep;
-                            const stepList = prop.isGraft ? ['Trying', 'Callusing', 'Fused'] : STEPS;
+                            const stepList = isGraft ? ['Trying', 'Callusing', 'Fused'] : STEPS;
                             return (React.createElement("div", { key: step, style: { flex: 1, textAlign: 'center', padding: '6px 4px', border: `2px solid ${theme.cardBorder}`, borderRight: i < stepList.length - 1 ? 'none' : `2px solid ${theme.cardBorder}`, background: done ? theme.btnP.bg : active ? theme.rowBg : 'transparent' } },
                                 React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: done ? theme.btnP.text : active ? theme.txtP : theme.txtS }) },
                                     done ? '✓ ' : active ? '▶ ' : '',
@@ -10931,7 +10941,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 }, isEditing ? 'Γ£ò Cancel' : '\u270F\uFE0F Edit')),
                             /* display mode */
                             !isEditing && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', padding: '0' } },
-                                (prop.isGraft
+                                (isGraft
                                     ? [
                                         ['Scion', `${prop.scionGenus || prop.genus || '—'}${prop.scionSpecies ? ' ' + prop.scionSpecies : ''}`],
                                         ['Rootstock', `${prop.rootstockGenus || '—'}${prop.rootstockSpecies ? ' ' + prop.rootstockSpecies : ''}`],
