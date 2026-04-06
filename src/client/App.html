@@ -8021,25 +8021,21 @@ function AddScreen({ prefill, openMode }) {
                         ),
                         React.createElement("div", { style: { padding: '8px 10px', border: '2px solid ' + theme.rowBorder, marginBottom: 8, borderLeft: '4px solid #2E6A18' } },
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#2E6A18', marginBottom: 6 }) }, "\uD83C\uDF3F Scion (top / bud)"),
-                            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
-                                React.createElement("div", null,
-                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Genus *"),
-                                    React.createElement("input", { type: "text", value: propScionGenus, onChange: function(e) { setPropScionGenus(e.target.value); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
-                                React.createElement("div", null,
-                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Species"),
-                                    React.createElement("input", { type: "text", value: propScionSpecies, onChange: function(e) { setPropScionSpecies(e.target.value); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
-                            )
+                            React.createElement(CommonNameSearch, { onSelect: function(r) { setPropScionGenus(r.genus || ''); setPropScionSpecies(r.species || ''); }, theme: theme, pxS: pxS }),
+                            React.createElement(GenusAutocompleteInput, {
+                                genusValue: propScionGenus, speciesValue: propScionSpecies,
+                                onGenusChange: setPropScionGenus, onSpeciesChange: setPropScionSpecies,
+                                theme: theme, pxS: pxS, genusPlaceholder: 'e.g. Monstera', speciesPlaceholder: 'e.g. deliciosa'
+                            })
                         ),
                         React.createElement("div", { style: { padding: '8px 10px', border: '2px solid ' + theme.rowBorder, marginBottom: 8, borderLeft: '4px solid #5A3808' } },
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#5A3808', marginBottom: 6 }) }, "\uD83E\uDEB5 Rootstock (bottom / host)"),
-                            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
-                                React.createElement("div", null,
-                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Genus"),
-                                    React.createElement("input", { type: "text", value: propRootstockGenus, onChange: function(e) { setPropRootstockGenus(e.target.value); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
-                                React.createElement("div", null,
-                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 2 }) }, "Species"),
-                                    React.createElement("input", { type: "text", value: propRootstockSpecies, onChange: function(e) { setPropRootstockSpecies(e.target.value); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
-                            )
+                            React.createElement(CommonNameSearch, { onSelect: function(r) { setPropRootstockGenus(r.genus || ''); setPropRootstockSpecies(r.species || ''); }, theme: theme, pxS: pxS }),
+                            React.createElement(GenusAutocompleteInput, {
+                                genusValue: propRootstockGenus, speciesValue: propRootstockSpecies,
+                                onGenusChange: setPropRootstockGenus, onSpeciesChange: setPropRootstockSpecies,
+                                theme: theme, pxS: pxS, genusPlaceholder: 'e.g. Gymnocalycium', speciesPlaceholder: 'e.g. mihanovichii'
+                            })
                         ),
                         React.createElement("div", { style: { marginBottom: 8 } },
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Technique"),
@@ -10697,6 +10693,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#2E6A18', marginBottom: 6 }) }, "\uD83C\uDF3F Scion (top / bud)"),
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Search collection or enter name:"),
                         React.createElement(SpecimenSearchInput, { placeholder: 'Search scion plant\u2026', value: form.scionUID || '', onChange: function(uid, plant) { setForm(function(p) { return Object.assign({}, p, { scionUID: uid ? String(uid) : '', scionGenus: plant && plant.genus ? plant.genus : p.scionGenus, scionSpecies: plant && (plant.taxon || plant.species) ? (plant.taxon || plant.species) : p.scionSpecies }); }); }, theme: theme, pxS: pxS }),
+                        React.createElement(CommonNameSearch, { onSelect: function(r) { setForm(function(p) { return Object.assign({}, p, { scionGenus: r.genus || '', scionSpecies: r.species || '' }); }); }, theme: theme, pxS: pxS }),
                         form.scionGenus && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, marginTop: 3 }) }, '\uD83C\uDF3F ' + form.scionGenus + (form.scionSpecies ? ' ' + form.scionSpecies : '') + ' \u00B7 auto-filled'),
                         React.createElement(GenusAutocompleteInput, {
                             genusValue: form.scionGenus || '',
@@ -10712,6 +10709,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#5A3808', marginBottom: 6 }) }, "\uD83E\uDEB5 Rootstock (bottom / host)"),
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Search collection or enter name:"),
                         React.createElement(SpecimenSearchInput, { placeholder: 'Search rootstock plant\u2026', value: form.rootstockUID || '', onChange: function(uid, plant) { setForm(function(p) { return Object.assign({}, p, { rootstockUID: uid ? String(uid) : '', rootstockGenus: plant && plant.genus ? plant.genus : p.rootstockGenus, rootstockSpecies: plant && (plant.taxon || plant.species) ? (plant.taxon || plant.species) : p.rootstockSpecies }); }); }, theme: theme, pxS: pxS }),
+                        React.createElement(CommonNameSearch, { onSelect: function(r) { setForm(function(p) { return Object.assign({}, p, { rootstockGenus: r.genus || '', rootstockSpecies: r.species || '' }); }); }, theme: theme, pxS: pxS }),
                         form.rootstockGenus && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, marginTop: 3 }) }, '\uD83E\uDEB5 ' + form.rootstockGenus + (form.rootstockSpecies ? ' ' + form.rootstockSpecies : '') + ' \u00B7 auto-filled'),
                         React.createElement(GenusAutocompleteInput, {
                             genusValue: form.rootstockGenus || '',
