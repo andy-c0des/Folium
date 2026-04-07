@@ -4753,6 +4753,8 @@ function PlantDataProvider({ children }) {
     const [demoHomeData, setDemoHomeData] = useState(() => null);
     const [demoProps, setDemoProps] = useState(() => DEMO_PROPS_SEED.map(p => (Object.assign({}, p))));
     const [demoPropTimelines, setDemoPropTimelines] = useState(() => (Object.assign({}, DEMO_PROP_TIMELINES_SEED)));
+    const [demoGrafts, setDemoGrafts] = useState([]);
+    const [demoGraftTimelines, setDemoGraftTimelines] = useState({});
     const [demoArchive, setDemoArchive] = useState(() => DEMO_ARCHIVE_SEED.map(a => (Object.assign({}, a))));
     const [demoEnvironments, setDemoEnvironments] = useState(() => DEMO_ENVIRONMENTS_SEED.map(e => (Object.assign({}, e))));
     const [demoLocationEnvMap, setDemoLocationEnvMap] = useState(() => (Object.assign({}, DEMO_LOCATION_ENV_MAP)));
@@ -4914,6 +4916,123 @@ function PlantDataProvider({ children }) {
     };
     const demoPropsRef = useRef(demoProps);
     demoPropsRef.current = demoProps;
+    const demoGraftsRef = useRef(demoGrafts);
+    demoGraftsRef.current = demoGrafts;
+    const demoPushGraftLog_ = (graftId, action, details) => {
+        const item = { graftId: String(graftId), ts: demoNowStamp_(), action, details: String(details || '').trim() };
+        setDemoGraftTimelines(prev => {
+            const next = Object.assign({}, (prev || {}));
+            const arr = Array.isArray(next[graftId]) ? next[graftId].slice() : [];
+            arr.unshift(item);
+            next[graftId] = arr.slice(0, 60);
+            return next;
+        });
+    };
+    const getGrafts = () => DEMO_MODE ? Promise.resolve((demoGraftsRef.current || []).map(g => Object.assign({}, g))) : gasCall('plantosGetGrafts').then(r => Array.isArray(r) ? r : []);
+    const getGraftTimeline = (graftId) => {
+        if (DEMO_MODE) return Promise.resolve(demoGraftTimelines[graftId] || []);
+        return gasCall('plantosGetGraftTimeline', graftId).then(res => (res && res.items) ? res.items : (Array.isArray(res) ? res : []));
+    };
+    const createGraft = (payload) => {
+        if (DEMO_MODE) {
+            const maxN = (demoGraftsRef.current || []).reduce((m, g) => Math.max(m, Number(String(g.graftId || '').replace('GRAFT', '')) || 0), 0);
+            const graftId = 'GRAFT' + String(maxN + 1).padStart(3, '0');
+            const newGraft = {
+                graftId,
+                scionGenus:       String(payload.scionGenus || '').trim(),
+                scionSpecies:     String(payload.scionSpecies || '').trim(),
+                rootstockGenus:   String(payload.rootstockGenus || '').trim(),
+                rootstockSpecies: String(payload.rootstockSpecies || '').trim(),
+                graftTechnique:   String(payload.graftTechnique || '').trim(),
+                scionUID:         String(payload.scionUID || '').trim(),
+                rootstockUID:     String(payload.rootstockUID || '').trim(),
+                notes:            String(payload.notes || '').trim(),
+                status: 'Trying',
+                startDate: String(payload.startDate || new Date().toISOString().slice(0,10)).trim(),
+            };
+            setDemoGrafts(prev => [newGraft, ...(prev || [])]);
+            demoPushGraftLog_(graftId, 'CREATED', 'Graft started — ' + (newGraft.graftTechnique || 'Graft'));
+            return Promise.resolve({ ok: true, graftId });
+        }
+        return gasCall('plantosCreateGraft', payload);
+    };
+    const updateGraftStatus = (graftId, status, failCause, failCauseDetail) => {
+        if (DEMO_MODE) {
+            setDemoGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status, failCause: failCause || null, failCauseDetail: failCauseDetail || null })));
+            let detail = `Status → ${status}`;
+            if (failCause) detail += `. Cause: ${failCause}`;
+            demoPushGraftLog_(graftId, 'STATUS', detail);
+            return Promise.resolve({ ok: true });
+        }
+        return gasCall('plantosUpdateGraftStatus', graftId, status, failCause || '', failCauseDetail || '');
+    };
+    const addGraftNote = (graftId, note, photoUrl) => {
+        if (DEMO_MODE) {
+            const action = photoUrl ? 'PHOTO' : 'NOTE';
+            if (photoUrl) {
+                const item = { graftId: String(graftId), ts: demoNowStamp_(), action, details: String(note || '').trim(), photoUrl: String(photoUrl) };
+                setDemoGraftTimelines(prev => {
+                    const next = Object.assign({}, (prev || {}));
+                    const arr = Array.isArray(next[graftId]) ? next[graftId].slice() : [];
+                    arr.unshift(item);
+                    next[graftId] = arr.slice(0, 100);
+                    return next;
+                });
+            } else {
+                demoPushGraftLog_(graftId, action, String(note || '').trim());
+            }
+            return Promise.resolve({ ok: true });
+        }
+        return gasCall('plantosAddGraftNote', graftId, note, photoUrl || '');
+    };
+    const uploadGraftPhoto = (graftId, dataUrl, name) => {
+        if (DEMO_MODE) return Promise.resolve({ ok: true, thumbUrl: dataUrl, viewUrl: dataUrl, name: name || 'photo.jpg' });
+        return gasCall('plantosUploadGraftPhoto', graftId, dataUrl, name || 'photo.jpg');
+    };
+    const graduateGraft = (graftId, specimenPayload) => {
+        if (DEMO_MODE) {
+            const maxUid = (demoPlants || []).reduce((m, p) => Math.max(m, Number(p.uid) || 0), 69000000);
+            const newUid = String(maxUid + 1).padStart(8, '0');
+            const graft = (demoGraftsRef.current || []).find(g => g.graftId === graftId);
+            if (!graft) return Promise.resolve({ ok: false });
+            const newPlant = {
+                uid: newUid,
+                nickname: String(specimenPayload.nickname || '').trim(),
+                genus: graft.scionGenus, taxon: graft.scionSpecies, species: graft.scionSpecies,
+                location: String(specimenPayload.location || '').trim(),
+                potSize: String(specimenPayload.potSize || '').trim(),
+                birthday: demoIso_(new Date()),
+                everyDays: String(specimenPayload.everyDays || '').trim(),
+                fertilizeEveryDays: String(specimenPayload.fertilizeEveryDays || '').trim(),
+                lastWatered: '', lastFertilized: '', notes: '', parentPropId: graftId,
+                gs: cleanDisplayName(`${graft.scionGenus} ${graft.scionSpecies}`.trim()),
+                primary: String(specimenPayload.nickname || '').trim() || cleanDisplayName(`${graft.scionGenus} ${graft.scionSpecies}`.trim()) || newUid,
+                due: '',
+            };
+            setDemoPlants(prev => [...(prev || []), newPlant]);
+            setDemoGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Graduated', graduatedUID: newUid })));
+            demoPushGraftLog_(graftId, 'STATUS', `Graduated → Specimen UID ${newUid}`);
+            return Promise.resolve({ ok: true, uid: newUid });
+        }
+        var gp = Object.assign({}, specimenPayload);
+        return gasCall('plantosGraduateGraft', graftId, gp);
+    };
+    const sellGraft = (graftId, priceSold) => {
+        if (DEMO_MODE) {
+            setDemoGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Sold', priceSold: String(priceSold || ''), soldDate: new Date().toISOString().slice(0,10) })));
+            const priceStr = priceSold ? ` for ${priceSold}` : '';
+            demoPushGraftLog_(graftId, 'SOLD', `Graft sold${priceStr}.`);
+            return Promise.resolve({ ok: true });
+        }
+        return gasCall('plantosSellGraft', graftId, priceSold || '');
+    };
+    const updateGraft = (graftId, patch) => {
+        if (DEMO_MODE) {
+            setDemoGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, patch)));
+            return Promise.resolve({ ok: true });
+        }
+        return gasCall('plantosUpdateGraft', graftId, patch);
+    };
     const getProps = () => DEMO_MODE ? Promise.resolve((demoPropsRef.current || []).map(p => Object.assign({}, p))) : gasCall('plantosGetProps').then(parseGasProps);
     const getPropTimeline = (propId) => {
         if (DEMO_MODE)
@@ -5416,6 +5535,8 @@ function PlantDataProvider({ children }) {
         createPlant, updatePlant, setNickname, addLocation,
         quickLog, batchWater, batchFertilize, search, getAllPhotos, getLatestPhoto, uploadPlantPhoto,
         getProps, getPropTimeline, createProp, updatePropStatus, addPropNote, uploadPropPhoto, graduateProp,
+        getGrafts, getGraftTimeline, createGraft, updateGraftStatus, addGraftNote, uploadGraftPhoto, graduateGraft, sellGraft, updateGraft,
+        demoGrafts, demoGraftTimelines,
         sellProp: (propId, priceSold) => {
             setDemoProps(prev => (prev || []).map(p => p.propId !== propId ? p : Object.assign({}, p, { status: 'Sold', priceSold: String(priceSold || ''), soldDate: new Date().toISOString().slice(0,10) })));
             const priceStr = priceSold ? ` for ${priceSold}` : '';
@@ -5486,6 +5607,16 @@ function PlantDataProvider({ children }) {
         uploadPropPhoto: (propId, dataUrl, name) => gasCall('plantosUploadPropPhoto', propId, dataUrl, name || 'photo.jpg'),
         graduateProp: (propId, specimenPayload) => { var gp = Object.assign({}, specimenPayload); if (gp.generation && typeof gp.generation === 'object') gp.generation = gp.generation.str || ''; return gasCall('plantosGraduateProp', propId, gp); },
         sellProp: (propId, priceSold) => gasCall('plantosSellProp', propId, priceSold || ''),
+        getGrafts: () => gasCall('plantosGetGrafts').then(r => Array.isArray(r) ? r : []).catch(() => []),
+        getGraftTimeline: (graftId) => gasCall('plantosGetGraftTimeline', graftId).then(r => (r && r.items) ? r.items : (Array.isArray(r) ? r : [])).catch(() => []),
+        createGraft: (payload) => gasCall('plantosCreateGraft', payload),
+        updateGraftStatus: (graftId, status, failCause, failCauseDetail) => gasCall('plantosUpdateGraftStatus', graftId, status, failCause || '', failCauseDetail || ''),
+        updateGraft: (graftId, patch) => gasCall('plantosUpdateGraft', graftId, patch),
+        addGraftNote: (graftId, note, photoUrl) => gasCall('plantosAddGraftNote', graftId, note, photoUrl || ''),
+        uploadGraftPhoto: (graftId, dataUrl, name) => gasCall('plantosUploadGraftPhoto', graftId, dataUrl, name || 'photo.jpg'),
+        graduateGraft: (graftId, specimenPayload) => gasCall('plantosGraduateGraft', graftId, specimenPayload),
+        sellGraft: (graftId, priceSold) => gasCall('plantosSellGraft', graftId, priceSold || ''),
+        demoGrafts: [], demoGraftTimelines: {},
         getEnvironments: () => gasCall('plantosGetEnvironments').then(r => Array.isArray(r) ? r : []).catch(() => []),
         getLocationEnvMap: () => gasCall('plantosGetLocationEnvMap').then(r => (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}).catch(() => ({})),
         getLocationConditions: () => gasCall('plantosGetLocationConditions').then(r => (r && typeof r === 'object') ? r : {}).catch(() => ({})),
@@ -9454,7 +9585,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                             )));
                     })))))))),
             activeTab === 'props' && React.createElement(PropsSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen }),
-            activeTab === 'grafts' && React.createElement(PropsSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen, defaultPropTab: 'graft' }),
+            activeTab === 'grafts' && React.createElement(GraftSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen }),
             activeTab === 'phylo' && React.createElement(PhyloScreen, { inline: true }),
             React.createElement("div", { className: "mt-4 flex gap-2" },
                 (activeTab === 'props' || activeTab === 'grafts')
@@ -10416,10 +10547,6 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         parentUID: (prefill && prefill.parentUID) || '',
         notes: '',
         hybridType: false,
-        isGraft: defaultPropTab === 'graft',
-        scionUID: '', scionGenus: '', scionSpecies: '',
-        rootstockUID: '', rootstockGenus: '', rootstockSpecies: '',
-        graftTechnique: 'Approach graft',
         motherUID: '', motherGenus: '', motherSpecies: '', motherFreetext: '',
         fatherUID: '', fatherGenus: '', fatherSpecies: '', fatherFreetext: '',
         pollinationMethod: 'Hand pollinated',
@@ -10453,7 +10580,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const [selectedStatus, setSelectedStatus] = useState('');
     const [showPhotoPrompt, setShowPhotoPrompt] = useState(null);
     const [filterStatus, setFilterStatus] = useState('active'); // 'active' | 'all'
-    const [propTab, setPropTab] = useState(defaultPropTab || 'all'); // 'all' | 'cutting' | 'seed' | 'hybrid' | 'graft'
+    const [propTab, setPropTab] = useState(defaultPropTab || 'all'); // 'all' | 'cutting' | 'seed' | 'hybrid'
     const [parentInCollection, setParentInCollection] = useState(
         prefill && prefill.parentUID ? true : null
     );
@@ -10500,9 +10627,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         if (!statusOk) return false;
         if (propTab === 'all') return true;
         if (propTab === 'hybrid') return !!p.hybridType;
-        if (propTab === 'graft') return !!(p.isGraft || p.propType === 'Graft');
-        if (propTab === 'seed') return !p.hybridType && !p.isGraft && p.propType && p.propType.toLowerCase().indexOf('seed') !== -1;
-        if (propTab === 'cutting') return !p.hybridType && !p.isGraft && p.propType && (
+        if (propTab === 'seed') return !p.hybridType && p.propType && p.propType.toLowerCase().indexOf('seed') !== -1;
+        if (propTab === 'cutting') return !p.hybridType && p.propType && (
             p.propType.toLowerCase().indexOf('cutting') !== -1 ||
             p.propType.toLowerCase().indexOf('wet stick') !== -1 ||
             p.propType.toLowerCase().indexOf('corm') !== -1 ||
@@ -10548,12 +10674,6 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             if (crossCheck.warn) setCrossWarning(crossCheck.warn);
             else setCrossWarning(null);
         }
-        else if (form.isGraft) {
-            if (!String(form.scionGenus || '').trim()) {
-                setFormStatus({ type: 'error', message: 'Scion genus is required.' });
-                return;
-            }
-        }
         else {
             if (!form.genus.trim() || !form.propType) {
                 setFormStatus({ type: 'error', message: 'Genus and prop type are required.' });
@@ -10562,9 +10682,6 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         }
         setFormStatus({ type: 'loading', message: 'Creating...' });
         let payload = Object.assign(Object.assign({}, form), { startDate: form.startDate || new Date().toISOString().slice(0, 10) });
-        if (form.isGraft) {
-            payload = Object.assign(Object.assign({}, payload), { genus: form.scionGenus || '', species: form.scionSpecies || '', propType: 'Graft' });
-        }
         if (form.hybridType) {
             const mGenus = form.motherGenus.trim() || form.motherFreetext.trim();
             const fGenus = form.fatherGenus.trim() || form.fatherFreetext.trim();
@@ -10588,10 +10705,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             setFormStatus({ type: 'success', message: form.hybridType ? 'Hybrid cross logged! 🧬' : 'Prop created! 🌱' });
             setShowForm(false);
             setForm({ genus: '', species: '', propType: 'Stem cutting', substrate: 'Sphagnum moss', startDate: '', parentUID: '', notes: '',
-                hybridType: false, isGraft: false,
-                scionUID: '', scionGenus: '', scionSpecies: '',
-                rootstockUID: '', rootstockGenus: '', rootstockSpecies: '',
-                graftTechnique: 'Approach graft',
+                hybridType: false,
                 motherUID: '', motherGenus: '', motherSpecies: '', motherFreetext: '',
                 fatherUID: '', fatherGenus: '', fatherSpecies: '', fatherFreetext: '',
                 pollinationMethod: 'Hand pollinated', crossDate: '', nothospeciesEpithet: '', generationOverride: '' });
@@ -10746,7 +10860,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     function stepIdx(status) { const i = STEPS.indexOf(status); return i >= 0 ? i : (status === 'Graduated' ? 3 : (status === 'Failed' ? -1 : 0)); }
     return (React.createElement("div", { style: { paddingTop: 24 } },
         React.createElement("div", { style: { marginBottom: 16 } },
-            React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, defaultPropTab === 'graft' ? "\uD83D\uDD17 Graft Bench" : "\uD83C\uDF31 Propagation Lab"),
+            React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { fontSize: isSmall ? '11px' : '13px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, "\uD83C\uDF31 Propagation Lab"),
             successRate !== null && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', color: theme.txtS }) },
                 succeededCount,
                 "/",
@@ -10806,10 +10920,10 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, 'Start Date'),
                             React.createElement("input", { type: "date", value: form.startDate || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { startDate: e.target.value }))), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
-                        !form.isGraft && React.createElement("div", null,
+                        React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Prop Type *"),
                             React.createElement("select", { value: form.propType, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { propType: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_TYPES.map(t => React.createElement("option", { key: t, value: t }, t)))),
-                        !form.isGraft && React.createElement("div", null,
+                        React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Substrate"),
                             React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_SUBSTRATES.map(s => React.createElement("option", { key: s, value: s }, s)))),
                         React.createElement("div", { className: 'col-span-2' },
@@ -10839,10 +10953,10 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                     React.createElement("input", { type: "text", placeholder: "e.g. Monstera deliciosa (neighbour's plant)", value: form.parentFreetext || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { parentFreetext: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
                                     React.createElement("button", { type: "button", onClick: () => setParentInCollection(null), style: Object.assign(Object.assign({}, pxS), { marginTop: 4, fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer', color: theme.txtS, textDecoration: 'underline', padding: 0 }) }, '\< change answer'))
                                 : React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, '\u2014')),
-                        !form.isGraft && React.createElement("div", null,
+                        React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Prop Type *"),
                             React.createElement("select", { value: form.propType, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { propType: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_TYPES.map(t => React.createElement("option", { key: t, value: t }, t)))),
-                        !form.isGraft && React.createElement("div", null,
+                        React.createElement("div", null,
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Substrate"),
                             React.createElement("select", { value: form.substrate, onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { substrate: e.target.value }))), className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }, PROP_SUBSTRATES.map(s => React.createElement("option", { key: s, value: s }, s))))),
                     React.createElement("div", { style: { marginTop: 8 } },
@@ -10850,59 +10964,6 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "Describe the cutting, source, conditions...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
                 )
             ,
-            parentInCollection !== null && React.createElement("div", { style: { marginTop: 10, paddingTop: 10, borderTop: '2px solid ' + theme.rowBorder } },
-                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: theme.txtS, marginBottom: 8 }) }, "\uD83D\uDD17 IS IT A GRAFT?"),
-                React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: form.isGraft ? 10 : 0 } },
-                    ['No', 'Yes'].map(function(v) {
-                        var active = v === 'Yes' ? !!form.isGraft : !form.isGraft;
-                        return React.createElement("button", { key: v, type: "button",
-                            onClick: function() { setForm(function(p) { return Object.assign({}, p, { isGraft: v === 'Yes' }); }); },
-                            style: Object.assign({}, pxS, { flex: 1, padding: '8px', fontSize: '12px', fontWeight: 900, cursor: 'pointer',
-                                border: '3px solid ' + (active ? theme.btnP.border : theme.cardBorder),
-                                background: active ? theme.btnP.bg : theme.cardBg,
-                                color: active ? theme.btnP.text : theme.txtS }) }, v);
-                    })
-                ),
-                form.isGraft && React.createElement(React.Fragment, null,
-                    React.createElement("div", { style: { padding: '8px 10px', border: '2px solid ' + theme.rowBorder, marginBottom: 8, borderLeft: '4px solid #2E6A18' } },
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#2E6A18', marginBottom: 6 }) }, "\uD83C\uDF3F Scion (top / bud)"),
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Search collection or enter name:"),
-                        React.createElement(SpecimenSearchInput, { placeholder: 'Search scion plant\u2026', value: form.scionUID || '', onChange: function(uid, plant) { setForm(function(p) { return Object.assign({}, p, { scionUID: uid ? String(uid) : '', scionGenus: plant && plant.genus ? plant.genus : p.scionGenus, scionSpecies: plant && (plant.taxon || plant.species) ? (plant.taxon || plant.species) : p.scionSpecies }); }); }, theme: theme, pxS: pxS }),
-                        form.scionGenus && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, marginTop: 3 }) }, '\uD83C\uDF3F ' + form.scionGenus + (form.scionSpecies ? ' ' + form.scionSpecies : '') + ' \u00B7 auto-filled'),
-                        React.createElement(GenusAutocompleteInput, {
-                            genusValue: form.scionGenus || '',
-                            speciesValue: form.scionSpecies || '',
-                            onGenusChange: function(v) { setForm(function(p) { return Object.assign({}, p, { scionGenus: v }); }); },
-                            onSpeciesChange: function(v) { setForm(function(p) { return Object.assign({}, p, { scionSpecies: v }); }); },
-                            theme: theme, pxS: pxS,
-                            genusPlaceholder: 'e.g. Monstera',
-                            speciesPlaceholder: 'e.g. deliciosa'
-                        })
-                    ),
-                    React.createElement("div", { style: { padding: '8px 10px', border: '2px solid ' + theme.rowBorder, marginBottom: 8, borderLeft: '4px solid #5A3808' } },
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#5A3808', marginBottom: 6 }) }, "\uD83E\uDEB5 Rootstock (bottom / host)"),
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 4 }) }, "Search collection or enter name:"),
-                        React.createElement(SpecimenSearchInput, { placeholder: 'Search rootstock plant\u2026', value: form.rootstockUID || '', onChange: function(uid, plant) { setForm(function(p) { return Object.assign({}, p, { rootstockUID: uid ? String(uid) : '', rootstockGenus: plant && plant.genus ? plant.genus : p.rootstockGenus, rootstockSpecies: plant && (plant.taxon || plant.species) ? (plant.taxon || plant.species) : p.rootstockSpecies }); }); }, theme: theme, pxS: pxS }),
-                        form.rootstockGenus && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, marginTop: 3 }) }, '\uD83E\uDEB5 ' + form.rootstockGenus + (form.rootstockSpecies ? ' ' + form.rootstockSpecies : '') + ' \u00B7 auto-filled'),
-                        React.createElement(GenusAutocompleteInput, {
-                            genusValue: form.rootstockGenus || '',
-                            speciesValue: form.rootstockSpecies || '',
-                            onGenusChange: function(v) { setForm(function(p) { return Object.assign({}, p, { rootstockGenus: v }); }); },
-                            onSpeciesChange: function(v) { setForm(function(p) { return Object.assign({}, p, { rootstockSpecies: v }); }); },
-                            theme: theme, pxS: pxS,
-                            genusPlaceholder: 'e.g. Gymnocalycium',
-                            speciesPlaceholder: 'e.g. mihanovichii'
-                        })
-                    ),
-                    React.createElement("div", null,
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Graft Technique"),
-                        React.createElement("select", { value: form.graftTechnique || 'Approach graft', onChange: function(e) { setForm(function(p) { return Object.assign({}, p, { graftTechnique: e.target.value }); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
-                            ['Approach graft', 'Cleft graft', 'Side graft', 'Wedge graft', 'T-bud graft', 'Saddle graft', 'Thread graft', 'Hypocotyl graft', 'Other'].map(function(t) { return React.createElement("option", { key: t, value: t }, t); })
-                        )
-                    )
-                )
-            )
-        )
         ) : (
             React.createElement(React.Fragment, null,
                 React.createElement("div", { style: { padding: '8px 10px', border: `2px solid ${theme.rowBorder}`, marginBottom: 8, borderLeft: `4px solid #c0392b` } },
@@ -10976,15 +11037,14 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Notes"),
                     React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "e.g. 4 seeds set, germination in ~3 weeks...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })))),
             (form.hybridType || parentInCollection !== null) && React.createElement("div", { style: { marginTop: 8 } },
-                React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : form.isGraft ? '🔗 Record Graft' : '🌱 Start Prop')))),
+                React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : '🌱 Start Prop')))),
         (props || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 8 } }, [['active', 'Active'], ['all', 'All']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setFilterStatus(id), style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', fontWeight: 900, padding: '5px 12px', border: `2px solid ${filterStatus === id ? theme.btnP.border : theme.rowBorder}`, background: filterStatus === id ? theme.btnP.bg : 'transparent', color: filterStatus === id ? theme.btnP.text : theme.txtS, cursor: 'pointer' }) }, label))))),
         !showForm && !defaultPropTab && React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
             [
                 { id: 'all', label: '🌱 All' },
                 { id: 'cutting', label: '\u2702 Cuttings' },
                 { id: 'seed', label: '🫘 Seeds' },
-                { id: 'hybrid', label: '🔬 Hybrids' },
-                { id: 'graft', label: '🔗 Grafts' }
+                { id: 'hybrid', label: '🔬 Hybrids' }
             ].map(function(t) {
                 var active = propTab === t.id;
                 return React.createElement('button', {
@@ -11007,11 +11067,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             const isOpen = openPropId === prop.propId;
             const days = daysSince(prop.startDate);
             const sc = STATUS_COLORS[prop.status] || STATUS_COLORS['Trying'];
-            const isGraft = !!(prop.isGraft || prop.propType === 'Graft');
-            const GRAFT_STEPS = ['Trying', 'Callusing', 'Fused', 'Rooted', 'Potted Up'];
-            const propSteps = isGraft ? GRAFT_STEPS : STEPS;
-            const curPropStep = propSteps.indexOf(prop.status);
-            const availableStatuses = [...propSteps.filter(function(s, i){ return i > curPropStep; }), 'Failed'];
+            const curPropStep = STEPS.indexOf(prop.status);
+            const availableStatuses = [...STEPS.filter(function(s, i){ return i > curPropStep; }), 'Failed'];
             const isFailed = prop.status === 'Failed';
             const isGraduated = prop.status === 'Graduated';
             const isSold = prop.status === 'Sold';
@@ -11022,12 +11079,9 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
                             prop.hybridType && React.createElement("span", { style: { fontSize: '14px' } }, "\uD83E\uDDEC"),
-                            isGraft && React.createElement("span", { style: { fontSize: '14px' } }, "\uD83D\uDD17"),
                             React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: theme.txtP, fontStyle: prop.species ? 'italic' : 'normal' }) },
-                                isGraft
-                                    ? `${prop.scionGenus || prop.genus || '?'}${prop.scionSpecies ? ' ' + prop.scionSpecies : ''} \u00D7 ${prop.rootstockGenus || '?'}${prop.rootstockSpecies ? ' ' + prop.rootstockSpecies : ''}`
-                                    : prop.hybridType && prop.nothogenus ? prop.nothogenus : prop.genus,
-                                !isGraft && prop.species ? ` ${prop.species}` : ''),
+                                prop.hybridType && prop.nothogenus ? prop.nothogenus : prop.genus,
+                                prop.species ? ` ${prop.species}` : ''),
                             statusBadge(prop.status),
                             prop.hybridType && prop.generation && (() => {
                                 const c = genBadgeColor(prop.generation);
@@ -11037,11 +11091,9 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 "\u2192 UID ",
                                 prop.graduatedUID))),
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginTop: 2 }) },
-                            isGraft
-                                ? `${prop.graftTechnique || 'Graft'} · Day ${days !== null ? days : '?'}`
-                                : prop.hybridType
-                                    ? `${prop.pollinationMethod || 'Hand pollinated'} · ${prop.crossDate || prop.startDate || ''}`
-                                    : `${prop.propType}${prop.substrate ? ' · ' + prop.substrate : ''}${days !== null ? ` · Day ${days}` : ''}`,
+                            prop.hybridType
+                                ? `${prop.pollinationMethod || 'Hand pollinated'} · ${prop.crossDate || prop.startDate || ''}`
+                                : `${prop.propType}${prop.substrate ? ' · ' + prop.substrate : ''}${days !== null ? ` · Day ${days}` : ''}`,
                             prop.hybridType && prop.motherGenus && prop.fatherGenus && (React.createElement("span", null,
                                 " \u00B7 \u2640 ",
                                 prop.motherGenus,
@@ -11051,7 +11103,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 prop.fatherGenus,
                                 " ",
                                 prop.fatherSpecies || '')),
-                            !prop.hybridType && !isGraft && prop.parentUID && React.createElement("span", null,
+                            !prop.hybridType && prop.parentUID && React.createElement("span", null,
                                 " \u00B7 Child of ",
                                 prop.parentUID))),
                     React.createElement("span", { style: { color: theme.txtS, fontSize: 14 } }, isOpen ? '\u25BC' : '\u25B6')),
@@ -11069,26 +11121,18 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                 !isDone && React.createElement("button", { type: "button",
                                     onClick: function() {
                                         if (isEditing) { setEditPropId(null); setEditPropForm({}); }
-                                        else { setShowStatusPicker(false); setShowGraduate(false); setShowSell(false); setShowPhotoPrompt(null); setEditPropId(prop.propId); setEditPropForm({ genus: prop.scionGenus || prop.genus || '', species: prop.scionSpecies || prop.species || '', scionGenus: prop.scionGenus || '', scionSpecies: prop.scionSpecies || '', rootstockGenus: prop.rootstockGenus || '', rootstockSpecies: prop.rootstockSpecies || '', graftTechnique: prop.graftTechnique || 'Approach graft', type: prop.type || prop.propType || '', substrate: prop.substrate || '', notes: prop.notes || '' }); }
+                                        else { setShowStatusPicker(false); setShowGraduate(false); setShowSell(false); setShowPhotoPrompt(null); setEditPropId(prop.propId); setEditPropForm({ genus: prop.genus || '', species: prop.species || '', type: prop.type || prop.propType || '', substrate: prop.substrate || '', notes: prop.notes || '' }); }
                                     },
                                     style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, padding: '3px 10px', border: `2px solid ${isEditing ? '#aaa' : theme.btnP.border}`, background: isEditing ? 'transparent' : theme.btnP.bg, color: isEditing ? theme.txtS : theme.btnP.text, cursor: 'pointer' })
                                 }, isEditing ? '\u00D7 Cancel' : '\u270F\uFE0F Edit')),
                             /* display mode */
                             !isEditing && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', padding: '0' } },
-                                (isGraft
-                                    ? [
-                                        ['Scion', `${prop.scionGenus || prop.genus || '—'}${prop.scionSpecies ? ' ' + prop.scionSpecies : ''}`],
-                                        ['Rootstock', `${prop.rootstockGenus || '—'}${prop.rootstockSpecies ? ' ' + prop.rootstockSpecies : ''}`],
-                                        ['Technique', prop.graftTechnique || '—'],
-                                        ['Days', days !== null ? String(days) + 'd' : '—'],
-                                      ]
-                                    : [
-                                        ['Type', prop.propType || prop.type || '—'],
-                                        ['Substrate', prop.substrate || '—'],
-                                        ['Started', prop.startDate || '—'],
-                                        ['Days', days !== null ? String(days) + 'd' : '—'],
-                                      ]
-                                ).map(function(pair, idx) {
+                                [
+                                    ['Type', prop.propType || prop.type || '—'],
+                                    ['Substrate', prop.substrate || '—'],
+                                    ['Started', prop.startDate || '—'],
+                                    ['Days', days !== null ? String(days) + 'd' : '—'],
+                                ].map(function(pair, idx) {
                                     return React.createElement("div", { key: pair[0], style: { padding: '7px 10px', borderBottom: idx < 2 ? `1px solid ${theme.rowBorder}` : 'none', borderRight: idx % 2 === 0 ? `1px solid ${theme.rowBorder}` : 'none' } },
                                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 2 }) }, pair[0].toUpperCase()),
                                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: theme.txtP }) }, pair[1]));
@@ -11101,25 +11145,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                     React.createElement("button", { type: "button", onClick: () => navigate('plant', { uid: prop.parentUID }), style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, color: theme.btnP.bg, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }) }, parentPlantName || prop.parentUID))),
                             /* edit mode */
                             isEditing && React.createElement("div", { style: { padding: '10px' } },
-                                isGraft
-                                    ? React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
-                                        React.createElement("div", null,
-                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, "\uD83C\uDF3F SCION GENUS"),
-                                            React.createElement("input", { value: ef.scionGenus || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {scionGenus: e.target.value, genus: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                        React.createElement("div", null,
-                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, "SCION SPECIES"),
-                                            React.createElement("input", { value: ef.scionSpecies || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {scionSpecies: e.target.value, species: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                        React.createElement("div", null,
-                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, "\uD83E\uDEB5 ROOTSTOCK GENUS"),
-                                            React.createElement("input", { value: ef.rootstockGenus || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {rootstockGenus: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                        React.createElement("div", null,
-                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, "ROOTSTOCK SPECIES"),
-                                            React.createElement("input", { value: ef.rootstockSpecies || '', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {rootstockSpecies: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                        React.createElement("div", { style: { gridColumn: 'span 2' } },
-                                            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "TECHNIQUE"),
-                                            React.createElement("select", { value: ef.graftTechnique || 'Approach graft', onChange: function(e){ setEditPropForm(function(p){ return Object.assign({}, p, {graftTechnique: e.target.value}); }); }, className: "w-full border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
-                                                ['Approach graft','Cleft graft','Side graft','Wedge graft','T-bud graft','Saddle graft','Thread graft','Hypocotyl graft','Other'].map(function(t){ return React.createElement("option", {key: t, value: t}, t); }))))
-                                    : React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
+                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
                                         /* genus */
                                         React.createElement("div", null,
                                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, "GENUS"),
@@ -11338,6 +11364,432 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         }),
         !loading && filterStatus === 'active' && (props || []).some(p => ['Graduated', 'Failed', 'Sold'].includes(p.status)) && (React.createElement("div", { style: { textAlign: 'center', marginTop: 8 } },
             React.createElement("button", { type: "button", onClick: () => setFilterStatus('all'), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, "Show graduated, sold & failed props")))));
+}
+function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowForm }) {
+    const { getGrafts, getGraftTimeline, createGraft, updateGraftStatus, updateGraft, addGraftNote, uploadGraftPhoto, graduateGraft, sellGraft, getPlant } = usePlantData();
+    const { isSmall } = useScreenSize();
+    const theme = useTheme();
+    const { navigate } = useNavigation();
+    const pxS = { fontFamily: "'Press Start 2P', cursive", fontSize: '13px' };
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '10px' : '13px' };
+    const [grafts, setGrafts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [openGraftId, setOpenGraftId] = useState(null);
+    const [timeline, setTimeline] = useState([]);
+    const [editGraftId, setEditGraftId] = useState(null);
+    const [editGraftForm, setEditGraftForm] = useState({});
+    const [editGraftSaving, setEditGraftSaving] = useState(false);
+    const [editGraftStatus, setEditGraftStatus] = useState(null);
+    const [showFormLocal, setShowFormLocal] = useState(!!(prefill || showFormProp));
+    const showForm = showFormProp !== undefined ? showFormProp : showFormLocal;
+    const setShowForm = (v) => { const nv = typeof v === 'function' ? v(showForm) : v; if (onSetShowForm) onSetShowForm(nv); else setShowFormLocal(nv); };
+    const [form, setForm] = useState({
+        scionGenus: (prefill && prefill.genus) || '', scionSpecies: (prefill && prefill.species) || '',
+        scionUID: (prefill && prefill.parentUID) || '',
+        rootstockGenus: '', rootstockSpecies: '', rootstockUID: '',
+        graftTechnique: 'Approach graft',
+        startDate: new Date().toISOString().slice(0, 10), notes: '',
+    });
+    const [formStatus, setFormStatus] = useState(null);
+    const [noteText, setNoteText] = useState('');
+    const graftPhotoRef = useRef(null);
+    const [graftPhotoMsg, setGraftPhotoMsg] = useState(null);
+    const [pendingGraftPhoto, setPendingGraftPhoto] = useState(null);
+    const [showStatusPicker, setShowStatusPicker] = useState(false);
+    const [failCause, setFailCause] = useState('');
+    const [failDetail, setFailDetail] = useState('');
+    const [showGraduate, setShowGraduate] = useState(false);
+    const [gradForm, setGradForm] = useState({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' });
+    const [gradStatus, setGradStatus] = useState(null);
+    const [showSell, setShowSell] = useState(false);
+    const [sellPrice, setSellPrice] = useState('');
+    const [sellStatus, setSellStatus] = useState(null);
+    const [selectedStatus, setSelectedStatus] = useState('');
+    const [showPhotoPrompt, setShowPhotoPrompt] = useState(null);
+    const [filterStatus, setFilterStatus] = useState('active');
+    const [scionPlantName, setScionPlantName] = useState('');
+    const [rootstockPlantName, setRootstockPlantName] = useState('');
+    const GRAFT_TECHNIQUES = ['Approach graft','Cleft graft','Side graft','Wedge graft','T-bud graft','Saddle graft','Thread graft','Hypocotyl graft','Other'];
+    const GRAFT_STEPS = ['Trying','Callusing','Fused','Rooted','Potted Up'];
+    const activeStatuses = ['Trying','Callusing','Fused','Rooted','Potted Up'];
+    const STATUS_COLORS = {
+        'Trying':    { bg: '#1E5870', border: '#0C3850', text: '#C0E8F8' },
+        'Callusing': { bg: '#4A3870', border: '#2A1850', text: '#D8C8FF' },
+        'Fused':     { bg: '#1E5050', border: '#0C3838', text: '#C0F0E8' },
+        'Rooted':    { bg: '#2E6A18', border: '#1A4A08', text: '#D0F0B0' },
+        'Potted Up': { bg: '#5A3808', border: '#3A2000', text: '#FFE8C0' },
+        'Graduated': { bg: '#3A6A18', border: '#2E5A08', text: '#E8FFD0' },
+        'Failed':    { bg: '#6A1818', border: '#3A0808', text: '#FFD0D0' },
+        'Sold':      { bg: '#3A2A68', border: '#1E1040', text: '#E0D8FF' },
+    };
+    useEffect(() => { getGrafts().then(gs => { setGrafts(gs || []); setLoading(false); }); }, []);
+    useEffect(() => {
+        if (!openGraftId) { setTimeline([]); return; }
+        getGraftTimeline(openGraftId).then(t => setTimeline(t || []));
+    }, [openGraftId]);
+    useEffect(() => {
+        const graft = (grafts || []).find(g => g.graftId === openGraftId);
+        if (!graft) { setScionPlantName(''); setRootstockPlantName(''); return; }
+        if (graft.scionUID) getPlant(graft.scionUID).then(pl => { if (pl) setScionPlantName(pl.nickname || `${pl.genus} ${pl.species}`.trim() || pl.uid); }).catch(() => {});
+        if (graft.rootstockUID) getPlant(graft.rootstockUID).then(pl => { if (pl) setRootstockPlantName(pl.nickname || `${pl.genus} ${pl.species}`.trim() || pl.uid); }).catch(() => {});
+    }, [openGraftId, grafts]);
+    function refreshGrafts() { getGrafts().then(gs => setGrafts(gs || [])); }
+    function statusBadge(status) {
+        const c = STATUS_COLORS[status] || STATUS_COLORS['Trying'];
+        return React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, padding: '2px 7px', border: `2px solid ${c.border}`, background: c.bg, color: c.text }) }, status);
+    }
+    function daysSince(dateStr) {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        if (isNaN(d)) return null;
+        return Math.floor((Date.now() - d.getTime()) / 86400000);
+    }
+    async function handleCreateGraft() {
+        if (!String(form.scionGenus || '').trim()) { setFormStatus({ type: 'error', message: 'Scion genus is required.' }); return; }
+        setFormStatus({ type: 'loading', message: 'Creating...' });
+        let res;
+        try { res = await createGraft(Object.assign({}, form, { startDate: form.startDate || new Date().toISOString().slice(0,10) })); }
+        catch(e) { setFormStatus({ type: 'error', message: 'Error: ' + (e && e.message || String(e)) }); return; }
+        if (res && res.ok) {
+            setFormStatus({ type: 'success', message: 'Graft recorded! \uD83D\uDD17' });
+            setShowForm(false);
+            setForm({ scionGenus: '', scionSpecies: '', scionUID: '', rootstockGenus: '', rootstockSpecies: '', rootstockUID: '', graftTechnique: 'Approach graft', startDate: new Date().toISOString().slice(0,10), notes: '' });
+            await new Promise(r => setTimeout(r, 300));
+            refreshGrafts();
+            setTimeout(() => setFormStatus(null), 1500);
+        } else { setFormStatus({ type: 'error', message: 'Failed: ' + ((res && res.reason) || 'unknown') }); }
+    }
+    async function handleStatusUpdate(graftId, newStatus) {
+        if (newStatus === 'Failed' && !failCause) { setShowStatusPicker(true); return; }
+        try { var res = await updateGraftStatus(graftId, newStatus, failCause || null, failDetail || null); if (res && res.ok === false) return; } catch(e) { return; }
+        setShowStatusPicker(false);
+        if (newStatus !== 'Failed') setShowPhotoPrompt(graftId);
+        setFailCause(''); setFailDetail('');
+        setGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: newStatus, failCause: failCause || null, failCauseDetail: failDetail || null })));
+        setSelectedStatus('');
+    }
+    async function handleSaveGraftEdit(graftId) {
+        setEditGraftSaving(true);
+        try {
+            await updateGraft(graftId, editGraftForm);
+            setGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, editGraftForm)));
+            setEditGraftStatus({ ok: true });
+            setTimeout(() => { setEditGraftId(null); setEditGraftForm({}); setEditGraftStatus(null); }, 800);
+        } catch(e) { setEditGraftStatus({ ok: false, msg: 'Save failed' }); }
+        setEditGraftSaving(false);
+    }
+    async function handleAddNote(graftId) {
+        if (!noteText.trim()) return;
+        const note = noteText.trim(); setNoteText('');
+        await addGraftNote(graftId, note);
+        setTimeline(prev => [{ action: 'NOTE', details: note, ts: new Date().toISOString().slice(0,10) }, ...(prev || [])]);
+    }
+    async function handleGraftPhotoPicked(graftId, e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        e.target.value = '';
+        const preview = await readFileAsDataUrl(file);
+        const exifDate = await readExifDate(file);
+        setPendingGraftPhoto({ graftId, file, preview, exifDate, manualDate: exifDate || new Date().toISOString().slice(0,10), caption: '' });
+    }
+    async function submitPendingGraftPhoto() {
+        if (!pendingGraftPhoto) return;
+        const { graftId, file, manualDate, caption } = pendingGraftPhoto;
+        setPendingGraftPhoto(null);
+        setGraftPhotoMsg({ type: 'loading', text: 'Uploading...' });
+        try {
+            const dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
+            const res = await uploadGraftPhoto(graftId, dataUrl, file.name || 'photo.jpg');
+            const photoUrl = res && (res.thumbUrl || res.url);
+            await addGraftNote(graftId, caption || manualDate || '', photoUrl);
+            setTimeline(prev => [{ action: 'PHOTO', details: caption || '', ts: manualDate || new Date().toISOString().slice(0,10), photoUrl }, ...(prev || [])]);
+            setGraftPhotoMsg({ type: 'success', text: 'Photo saved!' });
+            setTimeout(() => setGraftPhotoMsg(null), 1500);
+        } catch(e) { setGraftPhotoMsg({ type: 'error', text: 'Upload failed' }); setTimeout(() => setGraftPhotoMsg(null), 3000); }
+    }
+    async function handleGraduate(graftId) {
+        setGradStatus({ type: 'loading', message: 'Creating specimen...' });
+        try {
+            const res = await graduateGraft(graftId, gradForm);
+            if (res && res.ok) {
+                setGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Graduated', graduatedUID: res.uid })));
+                setGradStatus({ type: 'success', message: 'Graduated! UID ' + res.uid });
+                setShowGraduate(false);
+                setTimeout(() => setGradStatus(null), 2000);
+            } else { setGradStatus({ type: 'error', message: 'Failed' }); }
+        } catch(e) { setGradStatus({ type: 'error', message: 'Error: ' + (e && e.message || String(e)) }); }
+    }
+    async function handleSell(graftId) {
+        setSellStatus({ type: 'loading', message: 'Logging sale...' });
+        try {
+            const res = await sellGraft(graftId, sellPrice);
+            if (res && res.ok) {
+                setGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Sold', priceSold: sellPrice, soldDate: new Date().toISOString().slice(0,10) })));
+                setSellStatus({ type: 'success', message: 'Sale logged!' });
+                setShowSell(false);
+                setTimeout(() => setSellStatus(null), 1500);
+            }
+        } catch(e) { setSellStatus({ type: 'error', message: 'Error' }); }
+    }
+    const succeededCount = (grafts || []).filter(g => g.status === 'Graduated').length;
+    const resolvedCount  = (grafts || []).filter(g => ['Graduated','Failed'].includes(g.status)).length;
+    const successRate    = resolvedCount > 0 ? Math.round((succeededCount / resolvedCount) * 100) : null;
+    const displayGrafts  = (grafts || []).filter(g => filterStatus === 'all' || activeStatuses.includes(g.status)).slice().sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
+    return React.createElement(React.Fragment, null,
+        /* Stats */
+        (grafts || []).length > 0 && React.createElement("div", { style: { display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' } },
+            React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, (grafts || []).filter(g => activeStatuses.includes(g.status)).length + ' active'),
+            succeededCount > 0 && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: '#6AAA40' }) }, succeededCount + ' graduated'),
+            successRate !== null && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, successRate + '% success')
+        ),
+        /* Add form */
+        showForm && React.createElement("div", { style: { border: `2px solid ${theme.cardBorder}`, padding: 12, marginBottom: 14, background: theme.rowBg } },
+            React.createElement("div", { style: Object.assign({}, px8S, { color: theme.txtP, marginBottom: 10 }) }, '\uD83D\uDD17 RECORD GRAFT'),
+            formStatus && React.createElement("div", { className: "mb-3" }, React.createElement(StatusMessage, { type: formStatus.type, message: formStatus.message })),
+            React.createElement("div", { style: { marginBottom: 8 } },
+                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 4 }) }, '\uD83C\uDF3F SCION (top / bud)'),
+                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+                    React.createElement("input", { value: form.scionGenus, onChange: e => setForm(f => Object.assign({}, f, { scionGenus: e.target.value })), placeholder: 'Genus *', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) }),
+                    React.createElement("input", { value: form.scionSpecies, onChange: e => setForm(f => Object.assign({}, f, { scionSpecies: e.target.value })), placeholder: 'species', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })
+                )
+            ),
+            React.createElement("div", { style: { marginBottom: 8 } },
+                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 4 }) }, '\uD83E\uDEA8 ROOTSTOCK (base / host)'),
+                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+                    React.createElement("input", { value: form.rootstockGenus, onChange: e => setForm(f => Object.assign({}, f, { rootstockGenus: e.target.value })), placeholder: 'Genus', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) }),
+                    React.createElement("input", { value: form.rootstockSpecies, onChange: e => setForm(f => Object.assign({}, f, { rootstockSpecies: e.target.value })), placeholder: 'species', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })
+                )
+            ),
+            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 } },
+                React.createElement("div", null,
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 4 }) }, 'TECHNIQUE'),
+                    React.createElement("select", { value: form.graftTechnique, onChange: e => setForm(f => Object.assign({}, f, { graftTechnique: e.target.value })), className: "w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) },
+                        GRAFT_TECHNIQUES.map(t => React.createElement("option", { key: t, value: t }, t)))
+                ),
+                React.createElement("div", null,
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 4 }) }, 'DATE STARTED'),
+                    React.createElement("input", { type: "date", value: form.startDate, onChange: e => setForm(f => Object.assign({}, f, { startDate: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })
+                )
+            ),
+            React.createElement("div", { style: { marginBottom: 10 } },
+                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 4 }) }, 'NOTES'),
+                React.createElement("textarea", { value: form.notes, onChange: e => setForm(f => Object.assign({}, f, { notes: e.target.value })), rows: 2, placeholder: 'e.g. Approach graft, union wrapped in parafilm on heat mat', className: "w-full border-4 px-2 py-1.5 resize-none input-depth", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })
+            ),
+            React.createElement(PlantButton, { onClick: handleCreateGraft }, '\uD83D\uDD17 Record Graft')
+        ),
+        /* Graft list */
+        loading && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, padding: '12px 0' }) }, 'Loading grafts...'),
+        !loading && displayGrafts.length === 0 && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, padding: '12px 0' }) }, filterStatus === 'active' ? 'No active grafts. Record your first graft above.' : 'No grafts recorded yet.'),
+        (displayGrafts || []).map(function(graft) {
+            const graftId = graft.graftId;
+            const isOpen  = openGraftId === graftId;
+            const isDone  = ['Graduated','Failed','Sold'].includes(graft.status);
+            const isGraduated = graft.status === 'Graduated';
+            const isFailed    = graft.status === 'Failed';
+            const isSold      = graft.status === 'Sold';
+            const days = daysSince(graft.startDate);
+            const availableStatuses = GRAFT_STEPS.filter(s => s !== graft.status).concat(['Failed']);
+            const scionLine     = [graft.scionGenus, graft.scionSpecies].filter(Boolean).join(' ') || '\u2014';
+            const rootstockLine = [graft.rootstockGenus, graft.rootstockSpecies].filter(Boolean).join(' ') || '\u2014';
+            return React.createElement("div", { key: graftId, style: { border: `2px solid ${theme.cardBorder}`, marginBottom: 8, background: theme.cardBg } },
+                /* Row header */
+                React.createElement("div", { onClick: () => { setOpenGraftId(isOpen ? null : graftId); setSelectedStatus(''); setShowStatusPicker(false); setShowGraduate(false); setShowSell(false); setShowPhotoPrompt(null); setEditGraftId(null); }, style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', cursor: 'pointer', gap: 8 } },
+                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                        React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 3 } },
+                            statusBadge(graft.status),
+                            React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) }, days !== null ? days + 'd' : '')
+                        ),
+                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP }) },
+                            '\uD83D\uDD17 ',
+                            React.createElement("span", { style: { fontStyle: 'italic' } }, graft.scionGenus || '\u2014'),
+                            graft.scionSpecies ? ' ' + graft.scionSpecies : '',
+                            ' \u00D7 ',
+                            React.createElement("span", { style: { fontStyle: 'italic' } }, graft.rootstockGenus || '\u2014'),
+                            graft.rootstockSpecies ? ' ' + graft.rootstockSpecies : ''
+                        ),
+                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, graft.graftTechnique || '')
+                    ),
+                    React.createElement("span", { style: { color: theme.txtS, fontSize: 14, flexShrink: 0 } }, isOpen ? '\u25BC' : '\u25B6')
+                ),
+                /* Expanded */
+                isOpen && React.createElement("div", { style: { borderTop: `2px solid ${theme.rowBorder}`, padding: '12px' } },
+                    /* GRAFT DETAILS card */
+                    (() => {
+                        const isEditing = editGraftId === graftId;
+                        const ef = editGraftForm;
+                        return React.createElement("div", { style: { marginBottom: 12, border: `2px solid ${theme.rowBorder}`, background: theme.cardBg } },
+                            React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderBottom: `2px solid ${theme.rowBorder}` } },
+                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtS }) }, '\uD83D\uDD17 GRAFT DETAILS'),
+                                !isDone && React.createElement("button", { type: "button",
+                                    onClick: function() {
+                                        if (isEditing) { setEditGraftId(null); setEditGraftForm({}); }
+                                        else { setShowStatusPicker(false); setShowGraduate(false); setShowSell(false); setShowPhotoPrompt(null); setEditGraftId(graftId); setEditGraftForm({ scionGenus: graft.scionGenus || '', scionSpecies: graft.scionSpecies || '', rootstockGenus: graft.rootstockGenus || '', rootstockSpecies: graft.rootstockSpecies || '', graftTechnique: graft.graftTechnique || 'Approach graft', notes: graft.notes || '' }); }
+                                    },
+                                    style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '3px 10px', border: `2px solid ${isEditing ? '#aaa' : theme.btnP.border}`, background: isEditing ? 'transparent' : theme.btnP.bg, color: isEditing ? theme.txtS : theme.btnP.text, cursor: 'pointer' })
+                                }, isEditing ? '\u00D7 Cancel' : '\u270F\uFE0F Edit')
+                            ),
+                            !isEditing && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 } },
+                                [['Scion', scionLine], ['Rootstock', rootstockLine], ['Technique', graft.graftTechnique || '\u2014'], ['Days', days !== null ? days + 'd' : '\u2014']].map(function(pair, idx) {
+                                    return React.createElement("div", { key: pair[0], style: { padding: '7px 10px', borderBottom: idx < 2 ? `1px solid ${theme.rowBorder}` : 'none', borderRight: idx % 2 === 0 ? `1px solid ${theme.rowBorder}` : 'none' } },
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 2 }) }, pair[0].toUpperCase()),
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP }) }, pair[1]));
+                                }),
+                                graft.notes && React.createElement("div", { style: { gridColumn: 'span 2', padding: '7px 10px', borderTop: `1px solid ${theme.rowBorder}` } },
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 2 }) }, 'NOTES'),
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP }) }, graft.notes)),
+                                (graft.scionUID || graft.rootstockUID) && React.createElement("div", { style: { gridColumn: 'span 2', padding: '7px 10px', borderTop: `1px solid ${theme.rowBorder}`, display: 'flex', gap: 16, flexWrap: 'wrap' } },
+                                    graft.scionUID && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'Scion: ', React.createElement("button", { type: "button", onClick: () => navigate('plant', { uid: graft.scionUID }), style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }) }, scionPlantName || graft.scionUID)),
+                                    graft.rootstockUID && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'Rootstock: ', React.createElement("button", { type: "button", onClick: () => navigate('plant', { uid: graft.rootstockUID }), style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }) }, rootstockPlantName || graft.rootstockUID)))
+                            ),
+                            isEditing && React.createElement("div", { style: { padding: 10 } },
+                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, '\uD83C\uDF3F SCION GENUS'),
+                                        React.createElement("input", { value: ef.scionGenus || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { scionGenus: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, 'SCION SPECIES'),
+                                        React.createElement("input", { value: ef.scionSpecies || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { scionSpecies: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, '\uD83E\uDEA8 ROOTSTOCK GENUS'),
+                                        React.createElement("input", { value: ef.rootstockGenus || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { rootstockGenus: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, 'ROOTSTOCK SPECIES'),
+                                        React.createElement("input", { value: ef.rootstockSpecies || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { rootstockSpecies: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                    React.createElement("div", { style: { gridColumn: 'span 2' } },
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, 'TECHNIQUE'),
+                                        React.createElement("select", { value: ef.graftTechnique || 'Approach graft', onChange: e => setEditGraftForm(p => Object.assign({}, p, { graftTechnique: e.target.value })), className: "w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
+                                            GRAFT_TECHNIQUES.map(t => React.createElement("option", { key: t, value: t }, t))))
+                                ),
+                                React.createElement("div", { style: { marginBottom: 8 } },
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, 'NOTES'),
+                                    React.createElement("textarea", { value: ef.notes || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { notes: e.target.value })), rows: 2, className: "w-full border-4 px-2 py-1.5 resize-none input-depth", style: Object.assign({}, pxS, { fontSize: '12px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                editGraftStatus && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: editGraftStatus.ok ? '#2ecc71' : '#e74c3c', marginBottom: 6 }) }, editGraftStatus.ok ? '\u2713 Saved' : editGraftStatus.msg),
+                                React.createElement(PlantButton, { onClick: () => handleSaveGraftEdit(graftId), disabled: editGraftSaving, className: "py-1 px-4" }, editGraftSaving ? 'Saving...' : '\uD83D\uDCBE Save Changes'))
+                        );
+                    })(),
+                    /* Done-state info */
+                    isGraduated && graft.graduatedUID && React.createElement("div", { style: { marginBottom: 8 } },
+                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS }) }, '\uD83C\uDF93 Graduated to: '),
+                        React.createElement("button", { type: "button", onClick: () => navigate('plant', { uid: graft.graduatedUID }), style: Object.assign({}, pxS, { fontSize: '14px', color: theme.btnP.bg, fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, 'Specimen ' + graft.graduatedUID)
+                    ),
+                    isFailed && graft.failCause && React.createElement("div", { style: { marginBottom: 8, padding: '6px 10px', background: '#3A0808', border: '2px solid #601008' } },
+                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '14px', color: '#FFD0D0' }) }, '\uD83D\uDC80 Failed: ' + graft.failCause),
+                        graft.failCauseDetail && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: '#FFA0A0', marginTop: 2 }) }, graft.failCauseDetail)
+                    ),
+                    isSold && React.createElement("div", { style: { marginBottom: 12, padding: '8px 10px', border: '2px solid #1E1040', background: '#1A0A30' } },
+                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', color: '#D0C0FF' }) }, '\uD83D\uDCB0 Sold' + (graft.priceSold ? ' for ' + graft.priceSold : '') + (graft.soldDate ? ' on ' + graft.soldDate : ''))
+                    ),
+                    /* Actions */
+                    !isDone && React.createElement(React.Fragment, null,
+                        React.createElement("div", { style: { border: `2px solid ${theme.cardBorder}`, marginBottom: 10 } },
+                            React.createElement("div", { style: { padding: '8px 10px' } },
+                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 6 }) }, 'UPDATE STATUS'),
+                                React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center' } },
+                                    React.createElement("select", { value: selectedStatus, onChange: e => { setSelectedStatus(e.target.value); setShowStatusPicker(!!e.target.value); setShowGraduate(false); setShowSell(false); setShowPhotoPrompt(null); setEditGraftId(null); }, className: "border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', flex: 1, borderColor: theme.cardBorder, color: selectedStatus ? theme.txtP : theme.txtS, background: theme.cardBg }) },
+                                        React.createElement("option", { value: '' }, '\u2014 new status \u2014'),
+                                        availableStatuses.map(s => React.createElement("option", { key: s, value: s }, s === 'Failed' ? '\uD83D\uDC80 Failed' : s))
+                                    ),
+                                    selectedStatus && selectedStatus !== 'Failed' && React.createElement(PlantButton, { onClick: () => { handleStatusUpdate(graftId, selectedStatus); setSelectedStatus(''); }, className: "py-1 px-3", style: { flexShrink: 0 } }, '\u2713 Confirm')
+                                )
+                            ),
+                            showStatusPicker && selectedStatus === 'Failed' && React.createElement("div", { style: { padding: '8px 10px', borderTop: `1px solid ${theme.rowBorder}` } },
+                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 6 }) }, 'What went wrong?'),
+                                React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 } },
+                                    PROP_FAIL_CAUSES.map(c => React.createElement("button", { key: c, type: "button", onClick: () => setFailCause(failCause === c ? '' : c), style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '3px 8px', border: `2px solid ${failCause === c ? '#601008' : theme.rowBorder}`, background: failCause === c ? '#6A1818' : 'transparent', color: failCause === c ? '#FFD0D0' : theme.txtS, cursor: 'pointer' }) }, c))
+                                ),
+                                failCause && React.createElement(React.Fragment, null,
+                                    React.createElement("textarea", { value: failDetail, onChange: e => setFailDetail(e.target.value), rows: 2, placeholder: 'What happened? (optional)', className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, marginBottom: 6 }) }),
+                                    React.createElement(PlantButton, { onClick: () => { handleStatusUpdate(graftId, 'Failed'); setSelectedStatus(''); } }, 'Confirm Failed \uD83D\uDC80')
+                                )
+                            ),
+                            showPhotoPrompt === graftId && React.createElement("div", { style: { padding: '6px 10px', borderTop: `1px solid ${theme.rowBorder}`, display: 'flex', alignItems: 'center', gap: 8 } },
+                                React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, flex: 1 }) }, '\uD83D\uDCF8 Add a progress photo?'),
+                                React.createElement(PlantButton, { variant: "secondary", onClick: () => { if (graftPhotoRef.current) { graftPhotoRef.current.dataset.graftid = graftId; graftPhotoRef.current.click(); } setShowPhotoPrompt(null); }, className: "py-1 px-2" }, 'Add Photo'),
+                                React.createElement("button", { type: "button", onClick: () => setShowPhotoPrompt(null), style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }) }, 'Skip')
+                            )
+                        ),
+                        React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 8 } },
+                            React.createElement("input", { value: noteText, onChange: e => setNoteText(e.target.value), placeholder: 'Add a note...', onKeyDown: e => { if (e.key === 'Enter') handleAddNote(graftId); }, className: "border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, flex: '1 1 0', minWidth: 0 }) }),
+                            React.createElement(PlantButton, { onClick: () => handleAddNote(graftId), disabled: !noteText.trim(), className: "py-1 px-3", style: { flexShrink: 0 } }, '\uD83D\uDCDD'),
+                            React.createElement(PlantButton, { variant: "secondary", onClick: () => { if (graftPhotoRef.current) graftPhotoRef.current.dataset.graftid = graftId; if (graftPhotoRef.current) graftPhotoRef.current.click(); }, className: "py-1 px-3", style: { flexShrink: 0 } }, '\uD83D\uDCF8')
+                        ),
+                        graftPhotoMsg && React.createElement("div", { style: { marginBottom: 8 } }, React.createElement(StatusMessage, { type: graftPhotoMsg.type, message: graftPhotoMsg.text })),
+                        React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
+                            graft.status === 'Potted Up' && React.createElement("button", { type: "button", onClick: () => { setShowGraduate(v => !v); setShowSell(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); }, style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: `2px solid ${theme.btnP.border}`, background: showGraduate ? theme.btnP.bg : 'transparent', color: showGraduate ? theme.btnP.text : theme.btnP.bg, cursor: 'pointer' }) }, '\uD83C\uDF93 Graduate'),
+                            React.createElement("button", { type: "button", onClick: () => { setShowSell(v => !v); setShowGraduate(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setSellPrice(''); setSellStatus(null); }, style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: '2px solid #4A2A88', background: showSell ? '#2A1048' : 'transparent', color: showSell ? '#D0C0FF' : '#9080C0', cursor: 'pointer' }) }, '\uD83D\uDCB0 Sell')
+                        ),
+                        showGraduate && React.createElement("div", { style: { border: `2px solid ${theme.btnP.border}`, padding: 10, marginBottom: 12, background: theme.rowBg } },
+                            React.createElement("div", { style: Object.assign({}, px8S, { color: theme.txtP, marginBottom: 8 }) }, 'GRADUATE TO SPECIMEN'),
+                            gradStatus && React.createElement("div", { className: "mb-2" }, React.createElement(StatusMessage, { type: gradStatus.type, message: gradStatus.message })),
+                            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 } },
+                                React.createElement("div", { style: { gridColumn: 'span 2' } },
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, 'Nickname'),
+                                    React.createElement("input", { value: gradForm.nickname || '', onChange: e => setGradForm(p => Object.assign({}, p, { nickname: e.target.value })), placeholder: 'e.g. My grafted beauty', className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
+                                React.createElement("div", { style: { gridColumn: 'span 2' } },
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, 'Location'),
+                                    React.createElement("select", { value: gradForm.location || '', onChange: e => setGradForm(p => Object.assign({}, p, { location: e.target.value })), className: "w-full border-4 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
+                                        React.createElement("option", { value: '' }, '\u2014 no location \u2014'),
+                                        (locations || []).map(loc => React.createElement("option", { key: loc, value: loc }, loc)))),
+                                React.createElement("div", null,
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, 'Pot Size'),
+                                    React.createElement("input", { value: gradForm.potSize || '', onChange: e => setGradForm(p => Object.assign({}, p, { potSize: e.target.value })), placeholder: 'e.g. 4"', className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
+                                React.createElement("div", null,
+                                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, 'Water every (days)'),
+                                    React.createElement("input", { value: gradForm.everyDays || '', onChange: e => setGradForm(p => Object.assign({}, p, { everyDays: e.target.value })), placeholder: 'e.g. 7', className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
+                            ),
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, marginBottom: 6 }) }, 'Scion genus and species will be carried over.'),
+                            React.createElement(PlantButton, { variant: "secondary", onClick: () => handleGraduate(graftId), className: "py-1 px-3" }, '\uD83C\uDF93 Create Specimen')
+                        ),
+                        showSell && React.createElement("div", { style: { border: '2px solid #4A2A88', padding: 10, marginBottom: 12, background: '#0E0820' } },
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: '#D0C0FF', marginBottom: 8 }) }, 'LOG SALE'),
+                            sellStatus && React.createElement("div", { className: "mb-2" }, React.createElement(StatusMessage, { type: sellStatus.type, message: sellStatus.message })),
+                            React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: '#A090D0', marginBottom: 4 }) }, 'Price sold (optional)'),
+                            React.createElement("input", { value: sellPrice, onChange: e => setSellPrice(e.target.value), placeholder: 'e.g. \u00A325 or $40', className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: '#D0C0FF', borderColor: '#4A2A88', background: '#1A0A30', marginBottom: 8 }) }),
+                            React.createElement(PlantButton, { onClick: () => handleSell(graftId), className: "py-1 px-3", style: { borderColor: '#4A2A88', background: '#2A1048', color: '#D0C0FF' } }, '\uD83D\uDCB0 Confirm Sale')
+                        )
+                    ),
+                    /* Hidden file input */
+                    React.createElement("input", { ref: graftPhotoRef, type: "file", accept: "image/*", style: { display: 'none' }, onChange: e => { const gid = graftPhotoRef.current && graftPhotoRef.current.dataset.graftid; if (gid) handleGraftPhotoPicked(gid, e); } }),
+                    /* Pending photo confirm */
+                    pendingGraftPhoto && pendingGraftPhoto.graftId === graftId && React.createElement("div", { style: { border: `2px solid ${theme.cardBorder}`, padding: 10, marginBottom: 10, background: theme.rowBg } },
+                        React.createElement("div", { style: Object.assign({}, px8S, { color: theme.txtP, marginBottom: 8, fontSize: '11px' }) }, 'CONFIRM PHOTO'),
+                        React.createElement("img", { src: pendingGraftPhoto.preview, alt: "preview", style: { maxWidth: '100%', maxHeight: 130, display: 'block', marginBottom: 8, border: `2px solid ${theme.cardBorder}`, objectFit: 'cover' } }),
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 } },
+                            React.createElement("div", null,
+                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 2 }) }, pendingGraftPhoto.exifDate ? '\uD83D\uDCC5 Date (from photo)' : '\uD83D\uDCC5 Photo Date'),
+                                React.createElement("input", { type: "date", value: pendingGraftPhoto.manualDate, onChange: e => setPendingGraftPhoto(p => Object.assign({}, p, { manualDate: e.target.value })), className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
+                            React.createElement("div", null,
+                                React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 2 }) }, 'Caption'),
+                                React.createElement("input", { value: pendingGraftPhoto.caption, onChange: e => setPendingGraftPhoto(p => Object.assign({}, p, { caption: e.target.value })), placeholder: 'e.g. Union forming!', className: "w-full border-4 px-2 py-1 input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
+                        ),
+                        React.createElement("div", { style: { display: 'flex', gap: 6 } },
+                            React.createElement(PlantButton, { onClick: submitPendingGraftPhoto, className: "py-1 px-3" }, '\uD83D\uDCF8 Upload'),
+                            React.createElement(PlantButton, { variant: "ghost", onClick: () => setPendingGraftPhoto(null), className: "py-1 px-3" }, 'Cancel'))
+                    ),
+                    /* Diary */
+                    React.createElement("div", { style: Object.assign({}, px8S, { color: theme.txtP, marginBottom: 6 }) }, 'DIARY'),
+                    React.createElement("div", { style: { maxHeight: 200, overflowY: 'auto' } },
+                        (timeline || []).length === 0 && React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS }) }, 'No entries yet.'),
+                        (timeline || []).map(function(entry, i) {
+                            const icons = { CREATED: '\uD83C\uDF31', STATUS: '\uD83D\uDCC8', NOTE: '\uD83D\uDCDD', PHOTO: '\uD83D\uDCF8', SOLD: '\uD83D\uDCB0', UPDATE: '\u270F\uFE0F' };
+                            return React.createElement("div", { key: i, style: { padding: '6px 0', borderBottom: i < timeline.length - 1 ? `1px solid ${theme.rowBorder}` : 'none' } },
+                                React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                                    React.createElement("span", { style: { fontSize: 12, flexShrink: 0 } }, icons[entry.action] || '\u2022'),
+                                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtP }) }, entry.details),
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '12px', color: '#aaa' }) }, entry.ts))),
+                                entry.photoUrl && React.createElement("div", { style: { marginTop: 4, marginLeft: 20 } },
+                                    React.createElement("a", { href: entry.viewUrl || entry.photoUrl, target: '_blank', rel: 'noopener noreferrer' },
+                                        React.createElement("img", { src: entry.photoUrl, alt: entry.details || 'Graft photo', style: { maxWidth: '100%', maxHeight: 180, border: `2px solid ${theme.cardBorder}`, display: 'block' } }))));
+                        })
+                    )
+                )
+            );
+        }),
+        !loading && filterStatus === 'active' && (grafts || []).some(g => ['Graduated','Failed','Sold'].includes(g.status)) && React.createElement("div", { style: { textAlign: 'center', marginTop: 8 } },
+            React.createElement("button", { type: "button", onClick: () => setFilterStatus('all'), style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, 'Show graduated, sold & failed grafts')
+        )
+    );
 }
 function LocationsScreen() { return React.createElement(MyPlantsScreen, null); }
 function PlantLogScreen() {

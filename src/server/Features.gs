@@ -172,6 +172,16 @@ function doPost(e) {
       plantosUploadPropPhoto: plantosUploadPropPhoto,
       plantosGraduateProp: plantosGraduateProp,
       plantosSellProp: plantosSellProp,
+      plantosGetGrafts: plantosGetGrafts,
+      plantosGetGraftTimeline: plantosGetGraftTimeline,
+      plantosCreateGraft: plantosCreateGraft,
+      plantosUpdateGraftStatus: plantosUpdateGraftStatus,
+      plantosUpdateGraft: plantosUpdateGraft,
+      plantosAddGraftNote: plantosAddGraftNote,
+      plantosUploadGraftPhoto: plantosUploadGraftPhoto,
+      plantosGraduateGraft: plantosGraduateGraft,
+      plantosSellGraft: plantosSellGraft,
+      plantosMigrateGraftsFromProps: plantosMigrateGraftsFromProps,
       plantosLogin: plantosLogin,
       plantosGetWishlist: plantosGetWishlist,
       plantosAddToWishlist: plantosAddToWishlist,
@@ -473,4 +483,196 @@ function plantosPropTimelineAppend_(propId, entry) {
   const ts = Utilities.formatDate(plantosNow_(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
   items.unshift(Object.assign({ ts }, entry));
   PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(items.slice(0, 100)));
+}
+
+/* ===================== GRAFTS (siloed from Props) ===================== */
+
+const PLANTOS_GRAFTS_KEY = 'PLANTOS_GRAFTS';
+const PLANTOS_GRAFT_TIMELINES_KEY = 'PLANTOS_GRAFT_TIMELINES';
+
+function plantosGetGrafts() {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY)) || '[]'); } catch(e) { return []; }
+}
+
+function plantosGetGraftTimeline(graftId) {
+  const key = plantosUserKey_(PLANTOS_GRAFT_TIMELINES_KEY) + '::' + plantosSafeStr_(graftId).trim();
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(key) || '[]'); } catch(e) { return []; }
+}
+
+function plantosCreateGraft(payload) {
+  payload = payload || {};
+  const grafts = plantosGetGrafts();
+  const graftId = 'GRAFT_' + Date.now();
+  var startDate = plantosSafeStr_(payload.startDate || '').trim() || plantosFmtDate_(plantosNow_());
+  const graft = {
+    graftId,
+    scionGenus:       plantosSafeStr_(payload.scionGenus || '').trim(),
+    scionSpecies:     plantosSafeStr_(payload.scionSpecies || '').trim(),
+    rootstockGenus:   plantosSafeStr_(payload.rootstockGenus || '').trim(),
+    rootstockSpecies: plantosSafeStr_(payload.rootstockSpecies || '').trim(),
+    graftTechnique:   plantosSafeStr_(payload.graftTechnique || '').trim(),
+    scionUID:         plantosSafeStr_(payload.scionUID || '').trim(),
+    rootstockUID:     plantosSafeStr_(payload.rootstockUID || '').trim(),
+    notes:            plantosSafeStr_(payload.notes || '').trim(),
+    status: 'Trying',
+    createdAt: plantosFmtDate_(plantosNow_()),
+    startDate: startDate,
+  };
+  grafts.unshift(graft);
+  PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY), JSON.stringify(grafts));
+  plantosGraftTimelineAppend_(graftId, { action: 'CREATED', details: 'Graft started — ' + (graft.graftTechnique || 'Graft') });
+  return { ok: true, graftId };
+}
+
+function plantosUpdateGraftStatus(graftId, status, failCause, failCauseDetail) {
+  const id = plantosSafeStr_(graftId).trim();
+  const grafts = plantosGetGrafts();
+  const idx = grafts.findIndex(g => g.graftId === id);
+  if (idx < 0) return { ok: false, error: 'Graft not found' };
+  grafts[idx].status = plantosSafeStr_(status).trim();
+  if (failCause) grafts[idx].failCause = plantosSafeStr_(failCause).trim();
+  if (failCauseDetail) grafts[idx].failCauseDetail = plantosSafeStr_(failCauseDetail).trim();
+  PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY), JSON.stringify(grafts));
+  var details = failCause ? `${status} — ${failCause}` : status;
+  if (failCauseDetail) details += ': ' + failCauseDetail;
+  plantosGraftTimelineAppend_(id, { action: 'STATUS', details });
+  return { ok: true };
+}
+
+function plantosAddGraftNote(graftId, note, photoUrl) {
+  const id = plantosSafeStr_(graftId).trim();
+  const grafts = plantosGetGrafts();
+  const idx = grafts.findIndex(g => g.graftId === id);
+  if (idx < 0) return { ok: false, error: 'Graft not found' };
+  plantosGraftTimelineAppend_(id, { action: photoUrl ? 'PHOTO' : 'NOTE', details: plantosSafeStr_(note || '').trim(), photoUrl: photoUrl || '' });
+  return { ok: true };
+}
+
+function plantosUploadGraftPhoto(graftId, dataUrl, originalName) {
+  // Reuse the same Drive upload logic as prop photos, stored under graft folder
+  const id = plantosSafeStr_(graftId).trim();
+  const grafts = plantosGetGrafts();
+  const idx = grafts.findIndex(g => g.graftId === id);
+  if (idx < 0) return { ok: false, error: 'Graft not found' };
+  try {
+    var folderName = 'PlantOS Graft Photos';
+    var folders = DriveApp.getFoldersByName(folderName);
+    var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+    var safeName = plantosSafeStr_(originalName || 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
+    var blob = Utilities.newBlob(Utilities.base64Decode(dataUrl.replace(/^data:[^;]+;base64,/, '')), 'image/jpeg', safeName);
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var fileId = file.getId();
+    var thumbUrl = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w600';
+    var viewUrl  = 'https://drive.google.com/file/d/' + fileId + '/view';
+    plantosGraftTimelineAppend_(id, { action: 'PHOTO', details: '', photoUrl: thumbUrl, viewUrl });
+    return { ok: true, thumbUrl, viewUrl };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+function plantosGraduateGraft(graftId, plantPayload) {
+  const id = plantosSafeStr_(graftId).trim();
+  const grafts = plantosGetGrafts();
+  const idx = grafts.findIndex(g => g.graftId === id);
+  if (idx < 0) throw new Error('Graft not found');
+  const graft = grafts[idx];
+  const result = plantosCreatePlant(Object.assign({
+    genus: graft.scionGenus,
+    taxon: graft.scionSpecies,
+    parentPropId: id
+  }, plantPayload || {}));
+  if (!result.ok) throw new Error('Failed to create plant from graft');
+  grafts[idx].status = 'Graduated';
+  grafts[idx].graduatedUID = result.uid;
+  PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY), JSON.stringify(grafts));
+  plantosGraftTimelineAppend_(id, { action: 'STATUS', details: 'Graduated → UID ' + result.uid });
+  return { ok: true, uid: result.uid };
+}
+
+function plantosSellGraft(graftId, priceSold) {
+  const id = plantosSafeStr_(graftId).trim();
+  const grafts = plantosGetGrafts();
+  const idx = grafts.findIndex(g => g.graftId === id);
+  if (idx < 0) return { ok: false, error: 'Graft not found' };
+  grafts[idx].status = 'Sold';
+  grafts[idx].priceSold = plantosSafeStr_(String(priceSold || '')).trim();
+  grafts[idx].soldDate = Utilities.formatDate(plantosNow_(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY), JSON.stringify(grafts));
+  const priceStr = grafts[idx].priceSold ? ` for ${grafts[idx].priceSold}` : '';
+  plantosGraftTimelineAppend_(id, { action: 'SOLD', details: `Graft sold${priceStr}.` });
+  return { ok: true };
+}
+
+function plantosUpdateGraft(graftId, patch) {
+  const id = plantosSafeStr_(graftId).trim();
+  if (!id) throw new Error('Missing graftId');
+  patch = patch || {};
+  const grafts = plantosGetGrafts();
+  const idx = grafts.findIndex(g => g.graftId === id);
+  if (idx < 0) return { ok: false, error: 'Graft not found' };
+  const allowed = ['scionGenus','scionSpecies','rootstockGenus','rootstockSpecies','graftTechnique','scionUID','rootstockUID','notes','startDate'];
+  allowed.forEach(function(k) {
+    if (k in patch && patch[k] !== null && patch[k] !== undefined) {
+      grafts[idx][k] = plantosSafeStr_(patch[k]).trim();
+    }
+  });
+  PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY), JSON.stringify(grafts));
+  plantosGraftTimelineAppend_(id, { action: 'UPDATE', details: 'Edited: ' + Object.keys(patch).filter(k => allowed.includes(k)).join(', ') });
+  return { ok: true };
+}
+
+function plantosGraftTimelineAppend_(graftId, entry) {
+  const key = plantosUserKey_(PLANTOS_GRAFT_TIMELINES_KEY) + '::' + graftId;
+  let items = [];
+  try { items = JSON.parse(PropertiesService.getScriptProperties().getProperty(key) || '[]'); } catch(e) {}
+  const ts = Utilities.formatDate(plantosNow_(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  items.unshift(Object.assign({ ts }, entry));
+  PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(items.slice(0, 100)));
+}
+
+/* ── Run once from GAS editor to move existing isGraft=true props → grafts store ── */
+function plantosMigrateGraftsFromProps() {
+  var users = plantosGetUsers_();
+  var results = [];
+  users.forEach(function(user) {
+    _currentUser = { username: user.username, isAdmin: !!user.isAdmin };
+    var props   = plantosGetProps();
+    var grafts  = plantosGetGrafts();
+    var toMigrate = props.filter(function(p) { return p.isGraft || p.propType === 'Graft'; });
+    var remaining = props.filter(function(p) { return !p.isGraft && p.propType !== 'Graft'; });
+    toMigrate.forEach(function(p) {
+      var graft = {
+        graftId:         p.propId,  // keep same ID so timelines still match
+        scionGenus:      p.scionGenus || p.genus || '',
+        scionSpecies:    p.scionSpecies || p.species || '',
+        rootstockGenus:  p.rootstockGenus || '',
+        rootstockSpecies:p.rootstockSpecies || '',
+        graftTechnique:  p.graftTechnique || '',
+        scionUID:        p.parentUID || '',
+        rootstockUID:    '',
+        notes:           p.notes || '',
+        status:          p.status || 'Trying',
+        createdAt:       p.createdAt || '',
+        startDate:       p.startDate || p.createdAt || '',
+        graduatedUID:    p.graduatedUID || '',
+        failCause:       p.failCause || '',
+        failCauseDetail: p.failCauseDetail || '',
+        priceSold:       p.priceSold || '',
+        soldDate:        p.soldDate || '',
+      };
+      grafts.unshift(graft);
+      // Migrate timeline: copy from PLANTOS_PROP_TIMELINES → PLANTOS_GRAFT_TIMELINES
+      var oldTlKey = plantosUserKey_(PLANTOS_PROP_TIMELINES_KEY) + '::' + p.propId;
+      var newTlKey = plantosUserKey_(PLANTOS_GRAFT_TIMELINES_KEY) + '::' + p.propId;
+      var tl = PropertiesService.getScriptProperties().getProperty(oldTlKey);
+      if (tl) PropertiesService.getScriptProperties().setProperty(newTlKey, tl);
+    });
+    PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_PROPS_KEY),   JSON.stringify(remaining));
+    PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY), JSON.stringify(grafts));
+    results.push({ user: user.username, migrated: toMigrate.length });
+  });
+  _currentUser = null;
+  return { ok: true, results };
 }
