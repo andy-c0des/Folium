@@ -17443,38 +17443,40 @@ function SettingsScreen() {
                 React.createElement(PlantButton, { block: true, variant: 'ghost', onClick: function() { navigate('dev'); } }, 'Dev Tools')
             )))));
 }
-// PlantOSv3 cross-script exports — make symbols from this script visible to the PlantOSv3 script below
-window.HAS_GAS = HAS_GAS;
-window.HAS_API = HAS_API;
-window.ThemeProvider = ThemeProvider;
-window.NavigationProvider = NavigationProvider;
-window.PlantDataProvider = PlantDataProvider;
-window.HomeScreen = HomeScreen;
-window.WateringScreen = WateringScreen;
-window.AddScreen = AddScreen;
-window.MyPlantsScreen = MyPlantsScreen;
-window.LocationsScreen = LocationsScreen;
-window.PlantLogScreen = PlantLogScreen;
-window.BatchWaterScreen = BatchWaterScreen;
-window.BatchFertilizeScreen = BatchFertilizeScreen;
-window.PlantScreen = PlantScreen;
-window.EnvironmentsScreen = EnvironmentsScreen;
-window.ArchiveScreen = ArchiveScreen;
-window.SceneBackground = SceneBackground;
-window.DevScreen = DevScreen;
-window.BottomNav = BottomNav;
-window.GalleryScreen = GalleryScreen;
-window.DiaryScreen = DiaryScreen;
-window.SettingsScreen = SettingsScreen;
-window.DEMO_MODE = typeof DEMO_MODE !== 'undefined' ? DEMO_MODE : false;
-window.gasCall = gasCall;
-window.px8 = px8;
-window.pxS = pxS;
-window.useNavigation = useNavigation;
-window.usePlantData = usePlantData;
-window.useScreenSize = useScreenSize;
-window.useTheme = useTheme;
-window.compressImageToJpegDataUrl = compressImageToJpegDataUrl;
+  // PlantOSv3 cross-script exports — make symbols from this script visible to the PlantOSv3 script below
+  window.HAS_GAS = HAS_GAS;
+  window.HAS_API = HAS_API;
+  window.ThemeProvider = ThemeProvider;
+  window.NavigationProvider = NavigationProvider;
+  window.PlantDataProvider = PlantDataProvider;
+  window.HomeScreen = HomeScreen;
+  window.LoginScreen = LoginScreen;
+  window.WateringScreen = WateringScreen;
+  window.AddScreen = AddScreen;
+  window.MyPlantsScreen = MyPlantsScreen;
+  window.LocationsScreen = LocationsScreen;
+  window.PlantLogScreen = PlantLogScreen;
+  window.BatchWaterScreen = BatchWaterScreen;
+  window.BatchFertilizeScreen = BatchFertilizeScreen;
+  window.PlantScreen = PlantScreen;
+  window.EnvironmentsScreen = EnvironmentsScreen;
+  window.ArchiveScreen = ArchiveScreen;
+  window.SceneBackground = SceneBackground;
+  window.DevScreen = DevScreen;
+  window.BottomNav = BottomNav;
+  window.GalleryScreen = GalleryScreen;
+  window.DiaryScreen = DiaryScreen;
+  window.SettingsScreen = SettingsScreen;
+  window.DEMO_MODE = typeof DEMO_MODE !== 'undefined' ? DEMO_MODE : false;
+  window.gasCall = gasCall;
+  window.kbCacheLoad = typeof kbCacheLoad !== 'undefined' ? kbCacheLoad : window.kbCacheLoad;
+  window.px8 = px8;
+  window.pxS = pxS;
+  window.useNavigation = useNavigation;
+  window.usePlantData = usePlantData;
+  window.useScreenSize = useScreenSize;
+  window.useTheme = useTheme;
+  window.compressImageToJpegDataUrl = compressImageToJpegDataUrl;
 </script>
 
 <?!= include('Carl') ?>
