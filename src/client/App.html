@@ -17474,15 +17474,16 @@ window.useNavigation = useNavigation;
 window.usePlantData = usePlantData;
 window.useScreenSize = useScreenSize;
 window.useTheme = useTheme;
+window.compressImageToJpegDataUrl = compressImageToJpegDataUrl;
 </script>
 
 <?!= include('Carl') ?>
 
 <script type="text/javascript">
 function CarlHomeScreen() {
-    const { navigate } = useNavigation();
-    const { allPlantsCache, allPlantsCacheReady, getAllPlants } = usePlantData();
-    const theme = useTheme();
+    const { navigate } = window.useNavigation();
+    const { allPlantsCache, allPlantsCacheReady, getAllPlants } = window.usePlantData();
+    const theme = window.useTheme();
     const [query, setQuery] = React.useState('');
     React.useEffect(() => { if (!allPlantsCacheReady) { getAllPlants().catch(() => {}); } }, []);
     const filtered = React.useMemo(() => {
@@ -17535,7 +17536,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
         setProgPhotoUploading(true);
         setProgPhotoMsg('Uploading\u2026');
         try {
-            const dataUrl = await compressImageToJpegDataUrl(file, 1600, 0.82);
+            const dataUrl = await window.compressImageToJpegDataUrl(file, 1600, 0.82);
             if (uploadPlantPhoto) await uploadPlantPhoto(uid, dataUrl, file.name);
             setProgPhotoMsg('Photo uploaded \u2713');
         } catch(err) {
@@ -17559,7 +17560,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
     }
 
     const card = { background: theme.rowBg, borderRadius: 10, padding: '12px 14px', marginBottom: 10, border: '1.5px solid ' + theme.cardBorder };
-    const lbl = Object.assign({}, pxS, { fontSize: '8px', color: theme.txtS, marginBottom: 8, letterSpacing: '0.06em' });
+    const lbl = Object.assign({}, window.pxS, { fontSize: '8px', color: theme.txtS, marginBottom: 8, letterSpacing: '0.06em' });
     const photoOk = progPhotoMsg && progPhotoMsg.includes('\u2713');
 
     return React.createElement('div', { style: { display: 'flex', flexDirection: 'column' } },
@@ -17582,7 +17583,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
                         }
                     },
                         React.createElement('span', { style: { fontSize: 22 } }, s.icon),
-                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '7px', color: sel ? s.color : theme.txtS }) }, s.label)
+                        React.createElement('span', { style: Object.assign({}, window.pxS, { fontSize: '7px', color: sel ? s.color : theme.txtS }) }, s.label)
                     );
                 })
             )
@@ -17606,7 +17607,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
                 }
             },
                 React.createElement('span', { style: { fontSize: 28 } }, photoOk ? '\u2705' : '\uD83D\uDCF7'),
-                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '8px', color: theme.txtS }) },
+                React.createElement('span', { style: Object.assign({}, window.pxS, { fontSize: '8px', color: theme.txtS }) },
                     progPhotoUploading ? 'Uploading\u2026' : (progPhotoMsg || 'Tap to add a photo')
                 )
             )
@@ -17620,7 +17621,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
                 onChange: function(e) { setProgComment(e.target.value); },
                 placeholder: 'Add comment...',
                 rows: 3,
-                style: Object.assign({}, pxS, {
+                style: Object.assign({}, window.pxS, {
                     fontSize: '10px', width: '100%', boxSizing: 'border-box',
                     padding: '8px 10px', border: '1.5px solid ' + theme.cardBorder, borderRadius: 6,
                     background: theme.cardBg, color: theme.txtP,
@@ -17638,14 +17639,14 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
                     value: progHeight,
                     onChange: function(e) { setProgHeight(e.target.value); },
                     placeholder: 'e.g. 15',
-                    style: Object.assign({}, pxS, {
+                    style: Object.assign({}, window.pxS, {
                         fontSize: '11px', padding: '8px 10px', flex: 1,
                         border: '1.5px solid ' + theme.cardBorder, borderRadius: 6,
                         background: theme.cardBg, color: theme.txtP,
                         outline: 'none', boxSizing: 'border-box',
                     })
                 }),
-                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, flexShrink: 0 }) }, 'cm')
+                React.createElement('span', { style: Object.assign({}, window.pxS, { fontSize: '9px', color: theme.txtS, flexShrink: 0 }) }, 'cm')
             )
         ),
 
@@ -17700,10 +17701,10 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
 }
 
 function ProgressUpdatesScreen() {
-    const { navigate } = useNavigation();
-    const { homeData, refreshHome, removeProgressDue, quickLog, updatePlant, uploadPlantPhoto } = usePlantData();
-    const theme = useTheme();
-    const { isSmall } = useScreenSize();
+    const { navigate } = window.useNavigation();
+    const { homeData, refreshHome, removeProgressDue, quickLog, updatePlant, uploadPlantPhoto } = window.usePlantData();
+    const theme = window.useTheme();
+    const { isSmall } = window.useScreenSize();
     const [loading, setLoading] = React.useState(false);
     const [modalUid, setModalUid] = React.useState(null); // uid of plant whose modal is open
     const [done, setDone] = React.useState({}); // uid -> bool (just submitted)
@@ -17731,13 +17732,13 @@ function ProgressUpdatesScreen() {
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '8px 12px', background: theme.cardBg, border: '3px solid ' + theme.cardBorder } },
             React.createElement('span', { style: { fontSize: isSmall ? 18 : 22 } }, '📊'),
             React.createElement('div', null,
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: headingSize, fontWeight: 900, color: theme.txtP }) }, 'Progress Updates'),
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: subSize, color: theme.txtS, marginTop: 3 }) }, visible.length + ' plant' + (visible.length !== 1 ? 's' : '') + ' overdue'))),
-        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, textAlign: 'center', padding: 24 }) }, 'Loading\u2026'),
+                React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: headingSize, fontWeight: 900, color: theme.txtP }) }, 'Progress Updates'),
+                React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: subSize, color: theme.txtS, marginTop: 3 }) }, visible.length + ' plant' + (visible.length !== 1 ? 's' : '') + ' overdue'))),
+        loading && React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: '11px', color: theme.txtS, textAlign: 'center', padding: 24 }) }, 'Loading\u2026'),
         !loading && visible.length === 0 && React.createElement('div', { style: { textAlign: 'center', padding: '40px 16px' } },
             React.createElement('div', { style: { fontSize: 36, marginBottom: 12 } }, '🎉'),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isSmall ? '10px' : '12px', color: theme.txtP }) }, 'All caught up!'),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: subSize, color: theme.txtS, marginTop: 8 }) }, 'No progress updates overdue.')),
+            React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: isSmall ? '10px' : '12px', color: theme.txtP }) }, 'All caught up!'),
+            React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: subSize, color: theme.txtS, marginTop: 8 }) }, 'No progress updates overdue.')),
         !loading && visible.map(function(p) {
             return React.createElement('div', {
                 key: p.uid,
@@ -17746,17 +17747,17 @@ function ProgressUpdatesScreen() {
                 React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px' } },
                     React.createElement('span', { style: { fontSize: isSmall ? 16 : 20, flexShrink: 0 } }, '📊'),
                     React.createElement('div', { style: { flex: 1, minWidth: 0 } },
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: nameSize, fontWeight: 900, color: theme.txtP, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.nickname || p.primary || p.uid),
-                        p.primary && p.nickname && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginTop: 2 }) }, p.primary)),
+                        React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: nameSize, fontWeight: 900, color: theme.txtP, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }, p.nickname || p.primary || p.uid),
+                        p.primary && p.nickname && React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: '9px', color: theme.txtS, marginTop: 2 }) }, p.primary)),
                     React.createElement('button', {
                         type: 'button',
                         onClick: function() { navigate('plant', { uid: p.uid }); },
-                        style: Object.assign({}, pxS, { fontSize: '9px', padding: '4px 8px', background: 'transparent', border: '2px solid ' + theme.cardBorder, color: theme.txtS, cursor: 'pointer', flexShrink: 0 })
+                        style: Object.assign({}, window.pxS, { fontSize: '9px', padding: '4px 8px', background: 'transparent', border: '2px solid ' + theme.cardBorder, color: theme.txtS, cursor: 'pointer', flexShrink: 0 })
                     }, 'View'),
                     React.createElement('button', {
                         type: 'button',
                         onClick: function() { window.scrollTo(0, 0); setModalUid(p.uid); },
-                        style: Object.assign({}, pxS, { fontSize: '9px', padding: '4px 8px', background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8', cursor: 'pointer', flexShrink: 0 })
+                        style: Object.assign({}, window.pxS, { fontSize: '9px', padding: '4px 8px', background: '#2A6B1A', border: '2px solid #1A5A0A', color: '#C8F0A8', cursor: 'pointer', flexShrink: 0 })
                     }, '\u2713 Log Update')));
         }),
         modalUid && modalPlant && React.createElement('div', {
@@ -17771,8 +17772,8 @@ function ProgressUpdatesScreen() {
             }},
                 React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
                     React.createElement('div', null,
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP }) }, '\uD83D\uDCCA PROGRESS UPDATE'),
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, marginTop: 4 }) }, modalPlant.nickname || modalPlant.primary || modalPlant.uid)),
+                        React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: '13px', color: theme.txtP }) }, '\uD83D\uDCCA PROGRESS UPDATE'),
+                        React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: '9px', color: theme.txtS, marginTop: 4 }) }, modalPlant.nickname || modalPlant.primary || modalPlant.uid)),
                     React.createElement('button', { type: 'button', onClick: function() { setModalUid(null); }, style: { fontFamily: "'Press Start 2P',cursive", fontSize: '12px', background: 'none', border: 'none', color: theme.txtS, cursor: 'pointer', padding: '4px 8px' } }, '\u2715')
                 ),
                 React.createElement(ProgressUpdateForm, {
@@ -17793,39 +17794,39 @@ function ProgressUpdatesScreen() {
 }
 
 function AppContent() {
-    React.useEffect(() => { if (!DEMO_MODE && typeof kbCacheLoad === 'function') kbCacheLoad(); }, []);
-    const { route, navigate, goBack, canGoBack } = useNavigation();
-    const { isDesktop } = useScreenSize();
+    React.useEffect(() => { if (!window.DEMO_MODE && typeof window.kbCacheLoad === 'function') window.kbCacheLoad(); }, []);
+    const { route, navigate, goBack, canGoBack } = window.useNavigation();
+    const { isDesktop } = window.useScreenSize();
     const currentScreen = route && route.screen ? route.screen : 'home';
     const render = () => {
         switch (currentScreen) {
-            case 'home': return React.createElement(HomeScreen, null);
-            case 'plant': return React.createElement(PlantScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '' });
-            case 'watering': return React.createElement(WateringScreen, null);
-            case 'quick-log': return React.createElement(WateringScreen, null);
-            case 'add': return React.createElement(AddScreen, { prefill: (route.params && route.params.prefill) ? route.params.prefill : null, openMode: (route.params && route.params.openMode) ? route.params.openMode : null });
+            case 'home': return React.createElement(window.HomeScreen, null);
+            case 'plant': return React.createElement(window.PlantScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '' });
+            case 'watering': return React.createElement(window.WateringScreen, null);
+            case 'quick-log': return React.createElement(window.WateringScreen, null);
+            case 'add': return React.createElement(window.AddScreen, { prefill: (route.params && route.params.prefill) ? route.params.prefill : null, openMode: (route.params && route.params.openMode) ? route.params.openMode : null });
             case 'carl': navigate('progress-updates'); return null;
-            case 'carl-chat': return React.createElement(CarlClassicScreen, null);
-            case 'my-plants': return React.createElement(MyPlantsScreen, { openTab: (route.params && route.params.openTab) ? route.params.openTab : null, prefill: (route.params && route.params.prefill) ? route.params.prefill : null });
-            case 'environments': return React.createElement(EnvironmentsScreen, null);
-            case 'archive': return React.createElement(ArchiveScreen, null);
-            case 'locations': return React.createElement(LocationsScreen, null);
-            case 'plant-log': return React.createElement(PlantLogScreen, null);
-            case 'diary': return React.createElement(DiaryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
-            case 'gallery': return React.createElement(GalleryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
-            case 'spec': return React.createElement(DevScreen, null);
+            case 'carl-chat': return React.createElement(window.CarlClassicScreen, null);
+            case 'my-plants': return React.createElement(window.MyPlantsScreen, { openTab: (route.params && route.params.openTab) ? route.params.openTab : null, prefill: (route.params && route.params.prefill) ? route.params.prefill : null });
+            case 'environments': return React.createElement(window.EnvironmentsScreen, null);
+            case 'archive': return React.createElement(window.ArchiveScreen, null);
+            case 'locations': return React.createElement(window.LocationsScreen, null);
+            case 'plant-log': return React.createElement(window.PlantLogScreen, null);
+            case 'diary': return React.createElement(window.DiaryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
+            case 'gallery': return React.createElement(window.GalleryScreen, { uid: (route.params && route.params.uid) ? route.params.uid : '', name: (route.params && route.params.name) ? route.params.name : '' });
+            case 'spec': return React.createElement(window.DevScreen, null);
             case 'phylo': { navigate('my-plants', { openTab: 'phylo' }); return null; }
             case 'progress-updates': return React.createElement(ProgressUpdatesScreen, null);
-            case 'batch-water': return React.createElement(BatchWaterScreen, null);
-            case 'batch-fertilize': return React.createElement(BatchFertilizeScreen, null);
-            case 'settings': return React.createElement(SettingsScreen, null);
-            case 'dev': return React.createElement(DevScreen, null);
-            default: return React.createElement(HomeScreen, null);
+            case 'batch-water': return React.createElement(window.BatchWaterScreen, null);
+            case 'batch-fertilize': return React.createElement(window.BatchFertilizeScreen, null);
+            case 'settings': return React.createElement(window.SettingsScreen, null);
+            case 'dev': return React.createElement(window.DevScreen, null);
+            default: return React.createElement(window.HomeScreen, null);
         }
     };
     const showTopLeftNav = currentScreen !== 'home';
     return (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', width: '100%', flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative', paddingTop: 'env(safe-area-inset-top)' } },
-        React.createElement(SceneBackground, null),
+        React.createElement(window.SceneBackground, null),
         showTopLeftNav && (React.createElement("div", { style: {
                 position: 'relative', zIndex: 30, display: 'flex', alignItems: 'center', gap: 6,
                 padding: '8px 10px', borderBottom: '2px solid #1A4010',
@@ -17838,11 +17839,11 @@ function AppContent() {
             React.createElement("button", { onClick: () => window.location.reload(), style: { fontFamily: "'Press Start 2P',monospace", fontSize: 11, padding: '7px 10px', background: 'transparent', border: '2px solid rgba(255,255,255,0.25)', color: '#FFFFFF', cursor: 'pointer' } }, "\u21BB")
         )),
         React.createElement("div", { className: "scroll-y", style: { flex: 1, minHeight: 0, position: 'relative', zIndex: 10, overflowY: 'auto', paddingTop: 0, paddingBottom: !isDesktop ? 60 : 0 } }, render()),
-        React.createElement(BottomNav, { current: currentScreen, navigate: navigate, goBack: goBack })));
+        React.createElement(window.BottomNav, { current: currentScreen, navigate: navigate, goBack: goBack })));
 }
 
 function GasBannerTip() {
-    const { isMobile } = useScreenSize();
+    const { isMobile } = window.useScreenSize();
     const [visible, setVisible] = React.useState(true);
     if (!isMobile || !visible || !window.HAS_GAS)
         return null;
@@ -17854,9 +17855,9 @@ function GasBannerTip() {
         } },
         React.createElement("span", { style: { fontSize: 22 } }, "\uD83D\uDCF1"),
         React.createElement("div", { style: { flex: 1 } },
-            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: '#5A8A38', fontWeight: 900, marginBottom: 2 }) }, "TIP: Add to Home Screen"),
-            React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
-        React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
+            React.createElement("div", { style: Object.assign(Object.assign({}, window.pxS), { fontSize: '14px', color: '#5A8A38', fontWeight: 900, marginBottom: 2 }) }, "TIP: Add to Home Screen"),
+            React.createElement("div", { style: Object.assign(Object.assign({}, window.pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
+        React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, window.pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
 const PLANTOS_VERSION = '5.7';
 
@@ -17873,7 +17874,7 @@ function LoginScreen({ onLogin }) {
         if (!username.trim() || !password.trim() || loading) return;
         setLoading(true); setError('');
         try {
-            const res = await gasCall('plantosLogin', username.trim(), password);
+            const res = await window.gasCall('plantosLogin', username.trim(), password);
             if (res && res.ok && res.token) {
                 localStorage.setItem('plantos_auth_token', res.token);
                 localStorage.setItem('plantos_username', res.username || username.trim());
@@ -17889,12 +17890,12 @@ function LoginScreen({ onLogin }) {
 
     const px8 = { fontFamily: "'Press Start 2P', monospace" };
     const pxS = { fontFamily: "'Pixelify Sans', cursive" };
-    const inputStyle = Object.assign({}, pxS, { fontSize: 16, padding: '10px 14px', background: '#111E13', border: '3px solid #2A4A20', color: '#C8D8A8', width: '100%', outline: 'none', boxSizing: 'border-box' });
+    const inputStyle = Object.assign({}, window.pxS, { fontSize: 16, padding: '10px 14px', background: '#111E13', border: '3px solid #2A4A20', color: '#C8D8A8', width: '100%', outline: 'none', boxSizing: 'border-box' });
     return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0A150C', padding: 24 } },
         React.createElement('div', { style: { width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', alignItems: 'center' } },
             React.createElement('div', { style: { fontSize: 52, marginBottom: 12 } }, '\uD83C\uDF3F'),
             React.createElement('div', { style: Object.assign({}, px8, { fontSize: 16, color: '#C8D8A8', marginBottom: 6, letterSpacing: '0.05em' }) }, 'FOLIUM'),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: 15, color: '#5A7A4A', marginBottom: 40 }) }, 'Plant Collection Manager'),
+            React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: 15, color: '#5A7A4A', marginBottom: 40 }) }, 'Plant Collection Manager'),
             React.createElement('form', { onSubmit: handleSubmit, style: { width: '100%', display: 'flex', flexDirection: 'column', gap: 10 } },
                 React.createElement('div', { style: Object.assign({}, px8, { fontSize: 9, color: '#6A8A5A', marginBottom: 2, letterSpacing: '0.1em' }) }, '\uD83D\uDC64 USERNAME'),
                 React.createElement('input', {
@@ -17916,14 +17917,14 @@ function LoginScreen({ onLogin }) {
                     disabled: loading,
                     style: Object.assign({}, inputStyle, error ? { borderColor: '#8B1A1A' } : {})
                 }),
-                error && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: 13, color: '#FF7070', padding: '6px 10px', border: '2px solid #5A0A0A', background: '#1A0505' }) }, error),
+                error && React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: 13, color: '#FF7070', padding: '6px 10px', border: '2px solid #5A0A0A', background: '#1A0505' }) }, error),
                 React.createElement('button', {
                     type: 'submit',
                     disabled: loading || !username.trim() || !password.trim(),
                     style: Object.assign({}, px8, { fontSize: 10, padding: '13px 24px', background: (loading || !username.trim() || !password.trim()) ? '#1A2A1A' : '#1E4A14', color: (loading || !username.trim() || !password.trim()) ? '#4A6A3A' : '#B8D89A', border: '3px solid ' + ((loading || !username.trim() || !password.trim()) ? '#2A3A2A' : '#3A7A20'), cursor: (loading || !username.trim() || !password.trim()) ? 'default' : 'pointer', width: '100%', marginTop: 4, letterSpacing: '0.05em' })
                 }, loading ? 'CONNECTING...' : '\u25B6 ENTER')
             ),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: 12, color: '#3A5A2A', marginTop: 32, textAlign: 'center' }) }, 'v3 \u00B7 Folium')
+            React.createElement('div', { style: Object.assign({}, window.pxS, { fontSize: 12, color: '#3A5A2A', marginTop: 32, textAlign: 'center' }) }, 'v3 \u00B7 Folium')
         )
     );
 }
@@ -17945,9 +17946,9 @@ function PlantOSApp() {
         return function() { window.removeEventListener('plantos:unauthorized', handler); };
     }, []);
     if (!authed) return React.createElement(LoginScreen, { onLogin: function() { setAuthed(true); } });
-  return (React.createElement(ThemeProvider, null,
-      React.createElement(NavigationProvider, null,
-          React.createElement(PlantDataProvider, null,
+  return (React.createElement(window.ThemeProvider, null,
+      React.createElement(window.NavigationProvider, null,
+          React.createElement(window.PlantDataProvider, null,
               React.createElement(AppContent, null),
               React.createElement(GasBannerTip, null)))));
 }
