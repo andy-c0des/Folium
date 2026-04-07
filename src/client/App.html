@@ -17847,7 +17847,7 @@ function AppContent() {
 function GasBannerTip() {
     const { isMobile } = useScreenSize();
     const [visible, setVisible] = React.useState(true);
-    if (!isMobile || !visible || !HAS_GAS)
+    if (!isMobile || !visible || !window.HAS_GAS)
         return null;
     return (React.createElement("div", { style: {
             position: 'fixed', bottom: 72, left: 8, right: 8, zIndex: 999,
@@ -17939,7 +17939,7 @@ window.plantosLogout = function() {
 
 function PlantOSApp() {
     const [authed, setAuthed] = React.useState(function() {
-        if (!HAS_GAS) return true;
+        if (!window.HAS_GAS) return true;
         return !!localStorage.getItem('plantos_auth_token');
     });
     React.useEffect(function() {
