@@ -10959,8 +10959,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("div", { style: { marginTop: 8 } },
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Notes"),
                         React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "Describe the cutting, source, conditions...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
-                )
-            ,
+                ))
         ) : (
             React.createElement(React.Fragment, null,
                 React.createElement("div", { style: { padding: '8px 10px', border: `2px solid ${theme.rowBorder}`, marginBottom: 8, borderLeft: `4px solid #c0392b` } },
