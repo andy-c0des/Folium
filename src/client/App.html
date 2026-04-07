@@ -725,9 +725,6 @@
   window.addEventListener('resize', sizeRoot);
   window.addEventListener('orientationchange', function(){ setTimeout(sizeRoot, 250); });
   if (document.readyState !== 'loading') sizeRoot();
-</script>
-
-<script type="text/javascript">
 const { useState, useEffect, useRef, createContext, useContext, useMemo } = React;
 const _createElement = React.createElement.bind(React);
 React.createElement = function(type, props) {
