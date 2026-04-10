@@ -18,17 +18,24 @@ function plantosHome() {
   const H = PLANTOS_BACKEND_CFG.HEADERS;
   const uidCol = plantosCol_(hmap, H.UID), nicknameCol = plantosCol_(hmap, H.NICKNAME);
   const genusCol = plantosCol_(hmap, H.GENUS), taxonCol = plantosCol_(hmap, H.TAXON);
-  const lastWateredCol = plantosCol_(hmap, H.LAST_WATERED), everyDaysCol = plantosColMulti_(hmap, H.WATER_EVERY_DAYS, H.WATER_EVERY_DAYS_ALT); // FIX #14
+  const lastWateredCol = plantosCol_(hmap, H.LAST_WATERED), everyDaysCol = plantosColMulti_(hmap, H.WATER_EVERY_DAYS, H.WATER_EVERY_DAYS_ALT);
   const birthdayCol = plantosCol_(hmap, H.BIRTHDAY), lastFertCol = plantosCol_(hmap, H.LAST_FERTILIZED);
   const fertEveryCol = plantosCol_(hmap, H.FERT_EVERY_DAYS);
   const lastProgressCol = plantosCol_(hmap, H.LAST_PROGRESS_UPDATE);
-  const PROGRESS_INTERVAL = 14; // days between required progress updates
+  const priceCol = plantosCol_(hmap, H.PURCHASE_PRICE);
+  const aliveCol = plantosCol_(hmap, 'Alive'), inColCol = plantosCol_(hmap, 'In Collection');
+  const PROGRESS_INTERVAL = 14;
   const now = plantosNow_(), tz = Session.getScriptTimeZone();
   const today = Utilities.formatDate(now, tz, 'MM/dd');
   const dueNow = [], upcoming = [], fertDueNow = [], fertUpcoming = [], bothDueNow = [], bothUpcoming = [], birthdays = [];
   const progressDueNow = [], wateredToday = [], fertedToday = [];
   const todayStr = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
   let totalCount = 0;
+  // Dashboard accumulators (computed in same loop — no extra sheet read)
+  let dashTotalPlants = 0, dashSpentCurrent = 0, dashSpentAll = 0;
+  const genusCounts = {}, monthlyPurchases = {};
+  let dashWaterOverdue = 0, dashFertOverdue = 0, dashProgressOverdue = 0;
+
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
     const uid = uidCol >= 0 ? plantosSafeStr_(row[uidCol]).trim() : '';
@@ -38,7 +45,26 @@ function plantosHome() {
     const genus = genusCol >= 0 ? plantosSafeStr_(row[genusCol]).trim() : '';
     const taxon = taxonCol >= 0 ? plantosSafeStr_(row[taxonCol]).trim() : '';
     const primary = nn || [genus, taxon].filter(Boolean).join(' ') || uid;
-    if (birthdayCol >= 0) { const bd = plantosAsDate_(row[birthdayCol]); if (bd && Utilities.formatDate(bd, tz, 'MM/dd') === today) birthdays.push(primary); }
+
+    // Alive / In Collection (dashboard filtering)
+    let alive = true, inCol = true;
+    if (aliveCol >= 0) { const a = String(row[aliveCol] || '').toLowerCase().trim(); if (a && (a === 'false' || a === 'no' || a === 'dead' || a === '0')) alive = false; }
+    if (inColCol >= 0) { const ic = String(row[inColCol] || '').toLowerCase().trim(); if (ic && (ic === 'false' || ic === 'no' || ic === '0')) inCol = false; }
+
+    // Purchase price
+    const rawPrice = priceCol >= 0 ? plantosSafeStr_(row[priceCol]).trim() : '';
+    const price = rawPrice ? parseFloat(String(rawPrice).replace(/[$,]/g, '')) : NaN;
+    if (!isNaN(price) && price > 0) dashSpentAll += price;
+
+    // Monthly purchases (Birthday as purchase date)
+    if (birthdayCol >= 0) {
+      const bd = plantosAsDate_(row[birthdayCol]);
+      if (bd) {
+        if (Utilities.formatDate(bd, tz, 'MM/dd') === today) birthdays.push(primary);
+        if (!isNaN(price) && price > 0) { const ym = Utilities.formatDate(bd, tz, 'yyyy-MM'); monthlyPurchases[ym] = (monthlyPurchases[ym] || 0) + price; }
+      }
+    }
+
     const waterEvery = everyDaysCol >= 0 ? Number(row[everyDaysCol]) : NaN;
     const lw = lastWateredCol >= 0 ? plantosAsDate_(row[lastWateredCol]) : null;
     let waterBucket = null, waterDue = null;
@@ -71,18 +97,62 @@ function plantosHome() {
     else if ((waterBucket === 'now' || waterBucket === 'upcoming') && (fertBucket === 'now' || fertBucket === 'upcoming')) bothUpcoming.push({ uid, primary, due: waterDue, fertDue });
     if (lw && Utilities.formatDate(lw, tz, 'yyyy-MM-dd') === todayStr) wateredToday.push({ uid, primary });
     if (lf && Utilities.formatDate(lf, tz, 'yyyy-MM-dd') === todayStr) fertedToday.push({ uid, primary });
-    // Progress update tracking: flag plants with no update ever, or last update >14 days ago
     if (lastProgressCol >= 0) {
       const lp = plantosAsDate_(row[lastProgressCol]);
       if (!lp || plantosAddDays_(lp, PROGRESS_INTERVAL) <= now) {
         progressDueNow.push({ uid, primary, nickname: nn });
       }
     }
+
+    // Living collection dashboard metrics
+    if (alive && inCol) {
+      dashTotalPlants++;
+      if (!isNaN(price) && price > 0) dashSpentCurrent += price;
+      if (genus) genusCounts[genus] = (genusCounts[genus] || 0) + 1;
+      if (waterBucket === 'now') dashWaterOverdue++;
+      if (fertBucket === 'now') dashFertOverdue++;
+      if (lastProgressCol >= 0) { const lp2 = plantosAsDate_(row[lastProgressCol]); if (!lp2 || plantosAddDays_(lp2, PROGRESS_INTERVAL) <= now) dashProgressOverdue++; }
+    }
   }
   const byDue = (a, b) => String(a.due || '').localeCompare(String(b.due || ''));
   [dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming].forEach(a => a.sort(byDue));
   progressDueNow.sort((a, b) => String(a.primary || '').localeCompare(String(b.primary || '')));
-  return { dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow, wateredToday, fertedToday };
+
+  // ── Props & Grafts (dashboard metrics) ──
+  const props = plantosGetProps(), grafts = plantosGetGrafts();
+  const TERMINAL = { Graduated: 1, Failed: 1, Sold: 1 };
+  let activeProps = 0, activeGrafts = 0, totalSoldRevenue = 0;
+  const propStatusCounts = {}, graftStatusCounts = {}, monthlySales = {};
+  for (let i = 0; i < props.length; i++) {
+    const p = props[i], st = p.status || 'Trying';
+    propStatusCounts[st] = (propStatusCounts[st] || 0) + 1;
+    if (!TERMINAL[st]) activeProps++;
+    if (st === 'Sold' && p.priceSold) {
+      const pv = parseFloat(String(p.priceSold).replace(/[$,]/g, ''));
+      if (!isNaN(pv) && pv > 0) { totalSoldRevenue += pv; if (p.soldDate) { const sm = String(p.soldDate).slice(0, 7); monthlySales[sm] = (monthlySales[sm] || 0) + pv; } }
+    }
+  }
+  for (let j = 0; j < grafts.length; j++) {
+    const g = grafts[j], gs = g.status || 'Trying';
+    graftStatusCounts[gs] = (graftStatusCounts[gs] || 0) + 1;
+    if (!TERMINAL[gs]) activeGrafts++;
+    if (gs === 'Sold' && g.priceSold) {
+      const gv = parseFloat(String(g.priceSold).replace(/[$,]/g, ''));
+      if (!isNaN(gv) && gv > 0) { totalSoldRevenue += gv; if (g.soldDate) { const gm = String(g.soldDate).slice(0, 7); monthlySales[gm] = (monthlySales[gm] || 0) + gv; } }
+    }
+  }
+
+  return {
+    dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow, wateredToday, fertedToday,
+    // Dashboard fields (merged — no separate API call needed)
+    totalPlants: dashTotalPlants, activeProps, activeGrafts,
+    totalSpentCurrent: Math.round(dashSpentCurrent * 100) / 100,
+    totalSpentAllTime: Math.round(dashSpentAll * 100) / 100,
+    totalSoldRevenue: Math.round(totalSoldRevenue * 100) / 100,
+    genusCounts, propStatusCounts, graftStatusCounts,
+    monthlyPurchases, monthlySales,
+    waterOverdue: dashWaterOverdue, fertOverdue: dashFertOverdue, progressOverdue: dashProgressOverdue
+  };
 }
 
 /* ===================== FIX #5: Case-insensitive location matching ===================== */

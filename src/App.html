@@ -5506,8 +5506,9 @@ function HomeScreen() {
         attention:    { label: 'Attention Needed',     icon: '\u26A0\uFE0F', group: 'full' }
     };
     var DEFAULT_DASH_CONFIG = { order: ALL_WIDGET_IDS.slice(), hidden: [] };
-    const [dashData, setDashData] = useState(() => lsGet_('plantos_dash_cache', 5 * 60 * 1000));
-    const [dashLoading, setDashLoading] = useState(!dashData);
+    // Dashboard data derived from homeData (merged server call — no extra fetch)
+    var dashData = homeData;
+    var dashLoading = loading;
     const [dashConfig, setDashConfig] = useState(() => {
         try { var c = JSON.parse(localStorage.getItem('plantos_dash_config_v2'));
             if (c && c.order) { ALL_WIDGET_IDS.forEach(id => { if (c.order.indexOf(id) < 0) c.order.push(id); }); return c; }
@@ -5516,28 +5517,103 @@ function HomeScreen() {
     });
     const [dashEditMode, setDashEditMode] = useState(false);
 
-    useEffect(() => {
-        gasCall('plantosDashboard').then(d => {
-            if (d && !d.error) { setDashData(d); lsSet_('plantos_dash_cache', d); }
-        }).catch(() => {}).finally(() => setDashLoading(false));
-    }, []);
-
     function saveDashConfig(cfg) { setDashConfig(cfg); try { localStorage.setItem('plantos_dash_config_v2', JSON.stringify(cfg)); } catch(e) {} }
     function toggleWidget(id) {
         saveDashConfig(Object.assign({}, dashConfig, {
             hidden: dashConfig.hidden.includes(id) ? dashConfig.hidden.filter(h => h !== id) : dashConfig.hidden.concat(id)
         }));
     }
-    function moveWidget(id, dir) {
-        var order = dashConfig.order.slice();
-        var idx = order.indexOf(id);
-        if (idx < 0) return;
-        var swap = idx + dir;
-        if (swap < 0 || swap >= order.length) return;
-        var tmp = order[swap]; order[swap] = order[idx]; order[idx] = tmp;
-        saveDashConfig(Object.assign({}, dashConfig, { order: order }));
-    }
+    function reorderWidgets(newOrder) { saveDashConfig(Object.assign({}, dashConfig, { order: newOrder })); }
     function isVisible(id) { return !dashConfig.hidden.includes(id); }
+
+    // ── Drag-to-Reorder ──
+    var dragRef = React.useRef({ id: null, startY: 0, clone: null, items: [], overIdx: -1 });
+    function onDragStart(e, widgetId) {
+        if (e.button && e.button !== 0) return;
+        e.preventDefault();
+        var el = e.currentTarget.closest('[data-widget-id]');
+        if (!el) return;
+        var container = el.parentNode;
+        var siblings = Array.from(container.querySelectorAll('[data-widget-id]'));
+        var rect = el.getBoundingClientRect();
+        var clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+        var clone = el.cloneNode(true);
+        clone.style.position = 'fixed';
+        clone.style.left = rect.left + 'px';
+        clone.style.top = rect.top + 'px';
+        clone.style.width = rect.width + 'px';
+        clone.style.zIndex = '9999';
+        clone.style.opacity = '0.85';
+        clone.style.pointerEvents = 'none';
+        clone.style.transform = 'scale(1.03)';
+        clone.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
+        clone.style.transition = 'none';
+        document.body.appendChild(clone);
+
+        el.style.opacity = '0.3';
+
+        var items = siblings.map(s => {
+            var r = s.getBoundingClientRect();
+            return { id: s.getAttribute('data-widget-id'), mid: r.top + r.height / 2, el: s };
+        });
+
+        dragRef.current = { id: widgetId, startY: clientY, offsetY: clientY - rect.top, clone: clone, items: items, srcEl: el, overIdx: -1 };
+
+        function onMove(ev) {
+            var cy = ev.clientY != null ? ev.clientY : (ev.touches && ev.touches[0] ? ev.touches[0].clientY : 0);
+            clone.style.top = (cy - dragRef.current.offsetY) + 'px';
+            var best = -1;
+            for (var i = 0; i < items.length; i++) { if (cy < items[i].mid) { best = i; break; } }
+            if (best < 0) best = items.length;
+            if (best !== dragRef.current.overIdx) {
+                dragRef.current.overIdx = best;
+                items.forEach((it, idx) => {
+                    it.el.style.borderTop = (idx === best && it.id !== widgetId) ? '3px solid #4A7C1E' : '';
+                });
+                if (best === items.length) {
+                    var last = items[items.length - 1];
+                    if (last && last.id !== widgetId) last.el.style.borderBottom = '3px solid #4A7C1E';
+                }
+            }
+        }
+        function onEnd(ev) {
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onEnd);
+            document.removeEventListener('pointercancel', onEnd);
+            if (clone.parentNode) clone.parentNode.removeChild(clone);
+            dragRef.current.srcEl.style.opacity = '';
+            items.forEach(it => { it.el.style.borderTop = ''; it.el.style.borderBottom = ''; });
+
+            var order = dashConfig.order.slice();
+            var fromIdx = order.indexOf(widgetId);
+            if (fromIdx >= 0 && dragRef.current.overIdx >= 0) {
+                order.splice(fromIdx, 1);
+                var visibleIds = items.map(it => it.id);
+                var dropAt = dragRef.current.overIdx;
+                var targetId = visibleIds[dropAt] || null;
+                var insertIdx = targetId ? order.indexOf(targetId) : order.length;
+                if (insertIdx < 0) insertIdx = order.length;
+                order.splice(insertIdx, 0, widgetId);
+                reorderWidgets(order);
+            }
+            dragRef.current = { id: null, startY: 0, clone: null, items: [], overIdx: -1 };
+        }
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onEnd);
+        document.addEventListener('pointercancel', onEnd);
+    }
+
+    function DragHandle({ widgetId }) {
+        return React.createElement('div', {
+            onPointerDown: e => onDragStart(e, widgetId),
+            style: { cursor: 'grab', touchAction: 'none', padding: '4px 6px', display: 'flex', flexDirection: 'column',
+                gap: 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0, userSelect: 'none' }
+        },
+            [0,1,2].map(r => React.createElement('div', { key: r, style: { display: 'flex', gap: 3 } },
+                React.createElement('div', { style: { width: 4, height: 4, background: theme.txtS, borderRadius: 0, imageRendering: 'pixelated' } }),
+                React.createElement('div', { style: { width: 4, height: 4, background: theme.txtS, borderRadius: 0, imageRendering: 'pixelated' } }))));
+    }
 
     // ── Pixel Card Wrapper ──
     function DashCard({ title, emoji, children, noPad }) {
@@ -5768,7 +5844,6 @@ function HomeScreen() {
         var ordered = dashConfig.order.filter(id => isVisible(id));
         var visibleStats = ordered.filter(id => STAT_WIDGET_IDS[id]);
         var visibleCharts = ordered.filter(id => WIDGET_META[id] && WIDGET_META[id].group === 'chart' && !STAT_WIDGET_IDS[id]);
-        var visibleFull = ordered.filter(id => WIDGET_META[id] && WIDGET_META[id].group === 'full' && !STAT_WIDGET_IDS[id]);
         var visibleContent = ordered.filter(id => !STAT_WIDGET_IDS[id]);
         var chartGridCols = visibleCharts.length >= 2 && isDesktop ? 'repeat(2, 1fr)' : '1fr';
 
@@ -5790,15 +5865,20 @@ function HomeScreen() {
                 color: theme.txtS, textAlign: 'center', padding: '24px 0', letterSpacing: '0.1em' } }, 'LOADING...'),
             visibleStats.length > 0 && React.createElement('div', { style: { display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(' + (isDesktop ? '140px' : '130px') + ', 1fr))', gap: 8, marginBottom: 10 } },
-                visibleStats.map(id => React.createElement(StatCard, { key: id, id: id }))),
-            visibleContent.length > 0 && React.createElement('div', { style: { display: 'grid',
-                gridTemplateColumns: chartGridCols, gap: 10 } },
+                visibleStats.map(id => React.createElement('div', { key: id, 'data-widget-id': dashEditMode ? id : undefined },
+                    dashEditMode && React.createElement(DragHandle, { widgetId: id }),
+                    React.createElement(StatCard, { id: id })))),
+            visibleContent.length > 0 && React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
                 visibleContent.map(id => {
                     var W = CONTENT_WIDGETS[id];
                     if (!W) return null;
-                    var isFull = WIDGET_META[id] && WIDGET_META[id].group === 'full';
-                    return React.createElement('div', { key: id, style: isFull && visibleCharts.length >= 2 && isDesktop ? { gridColumn: '1 / -1' } : undefined },
-                        React.createElement(W, null));
+                    if (dashEditMode) {
+                        return React.createElement('div', { key: id, 'data-widget-id': id,
+                            style: { display: 'flex', alignItems: 'stretch' } },
+                            React.createElement(DragHandle, { widgetId: id }),
+                            React.createElement('div', { style: { flex: 1, minWidth: 0 } }, React.createElement(W, null)));
+                    }
+                    return React.createElement('div', { key: id }, React.createElement(W, null));
                 })));
     }
 
