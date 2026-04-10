@@ -134,6 +134,7 @@ function doPost(e) {
     // Dispatch map
     var dispatch = {
       plantosHome: plantosHome,
+      plantosDashboard: plantosDashboard,
       plantosGetAllPlantsLite: plantosGetAllPlantsLite,
       plantosGetPlant: plantosGetPlant,
       plantosCreatePlant: plantosCreatePlant,

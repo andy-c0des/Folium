@@ -5747,6 +5747,250 @@ function HomeScreen() {
     const overdueTotal = dueNow.length + fertDueNow.length + progressDueNow.length;
     const allHappy = !loading && overdueTotal === 0 && upcoming.length === 0 && fertUpcoming.length === 0;
 
+    // ══════════════════════════════════════════════════════════════
+    // ── Dashboard State ──
+    // ══════════════════════════════════════════════════════════════
+    const DEFAULT_DASH_CONFIG = { order: ['stats','genus','propFunnel','graftFunnel','monthly','attention'], hidden: [] };
+    const [dashData, setDashData] = useState(() => lsGet_('plantos_dash_cache', 5 * 60 * 1000));
+    const [dashLoading, setDashLoading] = useState(!dashData);
+    const [dashConfig, setDashConfig] = useState(() => {
+        try { var c = JSON.parse(localStorage.getItem('plantos_dash_config')); return (c && c.order) ? c : DEFAULT_DASH_CONFIG; } catch(e) { return DEFAULT_DASH_CONFIG; }
+    });
+    const [dashEditMode, setDashEditMode] = useState(false);
+
+    useEffect(() => {
+        gasCall('plantosDashboard').then(d => {
+            if (d && !d.error) { setDashData(d); lsSet_('plantos_dash_cache', d); }
+        }).catch(() => {}).finally(() => setDashLoading(false));
+    }, []);
+
+    function saveDashConfig(cfg) { setDashConfig(cfg); try { localStorage.setItem('plantos_dash_config', JSON.stringify(cfg)); } catch(e) {} }
+    function toggleWidget(id) {
+        saveDashConfig(Object.assign({}, dashConfig, {
+            hidden: dashConfig.hidden.includes(id) ? dashConfig.hidden.filter(h => h !== id) : dashConfig.hidden.concat(id)
+        }));
+    }
+    function moveWidget(id, dir) {
+        var order = dashConfig.order.slice();
+        var idx = order.indexOf(id);
+        if (idx < 0) return;
+        var swap = idx + dir;
+        if (swap < 0 || swap >= order.length) return;
+        var tmp = order[swap]; order[swap] = order[idx]; order[idx] = tmp;
+        saveDashConfig(Object.assign({}, dashConfig, { order: order }));
+    }
+
+    // ── SVG Donut Chart ──
+    function DonutChart({ data, size }) {
+        var sz = size || 160, cx = sz / 2, cy = sz / 2, outerR = sz * 0.42, innerR = sz * 0.25;
+        var total = data.reduce((s, d) => s + d.value, 0);
+        if (total === 0) return React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#8B6C3A', textAlign: 'center', padding: 20 }) }, 'No data');
+        var arcs = [], angle = -Math.PI / 2;
+        data.forEach(d => {
+            var sweep = (d.value / total) * Math.PI * 2;
+            var x1o = cx + outerR * Math.cos(angle), y1o = cy + outerR * Math.sin(angle);
+            var x1i = cx + innerR * Math.cos(angle), y1i = cy + innerR * Math.sin(angle);
+            var endAngle = angle + sweep;
+            var x2o = cx + outerR * Math.cos(endAngle), y2o = cy + outerR * Math.sin(endAngle);
+            var x2i = cx + innerR * Math.cos(endAngle), y2i = cy + innerR * Math.sin(endAngle);
+            var large = sweep > Math.PI ? 1 : 0;
+            var path = 'M ' + x1o + ' ' + y1o + ' A ' + outerR + ' ' + outerR + ' 0 ' + large + ' 1 ' + x2o + ' ' + y2o
+                + ' L ' + x2i + ' ' + y2i + ' A ' + innerR + ' ' + innerR + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
+            arcs.push({ path: path, color: d.color, label: d.label, value: d.value });
+            angle = endAngle;
+        });
+        return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 } },
+            React.createElement('svg', { width: sz, height: sz, viewBox: '0 0 ' + sz + ' ' + sz },
+                arcs.map((a, i) => React.createElement('path', { key: i, d: a.path, fill: a.color, stroke: '#F4EDD8', strokeWidth: 1.5 })),
+                React.createElement('text', { x: cx, y: cy - 4, textAnchor: 'middle', style: { fontSize: '22px', fontWeight: 900, fontFamily: "'Press Start 2P'", fill: '#2A4A10' } }, total),
+                React.createElement('text', { x: cx, y: cy + 14, textAnchor: 'middle', style: { fontSize: '8px', fontWeight: 700, fontFamily: "'Pixelify Sans'", fill: '#5A7A30' } }, 'PLANTS')),
+            React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 10px', maxWidth: sz + 40 } },
+                data.map((d, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 4 } },
+                    React.createElement('div', { style: { width: 10, height: 10, background: d.color, border: '1px solid #8B6C3A', flexShrink: 0 } }),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#2A4A10' }) }, d.label + ' (' + d.value + ')')))));
+    }
+
+    // ── Horizontal Bar Chart ──
+    function HBarChart({ data, barHeight }) {
+        var bh = barHeight || 22;
+        var maxVal = Math.max.apply(null, data.map(d => d.value).concat([1]));
+        return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 5 } },
+            data.map((d, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#2A4A10', fontWeight: 700, width: 72, textAlign: 'right', flexShrink: 0 }) }, d.label),
+                React.createElement('div', { style: { flex: 1, height: bh, background: '#E8E0D0', position: 'relative', border: '1px solid #C8B890' } },
+                    React.createElement('div', { style: { height: '100%', width: (d.value / maxVal * 100) + '%', background: d.color, transition: 'width 0.4s ease' } })),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#2A4A10', fontWeight: 900, width: 28, flexShrink: 0 }) }, d.value))));
+    }
+
+    // ── Monthly Bar Chart ──
+    function MonthlyBarChart({ purchases, sales }) {
+        var now = new Date();
+        var months = [];
+        for (var mi = 5; mi >= 0; mi--) {
+            var d = new Date(now.getFullYear(), now.getMonth() - mi, 1);
+            var ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            var label = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+            months.push({ ym: ym, label: label, buy: (purchases || {})[ym] || 0, sell: (sales || {})[ym] || 0 });
+        }
+        var maxVal = Math.max.apply(null, months.map(m => Math.max(m.buy, m.sell)).concat([1]));
+        var svgW = 260, svgH = 120, barW = 14, gap = svgW / 6, baseline = svgH - 20;
+        return React.createElement('svg', { width: '100%', viewBox: '0 0 ' + svgW + ' ' + svgH, style: { maxWidth: svgW } },
+            React.createElement('line', { x1: 0, y1: baseline, x2: svgW, y2: baseline, stroke: '#C8B890', strokeWidth: 1 }),
+            months.map((m, i) => {
+                var x = gap * i + gap / 2;
+                var buyH = maxVal > 0 ? (m.buy / maxVal) * (baseline - 10) : 0;
+                var sellH = maxVal > 0 ? (m.sell / maxVal) * (baseline - 10) : 0;
+                return React.createElement('g', { key: i },
+                    React.createElement('rect', { x: x - barW - 1, y: baseline - buyH, width: barW, height: buyH, fill: '#4A7C1E', rx: 2 }),
+                    React.createElement('rect', { x: x + 1, y: baseline - sellH, width: barW, height: sellH, fill: '#C8A84B', rx: 2 }),
+                    React.createElement('text', { x: x, y: svgH - 4, textAnchor: 'middle', style: { fontSize: '9px', fontWeight: 700, fontFamily: "'Pixelify Sans'", fill: '#5A4020' } }, m.label));
+            }),
+            React.createElement('g', null,
+                React.createElement('rect', { x: svgW - 90, y: 2, width: 10, height: 10, fill: '#4A7C1E', rx: 1 }),
+                React.createElement('text', { x: svgW - 76, y: 11, style: { fontSize: '9px', fontFamily: "'Pixelify Sans'", fill: '#2A4A10' } }, 'Bought'),
+                React.createElement('rect', { x: svgW - 90, y: 16, width: 10, height: 10, fill: '#C8A84B', rx: 1 }),
+                React.createElement('text', { x: svgW - 76, y: 25, style: { fontSize: '9px', fontFamily: "'Pixelify Sans'", fill: '#2A4A10' } }, 'Sold')));
+    }
+
+    // ── Widget Card Wrapper ──
+    function DashCard({ title, emoji, children }) {
+        return React.createElement('div', { style: { background: '#F4EDD8', border: '3px solid #8B6C3A', marginBottom: 10 } },
+            title && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: '2px solid #D8C8A0', background: '#E8F4D8' } },
+                emoji && React.createElement('span', { style: { fontSize: 15 } }, emoji),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2A4A10', letterSpacing: '0.04em' }) }, title)),
+            React.createElement('div', { style: { padding: '10px 12px' } }, children));
+    }
+
+    // ── Stat Cards ──
+    function DashStatCards() {
+        if (!dashData) return null;
+        var stats = [
+            { emoji: '\uD83C\uDF3F', value: dashData.totalPlants, label: 'Plants' },
+            { emoji: '\uD83C\uDF31', value: (dashData.activeProps || 0) + (dashData.activeGrafts || 0), label: 'Active Props' },
+            { emoji: '\uD83D\uDCB0', value: '$' + (dashData.totalSpentCurrent || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), label: 'Invested' },
+            { emoji: '\uD83D\uDCB5', value: '$' + (dashData.totalSoldRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), label: 'Revenue' }
+        ];
+        return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)', gap: 8, marginBottom: 10 } },
+            stats.map((s, i) => React.createElement('div', { key: i, className: 'fade-in', style: {
+                background: '#F4EDD8', border: '3px solid #8B6C3A', padding: '10px 8px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+                animationDelay: (i * 0.06) + 's'
+            } },
+                React.createElement('span', { style: { fontSize: 20, marginBottom: 4 } }, s.emoji),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isDesktop ? '18px' : '16px', fontWeight: 900, color: '#2A4A10', lineHeight: 1.2 }) }, s.value),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: '#5A7A30', fontWeight: 700, marginTop: 3, letterSpacing: '0.04em' }) }, s.label))));
+    }
+
+    // ── Genus Composition Widget ──
+    function DashGenusChart() {
+        if (!dashData || !dashData.genusCounts) return null;
+        var COLORS = ['#4A7C1E','#8B6C3A','#C87820','#2A6B9A','#7B4A8C','#B85C4A','#3A8A6A','#9A8A30'];
+        var entries = Object.keys(dashData.genusCounts).map(g => ({ label: g, value: dashData.genusCounts[g] }));
+        entries.sort((a, b) => b.value - a.value);
+        var chartData = [];
+        var otherTotal = 0;
+        entries.forEach((e, i) => { if (i < 8) chartData.push({ label: e.label, value: e.value, color: COLORS[i % COLORS.length] }); else otherTotal += e.value; });
+        if (otherTotal > 0) chartData.push({ label: 'Other', value: otherTotal, color: '#A0A090' });
+        if (chartData.length === 0) return null;
+        return React.createElement(DashCard, { title: 'GENUS COMPOSITION', emoji: '\uD83E\uDDEC' },
+            React.createElement(DonutChart, { data: chartData, size: isDesktop ? 180 : 150 }));
+    }
+
+    // ── Propagation Funnel Widget ──
+    function DashPropFunnel() {
+        if (!dashData || !dashData.propStatusCounts) return null;
+        var PROP_ORDER = ['Trying','Rooted','Potted Up','Graduated','Failed','Sold'];
+        var PROP_COLORS = { Trying: '#C87820', Rooted: '#4A7C1E', 'Potted Up': '#2A6B9A', Graduated: '#3A8A6A', Failed: '#B85C4A', Sold: '#9A8A30' };
+        var data = PROP_ORDER.map(s => ({ label: s, value: dashData.propStatusCounts[s] || 0, color: PROP_COLORS[s] || '#8B6C3A' })).filter(d => d.value > 0);
+        if (data.length === 0) return null;
+        return React.createElement(DashCard, { title: 'PROPAGATION STAGES', emoji: '\u2702\uFE0F' },
+            React.createElement(HBarChart, { data: data }));
+    }
+
+    // ── Graft Funnel Widget ──
+    function DashGraftFunnel() {
+        if (!dashData || !dashData.graftStatusCounts) return null;
+        var GRAFT_ORDER = ['Trying','Callusing','Fused','Rooted','Potted Up','Graduated','Failed','Sold'];
+        var GRAFT_COLORS = { Trying: '#C87820', Callusing: '#9A5E00', Fused: '#7B4A8C', Rooted: '#4A7C1E', 'Potted Up': '#2A6B9A', Graduated: '#3A8A6A', Failed: '#B85C4A', Sold: '#9A8A30' };
+        var data = GRAFT_ORDER.map(s => ({ label: s, value: dashData.graftStatusCounts[s] || 0, color: GRAFT_COLORS[s] || '#8B6C3A' })).filter(d => d.value > 0);
+        if (data.length === 0) return null;
+        return React.createElement(DashCard, { title: 'GRAFT STAGES', emoji: '\uD83E\uDE78' },
+            React.createElement(HBarChart, { data: data }));
+    }
+
+    // ── Monthly Purchases vs Sales Widget ──
+    function DashMonthlyChart() {
+        if (!dashData) return null;
+        var hasPurchases = dashData.monthlyPurchases && Object.keys(dashData.monthlyPurchases).length > 0;
+        var hasSales = dashData.monthlySales && Object.keys(dashData.monthlySales).length > 0;
+        if (!hasPurchases && !hasSales) return null;
+        return React.createElement(DashCard, { title: 'MONTHLY PURCHASES vs SALES', emoji: '\uD83D\uDCC8' },
+            React.createElement(MonthlyBarChart, { purchases: dashData.monthlyPurchases, sales: dashData.monthlySales }));
+    }
+
+    // ── Attention Needed Widget (dashboard version) ──
+    function DashAttention() {
+        if (!dashData) return null;
+        var items = [];
+        if (dashData.waterOverdue > 0) items.push({ emoji: '\uD83D\uDCA7', label: 'Watering overdue', count: dashData.waterOverdue, color: '#1A6A9A', bgColor: '#EFF8FF', action: () => navigate('watering') });
+        if (dashData.fertOverdue > 0) items.push({ emoji: '\uD83C\uDF3E', label: 'Fertilizer overdue', count: dashData.fertOverdue, color: '#5A2880', bgColor: '#F8F0FF', action: () => navigate('watering') });
+        if (dashData.progressOverdue > 0) items.push({ emoji: '\uD83D\uDCCA', label: 'Progress update due', count: dashData.progressOverdue, color: '#2A6B1A', bgColor: '#F0FAE8', action: () => navigate('progress-updates') });
+        if (items.length === 0) return React.createElement(DashCard, { title: 'ATTENTION NEEDED', emoji: '\u2705' },
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#2A6B1A', fontWeight: 700, textAlign: 'center', padding: '6px 0' }) }, 'All plants are happy!'));
+        return React.createElement(DashCard, { title: 'ATTENTION NEEDED', emoji: '\u26A0\uFE0F' },
+            React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+                items.map((it, i) => React.createElement('button', { key: i, type: 'button', onClick: it.action,
+                    style: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: it.bgColor,
+                        border: '2px solid ' + it.color + '40', cursor: 'pointer', width: '100%', textAlign: 'left' } },
+                    React.createElement('span', { style: { fontSize: 18, flexShrink: 0 } }, it.emoji),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', color: it.color, fontWeight: 700, flex: 1 }) }, it.label),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: '#fff', background: 'var(--c-urgent)', padding: '2px 8px', flexShrink: 0 }) }, it.count)))));
+    }
+
+    // ── Dashboard Customizer ──
+    function DashCustomizer() {
+        if (!dashEditMode) return null;
+        var WIDGET_LABELS = { stats: 'Stat Cards', genus: 'Genus Composition', propFunnel: 'Propagation Stages', graftFunnel: 'Graft Stages', monthly: 'Monthly Chart', attention: 'Attention Needed' };
+        return React.createElement('div', { style: { background: '#F4EDD8', border: '3px solid #8B6C3A', marginBottom: 10, padding: '10px 12px' } },
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2A4A10', marginBottom: 8, letterSpacing: '0.04em' }) }, 'CUSTOMIZE DASHBOARD'),
+            React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 4 } },
+                dashConfig.order.map((id, idx) => {
+                    var isHidden = dashConfig.hidden.includes(id);
+                    return React.createElement('div', { key: id, style: { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', background: isHidden ? '#E8E0D0' : '#E8F4D8', border: '1px solid #C8B890', opacity: isHidden ? 0.6 : 1 } },
+                        React.createElement('button', { type: 'button', onClick: () => toggleWidget(id),
+                            style: { width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isHidden ? '#D0C8B0' : '#4A7C1E', border: '2px solid #8B6C3A', color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 900, flexShrink: 0, fontFamily: "'Pixelify Sans'" } },
+                            isHidden ? '' : '\u2713'),
+                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#2A4A10', fontWeight: 700, flex: 1 }) }, WIDGET_LABELS[id] || id),
+                        React.createElement('button', { type: 'button', onClick: () => moveWidget(id, -1), disabled: idx === 0,
+                            style: { width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E8F4D8', border: '1px solid #8B6C3A', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1, fontSize: '10px' } }, '\u25B2'),
+                        React.createElement('button', { type: 'button', onClick: () => moveWidget(id, 1), disabled: idx === dashConfig.order.length - 1,
+                            style: { width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E8F4D8', border: '1px solid #8B6C3A', cursor: idx === dashConfig.order.length - 1 ? 'default' : 'pointer', opacity: idx === dashConfig.order.length - 1 ? 0.3 : 1, fontSize: '10px' } }, '\u25BC'));
+                })),
+            React.createElement('button', { type: 'button', onClick: () => saveDashConfig(DEFAULT_DASH_CONFIG),
+                style: Object.assign({}, pxS, { marginTop: 8, padding: '6px 14px', background: '#E8E0D0', border: '2px solid #8B6C3A', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#5A4020' }) }, 'Reset to Default'));
+    }
+
+    // ── Dashboard Section ──
+    var WIDGET_MAP = { stats: DashStatCards, genus: DashGenusChart, propFunnel: DashPropFunnel, graftFunnel: DashGraftFunnel, monthly: DashMonthlyChart, attention: DashAttention };
+    function DashboardSection() {
+        var visibleWidgets = dashConfig.order.filter(id => !dashConfig.hidden.includes(id));
+        return React.createElement('div', { style: { marginBottom: 12 } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+                React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                    React.createElement('span', { style: { fontSize: 16 } }, '\uD83D\uDCCA'),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: '#2A4A10', letterSpacing: '0.04em' }) }, 'DASHBOARD')),
+                React.createElement('button', { type: 'button', onClick: () => setDashEditMode(v => !v),
+                    style: { display: 'flex', alignItems: 'center', gap: 4, background: dashEditMode ? '#4A7C1E' : '#E8F4D8', border: '2px solid #8AA868', padding: '4px 10px', cursor: 'pointer' } },
+                    React.createElement('span', { style: { fontSize: 13 } }, '\u2699\uFE0F'),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: dashEditMode ? '#fff' : '#2A5808', fontWeight: 700 }) }, dashEditMode ? 'Done' : 'Edit'))),
+            React.createElement(DashCustomizer, null),
+            dashLoading && !dashData && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#8B6C3A', textAlign: 'center', padding: '20px 0' }) }, 'Loading dashboard...'),
+            visibleWidgets.map(id => {
+                var W = WIDGET_MAP[id];
+                return W ? React.createElement(W, { key: id }) : null;
+            }));
+    }
+
     // ── Greeting Bar ──
     const GreetingBar = () => {
         const hour = new Date().getHours();
@@ -6067,10 +6311,10 @@ function HomeScreen() {
             React.createElement(Header, null),
             React.createElement(GreetingBar, null),
             React.createElement(BirthdayBanner, null),
+            React.createElement(HappyBanner, null),
             React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, alignItems: 'start' } },
                 React.createElement("div", null,
-                    React.createElement(HappyBanner, null),
-                    React.createElement(NeedsAttention, null)),
+                    React.createElement(DashboardSection, null)),
                 React.createElement(WeeklySchedule, null)));
     }
     return React.createElement("div", { className: 'flex flex-col ' + pad + ' w-full pb-4 screen-enter', style: { maxWidth: maxW, margin: '0 auto' } },
@@ -6078,7 +6322,7 @@ function HomeScreen() {
         React.createElement(GreetingBar, null),
         React.createElement(BirthdayBanner, null),
         React.createElement(HappyBanner, null),
-        React.createElement(NeedsAttention, null),
+        React.createElement(DashboardSection, null),
         React.createElement("div", { style: { marginBottom: 12 } },
             React.createElement(WeeklySchedule, null)),
 );
