@@ -3844,9 +3844,9 @@ const PROP_TYPES = [
 ];
 // Single master substrate list — used everywhere so all dropdowns stay in sync
 const MASTER_SUBSTRATES = [
-    'Water', 'Sphagnum moss', 'Aroid mix', 'Moist potting mix', 'Dry potting mix',
-    'Coco coir', 'Semi-hydro (LECA)', 'Lechuza Pon', 'Perlite', '100% Perlite',
-    'Pumice', 'Fluval Stratum', 'Bark', 'Sand', 'Soil mix', 'Agar', 'Hydro mix (custom)', 'Custom mix'
+    'Water / Hydro', 'Sphagnum Moss', 'Coco Coir', 'Moist Potting Mix', 'Dry Potting Mix',
+    'Aroid Mix', 'Perlite', 'Fluval Stratum', 'Semi-Hydro (LECA)', 'Semi-Hydro (PON)',
+    'Mineral Mix', 'Bark', 'Sand', 'Pumice', 'Soil Mix', 'Custom Soil Mix'
 ];
 const PROP_SUBSTRATES      = MASTER_SUBSTRATES;
 const SEMIHYDRO_SUBSTRATES = MASTER_SUBSTRATES;
@@ -3930,22 +3930,22 @@ const ENV_HUMIDITY_LABELS = ['—', 'Very dry', 'Dry', 'Average', 'Humid', 'Very
 const ENV_TEMP_LABELS = ['—', 'Cool (< 16┬░C)', 'Moderate (16–21┬░C)', 'Warm (21–26┬░C)', 'Hot (> 26┬░C)'];
 const ENV_AIRFLOW_LABELS = ['—', 'Stagnant', 'Low', 'Moderate', 'Good', 'High / fan'];
 const SUBSTRATE_PROPS = {
-    'Water / hydro': { wh: 10, aer: 1, wick: 10, decomp: 0 },
-    'Sphagnum moss': { wh: 9, aer: 3, wick: 7, decomp: 3 },
-    'Coco coir': { wh: 7, aer: 4, wick: 6, decomp: 2 },
-    'Moist potting mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
-    'Aroid mix': { wh: 4, aer: 7, wick: 4, decomp: 3 },
+    'Water / Hydro': { wh: 10, aer: 1, wick: 10, decomp: 0 },
+    'Sphagnum Moss': { wh: 9, aer: 3, wick: 7, decomp: 3 },
+    'Coco Coir': { wh: 7, aer: 4, wick: 6, decomp: 2 },
+    'Moist Potting Mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
+    'Dry Potting Mix': { wh: 4, aer: 5, wick: 4, decomp: 4 },
+    'Aroid Mix': { wh: 4, aer: 7, wick: 4, decomp: 3 },
     'Perlite': { wh: 2, aer: 9, wick: 2, decomp: 0 },
     'Fluval Stratum': { wh: 4, aer: 7, wick: 4, decomp: 1 },
-    'Semi-hydro (LECA)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
-    'Semi-hydro (PON)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
-    'Mineral mix': { wh: 2, aer: 9, wick: 2, decomp: 0 },
+    'Semi-Hydro (LECA)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
+    'Semi-Hydro (PON)': { wh: 3, aer: 8, wick: 5, decomp: 0 },
+    'Mineral Mix': { wh: 2, aer: 9, wick: 2, decomp: 0 },
     'Bark': { wh: 3, aer: 8, wick: 3, decomp: 4 },
-    'Dry potting mix': { wh: 4, aer: 5, wick: 4, decomp: 4 },
     'Sand': { wh: 1, aer: 8, wick: 3, decomp: 0 },
     'Pumice': { wh: 2, aer: 9, wick: 2, decomp: 0 },
-    'Soil mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
-    'Custom mix': { wh: 5, aer: 5, wick: 5, decomp: 2 },
+    'Soil Mix': { wh: 6, aer: 3, wick: 5, decomp: 5 },
+    'Custom Soil Mix': { wh: 5, aer: 5, wick: 5, decomp: 2 },
 };
 const SUBSTRATE_DEFAULT = { wh: 5, aer: 5, wick: 5, decomp: 2 };
 
@@ -4015,7 +4015,7 @@ function isCustomMix(val) {
 // Human-readable label from encoded string: "2:1:1 Bark / Perlite / Coco"
 function customMixLabel(encoded) {
     var rows = decodeCustomMix(encoded);
-    if (!rows) return 'Custom mix';
+    if (!rows) return 'Custom Soil Mix';
     var partsArr = rows.map(function(r) { return r.parts; });
     var names = rows.map(function(r) {
         // shorten names for display
@@ -5768,8 +5768,22 @@ function HomeScreen() {
     var dashData = homeData;
     var dashLoading = loading;
     const [dashConfig, setDashConfig] = useState(() => {
-        try { var c = JSON.parse(localStorage.getItem('plantos_dash_config_v2'));
-            if (c && c.order) { ALL_WIDGET_IDS.forEach(id => { if (c.order.indexOf(id) < 0) c.order.push(id); }); return c; }
+        try {
+            var c = JSON.parse(localStorage.getItem('plantos_dash_config_v2'));
+            if (c && c.order) {
+                // Ensure any new widget IDs are included
+                ALL_WIDGET_IDS.forEach(id => { if (c.order.indexOf(id) < 0) c.order.push(id); });
+                // Remove stale IDs that no longer exist
+                c.order = c.order.filter(id => ALL_WIDGET_IDS.indexOf(id) >= 0);
+                c.hidden = (c.hidden || []).filter(id => ALL_WIDGET_IDS.indexOf(id) >= 0);
+                return c;
+            }
+            // Migrate from v1 config if it exists
+            var v1 = JSON.parse(localStorage.getItem('plantos_dash_config'));
+            if (v1 && v1.order) {
+                localStorage.setItem('plantos_dash_config_v2', JSON.stringify(DEFAULT_DASH_CONFIG));
+                localStorage.removeItem('plantos_dash_config');
+            }
             return DEFAULT_DASH_CONFIG;
         } catch(e) { return DEFAULT_DASH_CONFIG; }
     });
@@ -6842,7 +6856,7 @@ function WateringScreen() {
             if (s) seen.add(s);
         });
         // Always include core substrate categories so filter is usable immediately
-        ['leca', 'sphagnum moss', 'perlite', 'bark mix', 'soil mix', 'water', 'pon', 'coco coir', 'pumice'].forEach(function(c) { seen.add(c); });
+        ['water / hydro', 'sphagnum moss', 'coco coir', 'aroid mix', 'perlite', 'fluval stratum', 'semi-hydro (leca)', 'semi-hydro (pon)', 'bark', 'pumice', 'soil mix'].forEach(function(c) { seen.add(c); });
         var unique = Array.from(seen).sort();
         var btns = [{ label: 'All', key: '' }];
         unique.forEach(function(s) {
@@ -7238,6 +7252,10 @@ function WateringScreen() {
                 !manualQ && !subPreset && !locFilter && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A', opacity: 0.7 }) }, 'Type to search or select a Medium filter above\u2026'),
                 !manualQ && (subPreset || locFilter) && manualFilteredPlants.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A' }) }, 'No plants match this filter.'),
                 manualQ && manualResults.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A' }) }, 'No matches.'),
+                (function() { var list = manualQ ? manualResults : manualFilteredPlants; return list.length > 0 ? React.createElement('div', { style: { display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' } },
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#6A4A2A' }) }, list.length + ' plant' + (list.length !== 1 ? 's' : '')),
+                    React.createElement('button', { type: 'button', onClick: () => selectAll(list), className: 'underline', style: Object.assign({}, pxS, { fontSize: '12px', color: '#2C1000', fontWeight: 900 }) }, 'Select All'),
+                    Object.keys(selected).some(k => selected[k]) && React.createElement('button', { type: 'button', onClick: clearAll, className: 'underline', style: Object.assign({}, pxS, { fontSize: '12px', color: '#8B4513', fontWeight: 700 }) }, 'Clear')) : null; })(),
                 React.createElement('div', { className: 'space-y-2' },
                     (manualQ ? manualResults : manualFilteredPlants).map(p => {
                         const uid = String(p.uid || '');
@@ -8856,10 +8874,9 @@ function AddScreen({ prefill, openMode }) {
                     "These fields power the schedule algorithm \u2014 more info = better estimates."),
                 React.createElement("div", { className: "mb-3" },
                     React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Substrate / Medium"),
-                    React.createElement("select", { value: isCustomMix(medium) ? (isSemiHydro ? 'Custom PON mix' : 'Custom soil mix') : medium, onChange: function(e) { var v = e.target.value; if (v === 'Custom soil mix' || v === 'Custom PON mix') { setMedium(encodeCustomMix([{ ingredient: (isSemiHydro ? PON_MIX_INGREDIENTS : SOIL_MIX_INGREDIENTS)[0], parts: 1 }], isSemiHydro)); } else { setMedium(v); } }, className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
+                    React.createElement("select", { value: isCustomMix(medium) ? 'Custom Soil Mix' : medium, onChange: function(e) { var v = e.target.value; if (v === 'Custom Soil Mix') { setMedium(encodeCustomMix([{ ingredient: (isSemiHydro ? PON_MIX_INGREDIENTS : SOIL_MIX_INGREDIENTS)[0], parts: 1 }], isSemiHydro)); } else { setMedium(v); } }, className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                         React.createElement("option", { value: "" }, "\u2014 select \u2014"),
-                        substratesForMethod(growingMethod).map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                        React.createElement("option", { value: isSemiHydro ? 'Custom PON mix' : 'Custom soil mix' }, isSemiHydro ? '\uD83E\uDEA8 Custom PON mix...' : '\uD83C\uDF31 Custom soil mix...')),
+                        substratesForMethod(growingMethod).map(function(s) { return React.createElement("option", { key: s, value: s }, s === 'Custom Soil Mix' ? '\uD83C\uDF31 Custom Soil Mix...' : s); })),
                     isCustomMix(medium) && React.createElement(CustomMixBuilder, { value: medium, onChange: setMedium, growingMethod: growingMethod, pxS: pxS, theme: theme })),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
                     React.createElement("div", null,
@@ -8871,9 +8888,9 @@ function AddScreen({ prefill, openMode }) {
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Pot Size"),
                         React.createElement("select", { value: potSize, onChange: e => setPotSize(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                             React.createElement("option", { value: "" }, "\u2014"),
-                            ['2"','3"','4"','5"','6"','7"','8"','10"','12"','14"','16"'].map(s => React.createElement("option", { key: s, value: s }, s))))),
+                            ['1"','2"','3"','4"','5"','6"','7"','8"','10"','12"','14"','16"'].map(s => React.createElement("option", { key: s, value: s }, s))))),
                 React.createElement("div", null,
-                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "DOB / Acquired"),
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "DOB / Graduation Day"),
                     React.createElement("input", { type: "date", value: birthday, onChange: e => setBirthday(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
             ),
             !isBatch && (React.createElement(React.Fragment, null,
@@ -9387,7 +9404,7 @@ function MyPlantsScreen({ openTab, prefill }) {
             var s = String(p.substrate || p.medium || '').trim();
             if (!s) return;
             // Collapse any custom mix encoding to a single display value
-            if (s.startsWith('custom-soil:') || s.startsWith('custom-pon:')) { seen.add('Custom mix'); return; }
+            if (s.startsWith('custom-soil:') || s.startsWith('custom-pon:')) { seen.add('Custom Soil Mix'); return; }
             seen.add(s);
         });
         return Array.from(seen).sort();
@@ -9401,7 +9418,7 @@ function MyPlantsScreen({ openTab, prefill }) {
             }
             if (substrateFilter) {
                 var s = String(p.substrate || p.medium || '').trim();
-                var normalized = (s.startsWith('custom-soil:') || s.startsWith('custom-pon:')) ? 'Custom mix' : s;
+                var normalized = (s.startsWith('custom-soil:') || s.startsWith('custom-pon:')) ? 'Custom Soil Mix' : s;
                 if (normalized !== substrateFilter) return false;
             }
             return true;
@@ -9900,7 +9917,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Pot Size"),
                                 React.createElement("select", { value: edit.potSize || '', onChange: e => setEdit(prev => Object.assign({}, prev, { potSize: e.target.value })), className: "w-full border-4 px-2 py-1.5 mt-1", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                                     React.createElement("option", { value: "" }, "\u2014"),
-                                    ['2"','3"','4"','5"','6"','7"','8"','10"','12"','14"','16"'].map(s => React.createElement("option", { key: s, value: s }, s))))),
+                                    ['1"','2"','3"','4"','5"','6"','7"','8"','10"','12"','14"','16"'].map(s => React.createElement("option", { key: s, value: s }, s))))),
                         React.createElement("div", { className: "mb-2" },
                             React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "Birthday / Acquired"),
                             React.createElement("input", { type: "date", value: edit.birthday || '', onChange: e => setEdit(prev => Object.assign({}, prev, { birthday: e.target.value })), className: "w-full border-4 px-2 py-1.5 mt-1 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
@@ -10972,6 +10989,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     });
     const [formStatus, setFormStatus] = useState(null);
     const [crossWarning, setCrossWarning] = useState(null);
+    const [bulkCount, setBulkCount] = useState(1);
     useEffect(() => {
         if (!form.hybridType) { setCrossWarning(null); return; }
         const mG = (form.motherGenus || form.motherFreetext || '').trim();
@@ -11114,12 +11132,29 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             }
             payload = Object.assign(Object.assign({}, payload), { genus: tax.isIntrageneric ? tax.genus : (tax.nothogenus || tax.genus), species: nothoEpithet || (tax.isIntrageneric ? `×hybrid` : ''), propType: 'Seed', isIntrageneric: tax.isIntrageneric, nothogenus: tax.nothogenus, nothospeciesEpithet: nothoEpithet, motherGenus: mGenus, fatherGenus: fGenus, generation, generationConfirmed: !!(form.generationOverride.trim()) });
         }
-        let res;
-        try { res = await createProp(payload); }
-        catch(e) { setFormStatus({ type: 'error', message: 'GAS error: ' + (e && e.message || String(e)) }); return; }
-        if (res && res.ok) {
-            setFormStatus({ type: 'success', message: form.hybridType ? 'Hybrid cross logged! 🧬' : 'Prop created! 🌱' });
+        var count = Math.max(1, Math.min(20, bulkCount));
+        var created = 0, siblingIds = [];
+        try {
+            for (var bi = 0; bi < count; bi++) {
+                setFormStatus({ type: 'loading', message: 'Creating ' + (bi + 1) + ' of ' + count + '...' });
+                var bulkPayload = Object.assign({}, payload);
+                if (count > 1) bulkPayload.notes = (payload.notes ? payload.notes + ' | ' : '') + 'Sibling ' + (bi + 1) + '/' + count;
+                if (siblingIds.length > 0) bulkPayload.siblingPropIds = siblingIds.slice();
+                var res = await createProp(bulkPayload);
+                if (res && res.ok) { created++; if (res.propId) siblingIds.push(res.propId); }
+            }
+            // Link siblings back to each other
+            if (siblingIds.length > 1) {
+                for (var si = 0; si < siblingIds.length; si++) {
+                    try { await updateProp(siblingIds[si], { siblingPropIds: siblingIds.filter((_, idx) => idx !== si) }); } catch(e) {}
+                }
+            }
+        }
+        catch(e) { setFormStatus({ type: 'error', message: 'GAS error: ' + (e && e.message || String(e)) + ' (' + created + '/' + count + ' created)' }); return; }
+        if (created > 0) {
+            setFormStatus({ type: 'success', message: form.hybridType ? 'Hybrid cross logged! 🧬' : (created > 1 ? created + ' props created! 🌱' : 'Prop created! 🌱') });
             setShowForm(false);
+            setBulkCount(1);
             setForm({ genus: '', species: '', propType: 'Stem cutting', substrate: 'Sphagnum moss', startDate: '', parentUID: '', notes: '',
                 hybridType: false,
                 motherUID: '', motherGenus: '', motherSpecies: '', motherFreetext: '',
@@ -11130,7 +11165,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             setTimeout(() => setFormStatus(null), 1500);
         }
         else {
-            setFormStatus({ type: 'error', message: 'Failed: ' + ((res && res.reason) || 'unknown') });
+            setFormStatus({ type: 'error', message: 'Failed: no props created' });
         }
     }
     async function handleStatusUpdate(propId, newStatus) {
@@ -11451,8 +11486,17 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                 React.createElement("div", { style: { marginTop: 4 } },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Notes"),
                     React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "e.g. 4 seeds set, germination in ~3 weeks...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })))),
+            !form.hybridType && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, marginBottom: 4 } },
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, 'How many?'),
+                React.createElement('div', { style: { display: 'flex', gap: 0, alignItems: 'center' } },
+                    React.createElement('button', { type: 'button', onClick: () => setBulkCount(c => Math.max(1, c - 1)),
+                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 8px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, '\u2212'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 12px', border: '3px solid ' + theme.cardBorder, borderLeft: 'none', borderRight: 'none', background: theme.rowBg, color: theme.txtP, minWidth: 36, textAlign: 'center' }) }, bulkCount),
+                    React.createElement('button', { type: 'button', onClick: () => setBulkCount(c => Math.min(20, c + 1)),
+                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 8px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, '+')),
+                bulkCount > 1 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, opacity: 0.7 }) }, bulkCount + ' cuttings from same parent')),
             (form.hybridType || parentInCollection !== null) && React.createElement("div", { style: { marginTop: 8 } },
-                React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : '🌱 Start Prop')))),
+                React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : (bulkCount > 1 ? '🌱 Start ' + bulkCount + ' Props' : '🌱 Start Prop')))))),
         (props || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 8 } }, [['active', 'Active'], ['all', 'All']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setFilterStatus(id), style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', fontWeight: 900, padding: '5px 12px', border: `2px solid ${filterStatus === id ? theme.btnP.border : theme.rowBorder}`, background: filterStatus === id ? theme.btnP.bg : 'transparent', color: filterStatus === id ? theme.btnP.text : theme.txtS, cursor: 'pointer' }) }, label))))),
         !showForm && !defaultPropTab && React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
             [
@@ -14483,7 +14527,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                                 React.createElement('option', { value: '' }, '\u2014 select \u2014'),
                                 PROP_SUBSTRATES.map(function(s){ return React.createElement('option', { key: s, value: s }, s); }),
                                 React.createElement('option', { value: 'Soil mix' }, 'Soil mix'),
-                                React.createElement('option', { value: 'Custom mix' }, 'Custom mix')
+                                React.createElement('option', { value: 'Custom Soil Mix' }, 'Custom Soil Mix')
                             )
                         ),
                         missing.includes('potMaterial') && React.createElement('div', { style: { marginBottom: 6 } },
@@ -14519,7 +14563,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                 })(),
                 React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '6px 8px 3px', opacity: 0.6 }) }, 'HISTORY & SETUP'),
                 React.createElement(FactRow, { label: '\uD83E\uDEB4 Last Repot', value: plant.lastRepotted, accent: theme.cardBorder }),
-                React.createElement(FactRow, { label: '\uD83C\uDF82 Birthday', value: plant.birthday, accent: theme.cardBorder }),
+                React.createElement(FactRow, { label: '\uD83C\uDF82 Birthday / Graduation Day', value: plant.birthday, accent: theme.cardBorder }),
                 React.createElement(FactRow, { label: '\uD83E\uDEB4 Pot', value: [plant.potSize, plant.potMaterial, plant.potShape].filter(Boolean).join(' · ') || null, accent: theme.cardBorder }),
                 React.createElement(FactRow, { label: '\uD83E\uDDF1 Substrate', value: isCustomMix(plant.substrate || plant.medium) ? customMixLabel(plant.substrate || plant.medium) : (plant.substrate || plant.medium), accent: theme.cardBorder })
             ),
