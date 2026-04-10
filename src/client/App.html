@@ -5748,13 +5748,29 @@ function HomeScreen() {
     const allHappy = !loading && overdueTotal === 0 && upcoming.length === 0 && fertUpcoming.length === 0;
 
     // ══════════════════════════════════════════════════════════════
-    // ── Dashboard State ──
+    // ── Dashboard State & Config ──
     // ══════════════════════════════════════════════════════════════
-    const DEFAULT_DASH_CONFIG = { order: ['stats','genus','propFunnel','graftFunnel','monthly','attention'], hidden: [] };
+    var ALL_WIDGET_IDS = ['totalPlants','activeProps','totalSpent','totalRevenue','genus','propFunnel','graftFunnel','monthly','attention'];
+    var STAT_WIDGET_IDS = { totalPlants:1, activeProps:1, totalSpent:1, totalRevenue:1 };
+    var WIDGET_META = {
+        totalPlants:  { label: 'Total Plants',       icon: '\uD83C\uDF3F', group: 'stat' },
+        activeProps:  { label: 'Active Propagations', icon: '\uD83C\uDF31', group: 'stat' },
+        totalSpent:   { label: 'Total Invested',      icon: '\uD83D\uDCB0', group: 'stat' },
+        totalRevenue: { label: 'Total Revenue',       icon: '\uD83D\uDCB5', group: 'stat' },
+        genus:        { label: 'Genus Composition',   icon: '\uD83E\uDDEC', group: 'chart' },
+        propFunnel:   { label: 'Propagation Stages',  icon: '\u2702\uFE0F', group: 'chart' },
+        graftFunnel:  { label: 'Graft Stages',        icon: '\uD83E\uDE78', group: 'chart' },
+        monthly:      { label: 'Monthly Finances',    icon: '\uD83D\uDCC8', group: 'chart' },
+        attention:    { label: 'Attention Needed',     icon: '\u26A0\uFE0F', group: 'full' }
+    };
+    var DEFAULT_DASH_CONFIG = { order: ALL_WIDGET_IDS.slice(), hidden: [] };
     const [dashData, setDashData] = useState(() => lsGet_('plantos_dash_cache', 5 * 60 * 1000));
     const [dashLoading, setDashLoading] = useState(!dashData);
     const [dashConfig, setDashConfig] = useState(() => {
-        try { var c = JSON.parse(localStorage.getItem('plantos_dash_config')); return (c && c.order) ? c : DEFAULT_DASH_CONFIG; } catch(e) { return DEFAULT_DASH_CONFIG; }
+        try { var c = JSON.parse(localStorage.getItem('plantos_dash_config_v2'));
+            if (c && c.order) { ALL_WIDGET_IDS.forEach(id => { if (c.order.indexOf(id) < 0) c.order.push(id); }); return c; }
+            return DEFAULT_DASH_CONFIG;
+        } catch(e) { return DEFAULT_DASH_CONFIG; }
     });
     const [dashEditMode, setDashEditMode] = useState(false);
 
@@ -5764,7 +5780,7 @@ function HomeScreen() {
         }).catch(() => {}).finally(() => setDashLoading(false));
     }, []);
 
-    function saveDashConfig(cfg) { setDashConfig(cfg); try { localStorage.setItem('plantos_dash_config', JSON.stringify(cfg)); } catch(e) {} }
+    function saveDashConfig(cfg) { setDashConfig(cfg); try { localStorage.setItem('plantos_dash_config_v2', JSON.stringify(cfg)); } catch(e) {} }
     function toggleWidget(id) {
         saveDashConfig(Object.assign({}, dashConfig, {
             hidden: dashConfig.hidden.includes(id) ? dashConfig.hidden.filter(h => h !== id) : dashConfig.hidden.concat(id)
@@ -5779,12 +5795,29 @@ function HomeScreen() {
         var tmp = order[swap]; order[swap] = order[idx]; order[idx] = tmp;
         saveDashConfig(Object.assign({}, dashConfig, { order: order }));
     }
+    function isVisible(id) { return !dashConfig.hidden.includes(id); }
+
+    // ── Pixel Card Wrapper ──
+    function DashCard({ title, emoji, children, noPad }) {
+        return React.createElement('div', {
+            className: 'sdw-card paper-texture fade-in',
+            style: { background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
+                outline: '2px solid ' + theme.cardInset, outlineOffset: '-7px',
+                boxShadow: '4px 4px 0 ' + theme.cardBorder + ', 6px 6px 0 rgba(0,0,0,0.15)' }
+        },
+            title && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px',
+                borderBottom: '3px solid ' + theme.sep, background: 'rgba(200,230,160,0.15)' } },
+                emoji && React.createElement('span', { style: { fontSize: 14, imageRendering: 'pixelated' } }, emoji),
+                React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '7px', fontWeight: 400,
+                    color: theme.txtP, letterSpacing: '0.06em' } }, title)),
+            React.createElement('div', { style: { padding: noPad ? 0 : '10px 12px' } }, children));
+    }
 
     // ── SVG Donut Chart ──
     function DonutChart({ data, size }) {
-        var sz = size || 160, cx = sz / 2, cy = sz / 2, outerR = sz * 0.42, innerR = sz * 0.25;
+        var sz = size || 160, cx = sz / 2, cy = sz / 2, outerR = sz * 0.42, innerR = sz * 0.24;
         var total = data.reduce((s, d) => s + d.value, 0);
-        if (total === 0) return React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#8B6C3A', textAlign: 'center', padding: 20 }) }, 'No data');
+        if (total === 0) return React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, textAlign: 'center', padding: 20 }) }, 'No data');
         var arcs = [], angle = -Math.PI / 2;
         data.forEach(d => {
             var sweep = (d.value / total) * Math.PI * 2;
@@ -5796,36 +5829,41 @@ function HomeScreen() {
             var large = sweep > Math.PI ? 1 : 0;
             var path = 'M ' + x1o + ' ' + y1o + ' A ' + outerR + ' ' + outerR + ' 0 ' + large + ' 1 ' + x2o + ' ' + y2o
                 + ' L ' + x2i + ' ' + y2i + ' A ' + innerR + ' ' + innerR + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
-            arcs.push({ path: path, color: d.color, label: d.label, value: d.value });
+            arcs.push({ path: path, color: d.color, label: d.label, value: d.value, pct: Math.round(d.value / total * 100) });
             angle = endAngle;
         });
-        return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 } },
-            React.createElement('svg', { width: sz, height: sz, viewBox: '0 0 ' + sz + ' ' + sz },
-                arcs.map((a, i) => React.createElement('path', { key: i, d: a.path, fill: a.color, stroke: '#F4EDD8', strokeWidth: 1.5 })),
-                React.createElement('text', { x: cx, y: cy - 4, textAnchor: 'middle', style: { fontSize: '22px', fontWeight: 900, fontFamily: "'Press Start 2P'", fill: '#2A4A10' } }, total),
-                React.createElement('text', { x: cx, y: cy + 14, textAnchor: 'middle', style: { fontSize: '8px', fontWeight: 700, fontFamily: "'Pixelify Sans'", fill: '#5A7A30' } }, 'PLANTS')),
-            React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 10px', maxWidth: sz + 40 } },
+        return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 } },
+            React.createElement('svg', { width: sz, height: sz, viewBox: '0 0 ' + sz + ' ' + sz, style: { imageRendering: 'auto' } },
+                arcs.map((a, i) => React.createElement('path', { key: i, d: a.path, fill: a.color, stroke: theme.cardBg, strokeWidth: 2, strokeLinejoin: 'bevel' })),
+                React.createElement('text', { x: cx, y: cy - 2, textAnchor: 'middle', dominantBaseline: 'central',
+                    style: { fontSize: '20px', fontWeight: 400, fontFamily: "'Press Start 2P'", fill: theme.txtP } }, total),
+                React.createElement('text', { x: cx, y: cy + 16, textAnchor: 'middle',
+                    style: { fontSize: '8px', fontWeight: 700, fontFamily: "'Pixelify Sans'", fill: theme.txtS } }, 'PLANTS')),
+            React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3px 8px', maxWidth: sz + 60 } },
                 data.map((d, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 4 } },
-                    React.createElement('div', { style: { width: 10, height: 10, background: d.color, border: '1px solid #8B6C3A', flexShrink: 0 } }),
-                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#2A4A10' }) }, d.label + ' (' + d.value + ')')))));
+                    React.createElement('div', { style: { width: 8, height: 8, background: d.color, border: '2px solid ' + theme.cardBorder, imageRendering: 'pixelated', flexShrink: 0 } }),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtP }) }, d.label),
+                    React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '6px', color: theme.txtS } }, d.value)))));
     }
 
-    // ── Horizontal Bar Chart ──
-    function HBarChart({ data, barHeight }) {
-        var bh = barHeight || 22;
+    // ── Horizontal Bar Chart (pixel style) ──
+    function HBarChart({ data }) {
         var maxVal = Math.max.apply(null, data.map(d => d.value).concat([1]));
-        return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 5 } },
-            data.map((d, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 8 } },
-                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#2A4A10', fontWeight: 700, width: 72, textAlign: 'right', flexShrink: 0 }) }, d.label),
-                React.createElement('div', { style: { flex: 1, height: bh, background: '#E8E0D0', position: 'relative', border: '1px solid #C8B890' } },
-                    React.createElement('div', { style: { height: '100%', width: (d.value / maxVal * 100) + '%', background: d.color, transition: 'width 0.4s ease' } })),
-                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#2A4A10', fontWeight: 900, width: 28, flexShrink: 0 }) }, d.value))));
+        return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+            data.map((d, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 6 } },
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtP, fontWeight: 700,
+                    width: 68, textAlign: 'right', flexShrink: 0 }) }, d.label),
+                React.createElement('div', { style: { flex: 1, height: 20, background: theme.rowBg || '#E8E0D0', position: 'relative',
+                    border: '2px solid ' + (theme.rowBorder || '#C8B890'), imageRendering: 'pixelated' } },
+                    React.createElement('div', { style: { height: '100%', width: Math.max(d.value > 0 ? 4 : 0, d.value / maxVal * 100) + '%',
+                        background: d.color, imageRendering: 'pixelated' } })),
+                React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '8px', color: theme.txtP,
+                    width: 30, flexShrink: 0, textAlign: 'right' } }, d.value))));
     }
 
-    // ── Monthly Bar Chart ──
+    // ── Monthly Bar Chart (pixel style) ──
     function MonthlyBarChart({ purchases, sales }) {
-        var now = new Date();
-        var months = [];
+        var now = new Date(), months = [];
         for (var mi = 5; mi >= 0; mi--) {
             var d = new Date(now.getFullYear(), now.getMonth() - mi, 1);
             var ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
@@ -5833,52 +5871,57 @@ function HomeScreen() {
             months.push({ ym: ym, label: label, buy: (purchases || {})[ym] || 0, sell: (sales || {})[ym] || 0 });
         }
         var maxVal = Math.max.apply(null, months.map(m => Math.max(m.buy, m.sell)).concat([1]));
-        var svgW = 260, svgH = 120, barW = 14, gap = svgW / 6, baseline = svgH - 20;
-        return React.createElement('svg', { width: '100%', viewBox: '0 0 ' + svgW + ' ' + svgH, style: { maxWidth: svgW } },
-            React.createElement('line', { x1: 0, y1: baseline, x2: svgW, y2: baseline, stroke: '#C8B890', strokeWidth: 1 }),
+        var svgW = 280, svgH = 130, barW = 12, gap = svgW / 6, baseline = svgH - 22;
+        var gridLines = [0.25, 0.5, 0.75].map(f => baseline - f * (baseline - 8));
+        return React.createElement('svg', { width: '100%', viewBox: '0 0 ' + svgW + ' ' + svgH, style: { maxWidth: svgW, display: 'block', margin: '0 auto' } },
+            gridLines.map((y, i) => React.createElement('line', { key: 'g'+i, x1: 0, y1: y, x2: svgW, y2: y,
+                stroke: theme.sep || '#D8C8A0', strokeWidth: 1, strokeDasharray: '4,3', opacity: 0.5 })),
+            React.createElement('line', { x1: 0, y1: baseline, x2: svgW, y2: baseline, stroke: theme.cardBorder || '#8B6C3A', strokeWidth: 2 }),
             months.map((m, i) => {
                 var x = gap * i + gap / 2;
-                var buyH = maxVal > 0 ? (m.buy / maxVal) * (baseline - 10) : 0;
-                var sellH = maxVal > 0 ? (m.sell / maxVal) * (baseline - 10) : 0;
+                var buyH = maxVal > 0 ? (m.buy / maxVal) * (baseline - 8) : 0;
+                var sellH = maxVal > 0 ? (m.sell / maxVal) * (baseline - 8) : 0;
                 return React.createElement('g', { key: i },
-                    React.createElement('rect', { x: x - barW - 1, y: baseline - buyH, width: barW, height: buyH, fill: '#4A7C1E', rx: 2 }),
-                    React.createElement('rect', { x: x + 1, y: baseline - sellH, width: barW, height: sellH, fill: '#C8A84B', rx: 2 }),
-                    React.createElement('text', { x: x, y: svgH - 4, textAnchor: 'middle', style: { fontSize: '9px', fontWeight: 700, fontFamily: "'Pixelify Sans'", fill: '#5A4020' } }, m.label));
+                    React.createElement('rect', { x: x - barW - 1, y: baseline - buyH, width: barW, height: Math.max(buyH, 0),
+                        fill: '#4A7C1E', stroke: '#2A5010', strokeWidth: 1 }),
+                    React.createElement('rect', { x: x + 1, y: baseline - sellH, width: barW, height: Math.max(sellH, 0),
+                        fill: '#C8A84B', stroke: '#8B7A30', strokeWidth: 1 }),
+                    React.createElement('text', { x: x, y: svgH - 6, textAnchor: 'middle',
+                        style: { fontSize: '7px', fontWeight: 400, fontFamily: "'Press Start 2P'", fill: theme.txtS || '#5A4020' } }, m.label));
             }),
             React.createElement('g', null,
-                React.createElement('rect', { x: svgW - 90, y: 2, width: 10, height: 10, fill: '#4A7C1E', rx: 1 }),
-                React.createElement('text', { x: svgW - 76, y: 11, style: { fontSize: '9px', fontFamily: "'Pixelify Sans'", fill: '#2A4A10' } }, 'Bought'),
-                React.createElement('rect', { x: svgW - 90, y: 16, width: 10, height: 10, fill: '#C8A84B', rx: 1 }),
-                React.createElement('text', { x: svgW - 76, y: 25, style: { fontSize: '9px', fontFamily: "'Pixelify Sans'", fill: '#2A4A10' } }, 'Sold')));
+                React.createElement('rect', { x: svgW - 82, y: 4, width: 8, height: 8, fill: '#4A7C1E', stroke: '#2A5010', strokeWidth: 1 }),
+                React.createElement('text', { x: svgW - 70, y: 12, style: { fontSize: '8px', fontFamily: "'Pixelify Sans'", fontWeight: 700, fill: theme.txtP } }, 'Bought'),
+                React.createElement('rect', { x: svgW - 82, y: 17, width: 8, height: 8, fill: '#C8A84B', stroke: '#8B7A30', strokeWidth: 1 }),
+                React.createElement('text', { x: svgW - 70, y: 25, style: { fontSize: '8px', fontFamily: "'Pixelify Sans'", fontWeight: 700, fill: theme.txtP } }, 'Sold')));
     }
 
-    // ── Widget Card Wrapper ──
-    function DashCard({ title, emoji, children }) {
-        return React.createElement('div', { style: { background: '#F4EDD8', border: '3px solid #8B6C3A', marginBottom: 10 } },
-            title && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: '2px solid #D8C8A0', background: '#E8F4D8' } },
-                emoji && React.createElement('span', { style: { fontSize: 15 } }, emoji),
-                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2A4A10', letterSpacing: '0.04em' }) }, title)),
-            React.createElement('div', { style: { padding: '10px 12px' } }, children));
-    }
-
-    // ── Stat Cards ──
-    function DashStatCards() {
+    // ── Individual Stat Card ──
+    var STAT_TINTS = { totalPlants: 'rgba(74,124,30,0.08)', activeProps: 'rgba(60,138,106,0.08)',
+        totalSpent: 'rgba(200,120,32,0.08)', totalRevenue: 'rgba(200,168,75,0.08)' };
+    function StatCard({ id }) {
         if (!dashData) return null;
-        var stats = [
-            { emoji: '\uD83C\uDF3F', value: dashData.totalPlants, label: 'Plants' },
-            { emoji: '\uD83C\uDF31', value: (dashData.activeProps || 0) + (dashData.activeGrafts || 0), label: 'Active Props' },
-            { emoji: '\uD83D\uDCB0', value: '$' + (dashData.totalSpentCurrent || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), label: 'Invested' },
-            { emoji: '\uD83D\uDCB5', value: '$' + (dashData.totalSoldRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), label: 'Revenue' }
-        ];
-        return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)', gap: 8, marginBottom: 10 } },
-            stats.map((s, i) => React.createElement('div', { key: i, className: 'fade-in', style: {
-                background: '#F4EDD8', border: '3px solid #8B6C3A', padding: '10px 8px',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-                animationDelay: (i * 0.06) + 's'
-            } },
-                React.createElement('span', { style: { fontSize: 20, marginBottom: 4 } }, s.emoji),
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isDesktop ? '18px' : '16px', fontWeight: 900, color: '#2A4A10', lineHeight: 1.2 }) }, s.value),
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: '#5A7A30', fontWeight: 700, marginTop: 3, letterSpacing: '0.04em' }) }, s.label))));
+        var meta = WIDGET_META[id];
+        var valMap = {
+            totalPlants: dashData.totalPlants,
+            activeProps: (dashData.activeProps || 0) + (dashData.activeGrafts || 0),
+            totalSpent: '$' + (dashData.totalSpentCurrent || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+            totalRevenue: '$' + (dashData.totalSoldRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+        };
+        return React.createElement('div', {
+            className: 'sdw-card paper-texture fade-in',
+            style: { background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
+                outline: '2px solid ' + theme.cardInset, outlineOffset: '-7px',
+                boxShadow: '3px 3px 0 ' + theme.cardBorder + ', 5px 5px 0 rgba(0,0,0,0.12)',
+                padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+                position: 'relative', overflow: 'hidden' }
+        },
+            React.createElement('div', { style: { position: 'absolute', inset: 0, background: STAT_TINTS[id] || 'transparent', pointerEvents: 'none' } }),
+            React.createElement('span', { style: { fontSize: 22, imageRendering: 'pixelated', marginBottom: 6, position: 'relative', zIndex: 1 } }, meta.icon),
+            React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: isDesktop ? '14px' : '12px',
+                color: theme.txtP, lineHeight: 1.3, position: 'relative', zIndex: 1 } }, valMap[id]),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700,
+                marginTop: 4, letterSpacing: '0.04em', position: 'relative', zIndex: 1 }) }, meta.label));
     }
 
     // ── Genus Composition Widget ──
@@ -5887,8 +5930,7 @@ function HomeScreen() {
         var COLORS = ['#4A7C1E','#8B6C3A','#C87820','#2A6B9A','#7B4A8C','#B85C4A','#3A8A6A','#9A8A30'];
         var entries = Object.keys(dashData.genusCounts).map(g => ({ label: g, value: dashData.genusCounts[g] }));
         entries.sort((a, b) => b.value - a.value);
-        var chartData = [];
-        var otherTotal = 0;
+        var chartData = [], otherTotal = 0;
         entries.forEach((e, i) => { if (i < 8) chartData.push({ label: e.label, value: e.value, color: COLORS[i % COLORS.length] }); else otherTotal += e.value; });
         if (otherTotal > 0) chartData.push({ label: 'Other', value: otherTotal, color: '#A0A090' });
         if (chartData.length === 0) return null;
@@ -5899,9 +5941,9 @@ function HomeScreen() {
     // ── Propagation Funnel Widget ──
     function DashPropFunnel() {
         if (!dashData || !dashData.propStatusCounts) return null;
-        var PROP_ORDER = ['Trying','Rooted','Potted Up','Graduated','Failed','Sold'];
-        var PROP_COLORS = { Trying: '#C87820', Rooted: '#4A7C1E', 'Potted Up': '#2A6B9A', Graduated: '#3A8A6A', Failed: '#B85C4A', Sold: '#9A8A30' };
-        var data = PROP_ORDER.map(s => ({ label: s, value: dashData.propStatusCounts[s] || 0, color: PROP_COLORS[s] || '#8B6C3A' })).filter(d => d.value > 0);
+        var ORDER = ['Trying','Rooted','Potted Up','Graduated','Failed','Sold'];
+        var COLORS = { Trying: '#C87820', Rooted: '#4A7C1E', 'Potted Up': '#2A6B9A', Graduated: '#3A8A6A', Failed: '#B85C4A', Sold: '#9A8A30' };
+        var data = ORDER.map(s => ({ label: s, value: dashData.propStatusCounts[s] || 0, color: COLORS[s] || '#8B6C3A' })).filter(d => d.value > 0);
         if (data.length === 0) return null;
         return React.createElement(DashCard, { title: 'PROPAGATION STAGES', emoji: '\u2702\uFE0F' },
             React.createElement(HBarChart, { data: data }));
@@ -5910,9 +5952,9 @@ function HomeScreen() {
     // ── Graft Funnel Widget ──
     function DashGraftFunnel() {
         if (!dashData || !dashData.graftStatusCounts) return null;
-        var GRAFT_ORDER = ['Trying','Callusing','Fused','Rooted','Potted Up','Graduated','Failed','Sold'];
-        var GRAFT_COLORS = { Trying: '#C87820', Callusing: '#9A5E00', Fused: '#7B4A8C', Rooted: '#4A7C1E', 'Potted Up': '#2A6B9A', Graduated: '#3A8A6A', Failed: '#B85C4A', Sold: '#9A8A30' };
-        var data = GRAFT_ORDER.map(s => ({ label: s, value: dashData.graftStatusCounts[s] || 0, color: GRAFT_COLORS[s] || '#8B6C3A' })).filter(d => d.value > 0);
+        var ORDER = ['Trying','Callusing','Fused','Rooted','Potted Up','Graduated','Failed','Sold'];
+        var COLORS = { Trying: '#C87820', Callusing: '#9A5E00', Fused: '#7B4A8C', Rooted: '#4A7C1E', 'Potted Up': '#2A6B9A', Graduated: '#3A8A6A', Failed: '#B85C4A', Sold: '#9A8A30' };
+        var data = ORDER.map(s => ({ label: s, value: dashData.graftStatusCounts[s] || 0, color: COLORS[s] || '#8B6C3A' })).filter(d => d.value > 0);
         if (data.length === 0) return null;
         return React.createElement(DashCard, { title: 'GRAFT STAGES', emoji: '\uD83E\uDE78' },
             React.createElement(HBarChart, { data: data }));
@@ -5921,74 +5963,112 @@ function HomeScreen() {
     // ── Monthly Purchases vs Sales Widget ──
     function DashMonthlyChart() {
         if (!dashData) return null;
-        var hasPurchases = dashData.monthlyPurchases && Object.keys(dashData.monthlyPurchases).length > 0;
-        var hasSales = dashData.monthlySales && Object.keys(dashData.monthlySales).length > 0;
-        if (!hasPurchases && !hasSales) return null;
-        return React.createElement(DashCard, { title: 'MONTHLY PURCHASES vs SALES', emoji: '\uD83D\uDCC8' },
+        var hasP = dashData.monthlyPurchases && Object.keys(dashData.monthlyPurchases).length > 0;
+        var hasS = dashData.monthlySales && Object.keys(dashData.monthlySales).length > 0;
+        if (!hasP && !hasS) return null;
+        return React.createElement(DashCard, { title: 'PURCHASES vs SALES', emoji: '\uD83D\uDCC8' },
             React.createElement(MonthlyBarChart, { purchases: dashData.monthlyPurchases, sales: dashData.monthlySales }));
     }
 
-    // ── Attention Needed Widget (dashboard version) ──
+    // ── Attention Needed Widget ──
     function DashAttention() {
         if (!dashData) return null;
         var items = [];
-        if (dashData.waterOverdue > 0) items.push({ emoji: '\uD83D\uDCA7', label: 'Watering overdue', count: dashData.waterOverdue, color: '#1A6A9A', bgColor: '#EFF8FF', action: () => navigate('watering') });
-        if (dashData.fertOverdue > 0) items.push({ emoji: '\uD83C\uDF3E', label: 'Fertilizer overdue', count: dashData.fertOverdue, color: '#5A2880', bgColor: '#F8F0FF', action: () => navigate('watering') });
-        if (dashData.progressOverdue > 0) items.push({ emoji: '\uD83D\uDCCA', label: 'Progress update due', count: dashData.progressOverdue, color: '#2A6B1A', bgColor: '#F0FAE8', action: () => navigate('progress-updates') });
+        if (dashData.waterOverdue > 0) items.push({ icon: '\uD83D\uDCA7', label: 'Watering overdue', count: dashData.waterOverdue, color: '#1A6A9A', bg: '#EFF8FF', action: () => navigate('watering') });
+        if (dashData.fertOverdue > 0) items.push({ icon: '\uD83C\uDF3E', label: 'Fertilizer overdue', count: dashData.fertOverdue, color: '#5A2880', bg: '#F8F0FF', action: () => navigate('watering') });
+        if (dashData.progressOverdue > 0) items.push({ icon: '\uD83D\uDCCA', label: 'Progress update due', count: dashData.progressOverdue, color: '#2A6B1A', bg: '#F0FAE8', action: () => navigate('progress-updates') });
         if (items.length === 0) return React.createElement(DashCard, { title: 'ATTENTION NEEDED', emoji: '\u2705' },
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#2A6B1A', fontWeight: 700, textAlign: 'center', padding: '6px 0' }) }, 'All plants are happy!'));
-        return React.createElement(DashCard, { title: 'ATTENTION NEEDED', emoji: '\u26A0\uFE0F' },
-            React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '8px 0' } },
+                React.createElement('span', { style: { fontSize: 20 } }, '\uD83C\uDF3F'),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#2A6B1A', fontWeight: 700 }) }, 'All plants are happy!')));
+        return React.createElement(DashCard, { title: 'ATTENTION NEEDED', emoji: '\u26A0\uFE0F', noPad: true },
+            React.createElement('div', { style: { display: 'flex', flexDirection: 'column' } },
                 items.map((it, i) => React.createElement('button', { key: i, type: 'button', onClick: it.action,
-                    style: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: it.bgColor,
-                        border: '2px solid ' + it.color + '40', cursor: 'pointer', width: '100%', textAlign: 'left' } },
-                    React.createElement('span', { style: { fontSize: 18, flexShrink: 0 } }, it.emoji),
+                    style: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: it.bg,
+                        borderBottom: i < items.length - 1 ? '3px solid ' + theme.sep : 'none',
+                        cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', borderLeft: '5px solid ' + it.color } },
+                    React.createElement('span', { style: { fontSize: 18, imageRendering: 'pixelated', flexShrink: 0 } }, it.icon),
                     React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', color: it.color, fontWeight: 700, flex: 1 }) }, it.label),
-                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: '#fff', background: 'var(--c-urgent)', padding: '2px 8px', flexShrink: 0 }) }, it.count)))));
+                    React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '10px', color: '#fff',
+                        background: 'var(--c-urgent)', padding: '3px 8px', boxShadow: '2px 2px 0 rgba(0,0,0,0.2)',
+                        flexShrink: 0 } }, it.count)))));
     }
 
-    // ── Dashboard Customizer ──
+    // ── Dashboard Customizer (widget gallery) ──
     function DashCustomizer() {
         if (!dashEditMode) return null;
-        var WIDGET_LABELS = { stats: 'Stat Cards', genus: 'Genus Composition', propFunnel: 'Propagation Stages', graftFunnel: 'Graft Stages', monthly: 'Monthly Chart', attention: 'Attention Needed' };
-        return React.createElement('div', { style: { background: '#F4EDD8', border: '3px solid #8B6C3A', marginBottom: 10, padding: '10px 12px' } },
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2A4A10', marginBottom: 8, letterSpacing: '0.04em' }) }, 'CUSTOMIZE DASHBOARD'),
-            React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 4 } },
+        return React.createElement('div', {
+            className: 'sdw-card paper-texture',
+            style: { background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
+                outline: '2px solid ' + theme.cardInset, outlineOffset: '-7px',
+                boxShadow: '4px 4px 0 ' + theme.cardBorder, marginBottom: 10, padding: '10px' }
+        },
+            React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '7px', color: theme.txtP,
+                marginBottom: 10, letterSpacing: '0.06em', textAlign: 'center' } }, 'CUSTOMIZE WIDGETS'),
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 6 } },
                 dashConfig.order.map((id, idx) => {
-                    var isHidden = dashConfig.hidden.includes(id);
-                    return React.createElement('div', { key: id, style: { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', background: isHidden ? '#E8E0D0' : '#E8F4D8', border: '1px solid #C8B890', opacity: isHidden ? 0.6 : 1 } },
-                        React.createElement('button', { type: 'button', onClick: () => toggleWidget(id),
-                            style: { width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isHidden ? '#D0C8B0' : '#4A7C1E', border: '2px solid #8B6C3A', color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 900, flexShrink: 0, fontFamily: "'Pixelify Sans'" } },
-                            isHidden ? '' : '\u2713'),
-                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#2A4A10', fontWeight: 700, flex: 1 }) }, WIDGET_LABELS[id] || id),
-                        React.createElement('button', { type: 'button', onClick: () => moveWidget(id, -1), disabled: idx === 0,
-                            style: { width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E8F4D8', border: '1px solid #8B6C3A', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1, fontSize: '10px' } }, '\u25B2'),
-                        React.createElement('button', { type: 'button', onClick: () => moveWidget(id, 1), disabled: idx === dashConfig.order.length - 1,
-                            style: { width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E8F4D8', border: '1px solid #8B6C3A', cursor: idx === dashConfig.order.length - 1 ? 'default' : 'pointer', opacity: idx === dashConfig.order.length - 1 ? 0.3 : 1, fontSize: '10px' } }, '\u25BC'));
+                    var meta = WIDGET_META[id]; if (!meta) return null;
+                    var hidden = dashConfig.hidden.includes(id);
+                    return React.createElement('button', { key: id, type: 'button', onClick: () => toggleWidget(id),
+                        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                            padding: '10px 6px', background: hidden ? (theme.rowBg || '#E8E0D0') : 'rgba(200,230,160,0.2)',
+                            border: '3px solid ' + (hidden ? (theme.sep || '#C8B890') : theme.cardBorder),
+                            cursor: 'pointer', opacity: hidden ? 0.5 : 1,
+                            boxShadow: hidden ? 'none' : '2px 2px 0 ' + theme.cardBorder,
+                            transition: 'opacity 0.15s, box-shadow 0.15s' } },
+                        React.createElement('span', { style: { fontSize: 18, imageRendering: 'pixelated' } }, meta.icon),
+                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtP, fontWeight: 700, textAlign: 'center', lineHeight: 1.3 }) }, meta.label),
+                        React.createElement('div', { style: { width: 16, height: 16, border: '3px solid ' + theme.cardBorder,
+                            background: hidden ? 'transparent' : '#4A7C1E', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', imageRendering: 'pixelated', marginTop: 2 } },
+                            !hidden && React.createElement('span', { style: { color: '#fff', fontSize: '10px', fontWeight: 900, lineHeight: 1 } }, '\u2713')));
                 })),
-            React.createElement('button', { type: 'button', onClick: () => saveDashConfig(DEFAULT_DASH_CONFIG),
-                style: Object.assign({}, pxS, { marginTop: 8, padding: '6px 14px', background: '#E8E0D0', border: '2px solid #8B6C3A', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#5A4020' }) }, 'Reset to Default'));
+            React.createElement('div', { style: { display: 'flex', justifyContent: 'center', marginTop: 10 } },
+                React.createElement('button', { type: 'button', onClick: () => saveDashConfig(DEFAULT_DASH_CONFIG),
+                    style: { fontFamily: "'Press Start 2P'", fontSize: '6px', padding: '6px 14px',
+                        background: theme.rowBg || '#E8E0D0', border: '3px solid ' + theme.cardBorder,
+                        cursor: 'pointer', color: theme.txtS,
+                        boxShadow: '2px 2px 0 ' + theme.cardBorder } }, 'RESET DEFAULT')));
     }
 
-    // ── Dashboard Section ──
-    var WIDGET_MAP = { stats: DashStatCards, genus: DashGenusChart, propFunnel: DashPropFunnel, graftFunnel: DashGraftFunnel, monthly: DashMonthlyChart, attention: DashAttention };
+    // ── Dashboard Section (auto-layout) ──
+    var CONTENT_WIDGETS = { genus: DashGenusChart, propFunnel: DashPropFunnel, graftFunnel: DashGraftFunnel, monthly: DashMonthlyChart, attention: DashAttention };
     function DashboardSection() {
-        var visibleWidgets = dashConfig.order.filter(id => !dashConfig.hidden.includes(id));
+        var ordered = dashConfig.order.filter(id => isVisible(id));
+        var visibleStats = ordered.filter(id => STAT_WIDGET_IDS[id]);
+        var visibleCharts = ordered.filter(id => WIDGET_META[id] && WIDGET_META[id].group === 'chart' && !STAT_WIDGET_IDS[id]);
+        var visibleFull = ordered.filter(id => WIDGET_META[id] && WIDGET_META[id].group === 'full' && !STAT_WIDGET_IDS[id]);
+        var visibleContent = ordered.filter(id => !STAT_WIDGET_IDS[id]);
+        var chartGridCols = visibleCharts.length >= 2 && isDesktop ? 'repeat(2, 1fr)' : '1fr';
+
         return React.createElement('div', { style: { marginBottom: 12 } },
-            React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 } },
                 React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
-                    React.createElement('span', { style: { fontSize: 16 } }, '\uD83D\uDCCA'),
-                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: '#2A4A10', letterSpacing: '0.04em' }) }, 'DASHBOARD')),
+                    React.createElement('span', { style: { fontSize: 16, imageRendering: 'pixelated' } }, '\uD83D\uDCCA'),
+                    React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '8px', color: theme.txtP, letterSpacing: '0.06em' } }, 'DASHBOARD')),
                 React.createElement('button', { type: 'button', onClick: () => setDashEditMode(v => !v),
-                    style: { display: 'flex', alignItems: 'center', gap: 4, background: dashEditMode ? '#4A7C1E' : '#E8F4D8', border: '2px solid #8AA868', padding: '4px 10px', cursor: 'pointer' } },
-                    React.createElement('span', { style: { fontSize: 13 } }, '\u2699\uFE0F'),
-                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: dashEditMode ? '#fff' : '#2A5808', fontWeight: 700 }) }, dashEditMode ? 'Done' : 'Edit'))),
+                    className: 'sdw-card',
+                    style: { display: 'flex', alignItems: 'center', gap: 5, background: dashEditMode ? '#4A7C1E' : theme.cardBg,
+                        border: '3px solid ' + theme.cardBorder, padding: '4px 10px', cursor: 'pointer',
+                        boxShadow: '2px 2px 0 ' + theme.cardBorder } },
+                    React.createElement('span', { style: { fontSize: 12, imageRendering: 'pixelated' } }, '\u2699\uFE0F'),
+                    React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '6px',
+                        color: dashEditMode ? '#fff' : theme.txtP } }, dashEditMode ? 'DONE' : 'EDIT'))),
             React.createElement(DashCustomizer, null),
-            dashLoading && !dashData && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#8B6C3A', textAlign: 'center', padding: '20px 0' }) }, 'Loading dashboard...'),
-            visibleWidgets.map(id => {
-                var W = WIDGET_MAP[id];
-                return W ? React.createElement(W, { key: id }) : null;
-            }));
+            dashLoading && !dashData && React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '7px',
+                color: theme.txtS, textAlign: 'center', padding: '24px 0', letterSpacing: '0.1em' } }, 'LOADING...'),
+            visibleStats.length > 0 && React.createElement('div', { style: { display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(' + (isDesktop ? '140px' : '130px') + ', 1fr))', gap: 8, marginBottom: 10 } },
+                visibleStats.map(id => React.createElement(StatCard, { key: id, id: id }))),
+            visibleContent.length > 0 && React.createElement('div', { style: { display: 'grid',
+                gridTemplateColumns: chartGridCols, gap: 10 } },
+                visibleContent.map(id => {
+                    var W = CONTENT_WIDGETS[id];
+                    if (!W) return null;
+                    var isFull = WIDGET_META[id] && WIDGET_META[id].group === 'full';
+                    return React.createElement('div', { key: id, style: isFull && visibleCharts.length >= 2 && isDesktop ? { gridColumn: '1 / -1' } : undefined },
+                        React.createElement(W, null));
+                })));
     }
 
     // ── Greeting Bar ──
