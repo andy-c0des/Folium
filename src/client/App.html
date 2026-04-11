@@ -6865,7 +6865,7 @@ function WateringScreen() {
         });
         return btns;
     }, [metaByUid, allPlantsCache]);
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '9px' : '12px' };
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
     function normalizeSubText(p) {
         const a = String((p && p.substrate) ? p.substrate : '').trim().toLowerCase();
         const b = String((p && p.medium) ? p.medium : '').trim().toLowerCase();
@@ -8263,7 +8263,7 @@ function AddScreen({ prefill, openMode }) {
     const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem, addLocation, uploadPlantPhoto } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '10px' : '13px' };
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
     const labelSize = isSmall ? '12px' : '14px';
     const [mode, setMode] = useState(openMode || 'single');
     const [genus, setGenus] = useState('');
@@ -10315,7 +10315,8 @@ function PlantKnowledgePanel({ plant, inline }) {
 
 function ProblemsSection({ plant, autoOpenAI, onAutoOpenDone }) {
     const theme = useTheme();
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '11px' };
+    const { isSmall } = useScreenSize();
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
     const [open, setOpen] = React.useState(false);
     const [step, setStep] = React.useState('symptoms'); // 'symptoms' | 'results' | 'pest_detail' | 'ai'
     React.useEffect(function() {
@@ -10959,7 +10960,8 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
     const { navigate } = useNavigation();
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '10px' : '13px' };
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
+    const pxS = { fontFamily: "'Pixelify Sans', cursive" };
     const [props, setProps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openPropId, setOpenPropId] = useState(null);
@@ -11829,8 +11831,8 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const { isSmall } = useScreenSize();
     const theme = useTheme();
     const { navigate } = useNavigation();
-    const pxS = { fontFamily: "'Press Start 2P', cursive", fontSize: '13px' };
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '10px' : '13px' };
+    const pxS = { fontFamily: "'Pixelify Sans', cursive" };
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
     const [grafts, setGrafts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openGraftId, setOpenGraftId] = useState(null);
@@ -13191,7 +13193,8 @@ function PlantScreen({ uid }) {
             return '#e67e22';
         return '#1A2A08';
     }
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '13px' };
+    const { isSmall: _isSmall } = useScreenSize();
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: _isSmall ? '8px' : '11px' };
     const theme = useTheme();
     const env = useMemo(() => plant && getPlantEnv ? getPlantEnv(plant) : null, [plant]);
     const physics = useMemo(() => {
@@ -16146,7 +16149,8 @@ function WarningBadge({ plant }) {
 function CompostModal({ plant, onClose, onDone }) {
     const { archivePlant } = usePlantData();
     const theme = useTheme();
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: '11px' };
+    const { isSmall: _isSmall } = useScreenSize();
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: _isSmall ? '8px' : '11px' };
     const [step, setStep] = useState('type');
     useEffect(function() {
         document.body.style.overflow = 'hidden'; window.scrollTo(0, 0);
@@ -16520,7 +16524,7 @@ function ArchiveScreen() {
     const { getArchive } = usePlantData();
     const { isSmall, isDesktop } = useScreenSize();
     const theme = useTheme();
-    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '10px' : '13px' };
+    const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
     const [archive, setArchive] = useState([]);
     const [filter, setFilter] = useState('all'); // all | deceased | rehomed
     const [noteUid, setNoteUid] = useState(null);
