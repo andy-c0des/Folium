@@ -3800,7 +3800,7 @@ const PROP_SUBSTRATES      = MASTER_SUBSTRATES;
 const SEMIHYDRO_SUBSTRATES = MASTER_SUBSTRATES;
 const SOIL_SUBSTRATES      = MASTER_SUBSTRATES;
 function substratesForMethod() { return MASTER_SUBSTRATES; }
-const PROP_STATUSES = ['Trying', 'Rooted', 'Potted Up', 'Graduated', 'Failed'];
+const PROP_STATUSES = ['Trying', 'Rooted', 'Potted Up', 'Graduated', 'Failed', 'Sold'];
 const PROP_FAIL_CAUSES = [
     'Rotted', 'Dried out', 'No roots formed', 'Pests',
     'Disease / mould', 'Too cold', 'Too hot', 'Unknown'
@@ -8186,7 +8186,7 @@ function AddScreen() {
                     React.createElement("select", { value: isCustomMix(medium) ? (isSemiHydro ? 'Custom Soil Mix' : 'Custom Soil Mix') : medium, onChange: function(e) { var v = e.target.value; if (v === 'Custom Soil Mix' || v === 'Custom Soil Mix') { setMedium(encodeCustomMix([{ ingredient: (isSemiHydro ? PON_MIX_INGREDIENTS : SOIL_MIX_INGREDIENTS)[0], parts: 1 }], isSemiHydro)); } else { setMedium(v); } }, className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
                         React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                         substratesForMethod(growingMethod).map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                        React.createElement("option", { value: isSemiHydro ? 'Custom Soil Mix' : 'Custom Soil Mix' }, isSemiHydro ? '\uD83E\uDEA8 Custom PON mix...' : '\uD83C\uDF31 Custom soil mix...')),
+                        React.createElement("option", { value: 'Custom Soil Mix' }, '\uD83C\uDF31 Custom Soil Mix...')),
                     isCustomMix(medium) && React.createElement(CustomMixBuilder, { value: medium, onChange: setMedium, growingMethod: growingMethod, pxS: pxS, theme: theme })),
                 React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
                     React.createElement("div", null,
@@ -9044,7 +9044,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                                 PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
                                 React.createElement("option", { value: "Soil mix" }, "Soil mix"),
-                                React.createElement("option", { value: "Custom soil mix" }, "\uD83C\uDF31 Custom soil mix...")),
+                                React.createElement("option", { value: "Custom Soil Mix" }, "\uD83C\uDF31 Custom Soil Mix...")),
                             isCustomMix(edit.substrate) && React.createElement(CustomMixBuilder, { value: edit.substrate, onChange: function(enc) { setEdit(function(prev) { return Object.assign({}, prev, { substrate: enc }); }); }, growingMethod: 'substrate', pxS: pxS, theme: theme })),
                         React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
                             React.createElement("div", null,
@@ -9177,7 +9177,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                                 PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
                                 React.createElement("option", { value: "Soil mix" }, "Soil mix"),
-                                React.createElement("option", { value: "Custom soil mix" }, "\uD83C\uDF31 Custom soil mix...")),
+                                React.createElement("option", { value: "Custom Soil Mix" }, "\uD83C\uDF31 Custom Soil Mix...")),
                             isCustomMix(edit.substrate) && React.createElement(CustomMixBuilder, { value: edit.substrate, onChange: function(enc) { setEdit(function(prev) { return Object.assign({}, prev, { substrate: enc }); }); }, growingMethod: 'substrate', pxS: pxS, theme: theme }),
                         React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-2" },
                             React.createElement("div", null,
@@ -10747,7 +10747,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     (() => {
                         const isEditing = editPropId === prop.propId;
                         const ef = editPropForm;
-                        const subOpts = typeof SUB_PRESETS !== 'undefined' ? SUB_PRESETS : ['Sphagnum moss','Perlite','LECA','Bark mix','Coco coir','Pumice','Sand','Water','Soil mix'];
+                        const subOpts = typeof SUB_PRESETS !== 'undefined' ? SUB_PRESETS : ['Water / Hydro','Sphagnum Moss','Coco Coir','Aroid Mix','Perlite','Semi-Hydro (LECA)','Semi-Hydro (PON)','Bark','Pumice','Soil Mix'];
                         const propTypeOpts = typeof PROP_TYPES !== 'undefined' ? PROP_TYPES : ['Stem cutting','Leaf cutting','Division','Air layer','Seed','Offset','Rhizome'];
                         return React.createElement("div", { style: { marginBottom: 12, border: `2px solid ${theme.rowBorder}`, background: theme.cardBg } },
                             /* card header */
@@ -12303,7 +12303,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                     React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                                     PROP_SUBSTRATES.map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
                                     React.createElement("option", { value: "Soil mix" }, "Soil mix"),
-                                    React.createElement("option", { value: (plant && plant.growingMethod) === 'semihydro' ? 'Custom Soil Mix' : 'Custom Soil Mix' }, (plant && plant.growingMethod) === 'semihydro' ? '\uD83E\uDEA8 Custom PON mix...' : '\uD83C\uDF31 Custom soil mix...')),
+                                    React.createElement("option", { value: 'Custom Soil Mix' }, '\uD83C\uDF31 Custom Soil Mix...')),
                                 isCustomMix(repotSub) && React.createElement(CustomMixBuilder, { value: repotSub, onChange: setRepotSub, growingMethod: (plant && plant.growingMethod) || 'substrate', pxS: pxS, theme: theme }),
                             React.createElement("div", { className: "flex gap-2 pt-2" },
                                 React.createElement(PlantButton, { block: false, onClick: submitRepot }, "Save Repot"),
@@ -12497,7 +12497,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                             React.createElement("select", { value: isCustomMix(editSub) ? ((plant && plant.growingMethod) === 'semihydro' ? 'Custom Soil Mix' : 'Custom Soil Mix') : editSub, onChange: function(e) { var v = e.target.value; if (v === 'Custom Soil Mix' || v === 'Custom Soil Mix') { var sh = (plant && plant.growingMethod) === 'semihydro'; setEditSub(encodeCustomMix([{ ingredient: (sh ? PON_MIX_INGREDIENTS : SOIL_MIX_INGREDIENTS)[0], parts: 1 }], sh)); } else { setEditSub(v); } }, className: "w-full border-4 px-3 py-2 mt-1", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
                                 React.createElement("option", { value: "" }, "\u2014 select \u2014"),
                                 Object.keys(SUBSTRATE_PROPS).map(function(s) { return React.createElement("option", { key: s, value: s }, s); }),
-                                React.createElement("option", { value: (plant && plant.growingMethod) === 'semihydro' ? 'Custom Soil Mix' : 'Custom Soil Mix' }, (plant && plant.growingMethod) === 'semihydro' ? '\uD83E\uDEA8 Custom PON mix...' : '\uD83C\uDF31 Custom soil mix...'),
+                                React.createElement("option", { value: 'Custom Soil Mix' }, '\uD83C\uDF31 Custom Soil Mix...'),
                                 isCustomMix(editSub) && !SUBSTRATE_PROPS[editSub] && React.createElement("option", { value: editSub }, editSub)),
                             isCustomMix(editSub) && React.createElement(CustomMixBuilder, { value: editSub, onChange: setEditSub, growingMethod: (plant && plant.growingMethod) || 'substrate', pxS: pxS, theme: theme })),
                         React.createElement("div", null,
@@ -16449,7 +16449,7 @@ function SettingsScreen() {
                 React.createElement(Row, { label: "Batch Fertilize", sublabel: "Fertilize multiple plants at once" },
                     React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('batch-fertilize') }, "Open \>"))),
             React.createElement(Section, { title: "\u2139\uFE0F ABOUT" },
-                React.createElement(Row, { label: "Version", sublabel: "PlantOS v5" },
+                React.createElement(Row, { label: "Version", sublabel: "Folium v5.5" },
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS }) }, "v5.0")),
                 React.createElement(Row, { label: "Mode", sublabel: HAS_GAS ? 'Live — connected to sheet' : 'Demo — no persistence' },
                     React.createElement("span", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: HAS_GAS ? '#4CAF50' : '#FF9800' }) }, HAS_GAS ? 'LIVE' : 'DEMO')),
@@ -16844,7 +16844,7 @@ function GasBannerTip() {
             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#7A5528', lineHeight: 1.4 }) }, "Share \u2192 Add to Home Screen for a full-screen app experience without the Google banner.")),
         React.createElement("button", { type: "button", onClick: () => setVisible(false), style: Object.assign(Object.assign({}, pxS), { fontSize: '18px', color: '#5A3818', background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer' }) }, "\u2715")));
 }
-const PLANTOS_VERSION = '5.4';
+const PLANTOS_VERSION = '5.5';
 
 function SplashScreen({ onEnter }) {
   const [hover, setHover] = React.useState(false);
