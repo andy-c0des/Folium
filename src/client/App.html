@@ -12003,7 +12003,7 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const resolvedCount  = (grafts || []).filter(g => ['Graduated','Failed'].includes(g.status)).length;
     const successRate    = resolvedCount > 0 ? Math.round((succeededCount / resolvedCount) * 100) : null;
     const displayGrafts  = (grafts || []).filter(g => filterStatus === 'all' || activeStatuses.includes(g.status)).slice().sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
-    return React.createElement(React.Fragment, null,
+    return React.createElement('div', { style: { width: '100%', minWidth: 0, paddingTop: 8, boxSizing: 'border-box' } },
         /* Stats */
         (grafts || []).length > 0 && React.createElement("div", { style: { display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' } },
             React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, (grafts || []).filter(g => activeStatuses.includes(g.status)).length + ' active'),
