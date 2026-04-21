@@ -109,6 +109,58 @@ function plantosDeleteSale(listingId) {
   return { ok: true };
 }
 
+/* Backfill sales tracker from the Archive — imports any plant that was archived
+   as 'rehomed' with a salePrice. Skips entries that already have a sales listing
+   for the same plantUID. Returns { ok, imported, skipped, total }. */
+function plantosBackfillSalesFromArchive() {
+  var archive;
+  try { archive = plantosGetArchive(); } catch(e) { return { ok: false, error: 'Archive unavailable: ' + (e && e.message || String(e)) }; }
+  if (!Array.isArray(archive) || archive.length === 0) return { ok: true, imported: 0, skipped: 0, total: 0 };
+  var sales = plantosGetSales();
+  // Build a set of plantUIDs that already have at least one Sold listing — avoid duplicates
+  var existingSoldUids = {};
+  for (var i = 0; i < sales.length; i++) {
+    var s = sales[i];
+    if (s.status === 'Sold' && s.plantUID) existingSoldUids[String(s.plantUID).trim()] = true;
+  }
+  var imported = 0, skipped = 0, scanned = 0;
+  for (var j = 0; j < archive.length; j++) {
+    var a = archive[j];
+    if (!a || a.type !== 'rehomed') continue;
+    var price = plantosSafeStr_(a.salePrice || '').trim();
+    if (!price) { skipped++; continue; }
+    scanned++;
+    var uid = plantosSafeStr_(a.uid || '').trim();
+    if (uid && existingSoldUids[uid]) { skipped++; continue; }
+    var soldDate = plantosSafeStr_(a.rehomeDate || a.archivedAt || '').trim();
+    var listing = {
+      listingId: 'SALE_BF_' + Date.now() + '_' + j,
+      plantUID: uid,
+      plantName: plantosSafeStr_(a.primary || a.genus || ('Plant ' + uid)).trim(),
+      status: 'Sold',
+      quantity: 1,
+      quantitySold: 1,
+      listPrice: price,
+      salePrice: price,
+      listingUrl: '',
+      listingLocation: '',
+      buyer: '',
+      notes: 'Backfilled from Archive' + (a.cause ? ' \u00B7 ' + a.cause : '') + (a.note ? ' \u00B7 ' + a.note : ''),
+      shipped: false,
+      trackingNumber: '',
+      orderNumber: '',
+      createdAt: soldDate || plantosFmtDate_(plantosNow_()),
+      listedAt: '',
+      soldAt: soldDate || plantosFmtDate_(plantosNow_())
+    };
+    sales.unshift(listing);
+    if (uid) existingSoldUids[uid] = true;
+    imported++;
+  }
+  if (imported > 0) plantosSaveSales_(sales);
+  return { ok: true, imported: imported, skipped: skipped, total: scanned };
+}
+
 /* Sum revenue from Sold sales listings (used by plantosHome() dashboard).
    If listing has quantitySold > 0, use that; else if status=Sold use quantity; else 1. */
 function plantosSalesRevenueSummary_() {

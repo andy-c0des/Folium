@@ -5618,6 +5618,7 @@ function PlantDataProvider({ children }) {
         updateSale: (listingId, patch) => gasCall('plantosUpdateSale', listingId, patch),
         updateSaleStatus: (listingId, status, salePrice) => gasCall('plantosUpdateSaleStatus', listingId, status, salePrice || ''),
         deleteSale: (listingId) => gasCall('plantosDeleteSale', listingId),
+        backfillSalesFromArchive: () => gasCall('plantosBackfillSalesFromArchive'),
         demoGrafts: [], demoGraftTimelines: {},
         getEnvironments: () => gasCall('plantosGetEnvironments').then(r => Array.isArray(r) ? r : []).catch(() => []),
         getLocationEnvMap: () => gasCall('plantosGetLocationEnvMap').then(r => (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}).catch(() => ({})),
@@ -16322,7 +16323,7 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
 }
 
 function SalesSection() {
-    const { getSales, updateSale, updateSaleStatus, deleteSale, allPlantsCache } = usePlantData();
+    const { getSales, updateSale, updateSaleStatus, deleteSale, backfillSalesFromArchive, allPlantsCache } = usePlantData();
     const { navigate } = useNavigation();
     const theme = useTheme();
     const { isSmall, isDesktop } = useScreenSize();
@@ -16430,6 +16431,20 @@ function SalesSection() {
         if (res && res.ok) refresh();
     }
 
+    async function importFromArchive() {
+        if (!confirm('Import previously sold plants from your Archive into the Sales Tracker? This scans for archived "rehomed" plants with a sale price and creates Sold listings for them. Existing sold listings will not be duplicated.')) return;
+        try {
+            var res = await backfillSalesFromArchive();
+            if (res && res.ok) {
+                refresh();
+                var msg = 'Imported ' + (res.imported || 0) + ' previous sale' + (res.imported === 1 ? '' : 's') + '.';
+                if (res.skipped > 0) msg += ' Skipped ' + res.skipped + ' already-tracked.';
+                alert(msg);
+            } else {
+                alert('Import failed: ' + ((res && res.error) || 'unknown error'));
+            }
+        } catch(e) { alert('Import failed: ' + (e && e.message || String(e))); }
+    }
     function exportCSV() {
         var rows = [['Listing ID','Plant UID','Plant Name','Status','Qty','Units Sold','Unit Price','Sale Price','Line Total','Marketplace','URL','Created','Listed','Sold','Notes']];
         sales.forEach(s => {
@@ -16485,6 +16500,10 @@ function SalesSection() {
                             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, boxSizing: 'border-box' }) },
                         label + ' (' + count + ')');
                 })),
+            React.createElement('button', { type: 'button', onClick: importFromArchive, title: 'Import previously sold plants from your Archive',
+                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '6px 10px', cursor: 'pointer',
+                    background: 'rgba(58,138,40,0.12)', color: '#2A5A10', border: '2px solid #3A8A28',
+                    whiteSpace: 'nowrap', flexShrink: 0 }) }, '\uD83D\uDCE5 Import'),
             sales.length > 0 && React.createElement('button', { type: 'button', onClick: exportCSV,
                 style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '6px 10px', cursor: 'pointer',
                     background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder,
@@ -16498,10 +16517,14 @@ function SalesSection() {
             React.createElement('div', { style: { fontSize: 44, marginBottom: 10, lineHeight: 1 } }, sales.length === 0 ? '\uD83D\uDCB0' : '\uD83D\uDD0D'),
             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '15px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) },
                 sales.length === 0 ? 'No listings yet' : 'No listings match this filter'),
-            sales.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, lineHeight: 1.5, maxWidth: 300, margin: '0 auto' }) },
+            sales.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, lineHeight: 1.5, maxWidth: 320, margin: '0 auto' }) },
                 'Open any plant and tap ',
                 React.createElement('span', { style: { fontWeight: 700, color: theme.txtP } }, '\uD83D\uDCB0 List for Sale'),
-                ' to create your first listing.')),
+                ' to create your first listing.'),
+            sales.length === 0 && React.createElement('button', { type: 'button', onClick: importFromArchive,
+                style: Object.assign({}, pxS, { marginTop: 16, fontSize: '12px', fontWeight: 700, padding: '8px 14px', cursor: 'pointer',
+                    background: 'rgba(58,138,40,0.12)', color: '#2A5A10', border: '2px solid #3A8A28' }) },
+                '\uD83D\uDCE5 Import previous sales from Archive')),
 
         // Spreadsheet-style listing table
         filtered.length > 0 && (function() {

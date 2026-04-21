@@ -140,6 +140,7 @@ function doPost(e) {
       plantosUpdateSale: plantosUpdateSale,
       plantosUpdateSaleStatus: plantosUpdateSaleStatus,
       plantosDeleteSale: plantosDeleteSale,
+      plantosBackfillSalesFromArchive: plantosBackfillSalesFromArchive,
       plantosGetAllPlantsLite: plantosGetAllPlantsLite,
       plantosGetPlant: plantosGetPlant,
       plantosCreatePlant: plantosCreatePlant,
