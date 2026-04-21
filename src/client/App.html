@@ -5613,6 +5613,11 @@ function PlantDataProvider({ children }) {
         uploadGraftPhoto: (graftId, dataUrl, name) => gasCall('plantosUploadGraftPhoto', graftId, dataUrl, name || 'photo.jpg'),
         graduateGraft: (graftId, specimenPayload) => gasCall('plantosGraduateGraft', graftId, specimenPayload),
         sellGraft: (graftId, priceSold) => gasCall('plantosSellGraft', graftId, priceSold || ''),
+        getSales: () => gasCall('plantosGetSales').then(r => Array.isArray(r) ? r : []).catch(() => []),
+        createSale: (payload) => gasCall('plantosCreateSale', payload),
+        updateSale: (listingId, patch) => gasCall('plantosUpdateSale', listingId, patch),
+        updateSaleStatus: (listingId, status, salePrice) => gasCall('plantosUpdateSaleStatus', listingId, status, salePrice || ''),
+        deleteSale: (listingId) => gasCall('plantosDeleteSale', listingId),
         demoGrafts: [], demoGraftTimelines: {},
         getEnvironments: () => gasCall('plantosGetEnvironments').then(r => Array.isArray(r) ? r : []).catch(() => []),
         getLocationEnvMap: () => gasCall('plantosGetLocationEnvMap').then(r => (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}).catch(() => ({})),
@@ -9557,7 +9562,7 @@ function MyPlantsScreen({ openTab, prefill }) {
         setAddingLoc(false);
     }
     function TabBar() {
-        return (React.createElement("div", { className: "plant-tab-bar", style: { borderBottomColor: theme.cardBorder, marginBottom: 14 } }, [['plants', '\uD83C\uDF3F Plants'], ['props', '\uD83C\uDF31 Props'], ['grafts', '\uD83D\uDD17 Grafts'], ['phylo', '\uD83E\uddEC Phylo']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setActiveTab(id), className: "plant-tab" + (activeTab === id ? " active" : ""), style: { color: activeTab === id ? theme.btnP.bg : theme.txtS, fontSize: isSmall ? '11px' : '13px' } }, label)))));
+        return (React.createElement("div", { className: "plant-tab-bar", style: { borderBottomColor: theme.cardBorder, marginBottom: 14 } }, [['plants', '\uD83C\uDF3F Plants'], ['props', '\uD83C\uDF31 Props'], ['grafts', '\uD83D\uDD17 Grafts'], ['sales', '\uD83D\uDCB0 Sales'], ['phylo', '\uD83E\uddEC Phylo']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setActiveTab(id), className: "plant-tab" + (activeTab === id ? " active" : ""), style: { color: activeTab === id ? theme.btnP.bg : theme.txtS, fontSize: isSmall ? '11px' : '13px' } }, label)))));
     }
     const locModalEl = locModal && React.createElement('div', {
         style: {
@@ -10020,6 +10025,7 @@ function MyPlantsScreen({ openTab, prefill }) {
                     })))))))),
             activeTab === 'props' && React.createElement(PropsSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen }),
             activeTab === 'grafts' && React.createElement(GraftSection, { locations: locations, prefill: prefill, showForm: propFormOpen, onSetShowForm: setPropFormOpen }),
+            activeTab === 'sales' && React.createElement(SalesSection, null),
             activeTab === 'phylo' && React.createElement(PhyloScreen, { inline: true }),
             React.createElement("div", { className: "mt-4 flex gap-2" },
                 (activeTab === 'props' || activeTab === 'grafts')
@@ -12732,6 +12738,7 @@ function PlantScreen({ uid }) {
     const [logProgress, setLogProgress] = useState(false);
     const [logProgressStatus, setLogProgressStatus] = useState('');
     const [logProgressNotes, setLogProgressNotes] = useState('');
+    const [saleListOpen, setSaleListOpen] = useState(false);
     const [logDate, setLogDate] = useState(todayStr());
     const [showHistory, setShowHistory] = useState(false);
     const [compostOpen, setCompostOpen] = useState(false);
@@ -13692,7 +13699,20 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 boxShadow: '0 3px 0 #0A1800',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                             })
-                        }, '\uD83D\uDCCA Log Progress Update')
+                        }, '\uD83D\uDCCA Log Progress Update'),
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => { window.scrollTo(0, 0); setSaleListOpen(true); },
+                            className: "btn-press w-full",
+                            style: Object.assign({}, pxS, {
+                                fontWeight: 900, fontSize: '13px', padding: '10px 4px', marginTop: 6,
+                                border: '3px solid #8B7A30',
+                                background: 'rgba(200,168,75,0.15)',
+                                color: theme.txtP,
+                                boxShadow: '0 3px 0 #5A4A10',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            })
+                        }, '\uD83D\uDCB0 List for Sale')
                     )), repotOpen && (React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
@@ -13865,6 +13885,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
         plant && React.createElement("div", { id: 'carl-section-' + plant.uid },
             React.createElement(ProblemsSection, { plant: plant, autoOpenAI: autoOpenAI, onAutoOpenDone: function() { setAutoOpenAI(false); } })),
         compostOpen && plant && (React.createElement(CompostModal, { plant: plant, onClose: () => setCompostOpen(false), onDone: () => { setCompostOpen(false); goBack(); } })),
+        saleListOpen && plant && React.createElement(SaleListingModal, { plant: plant, onClose: () => setSaleListOpen(false), onDone: () => { setSaleListOpen(false); } }),
         logProgress && plant && React.createElement("div", {
             style: { position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'stretch', justifyContent: 'center' },
             onClick: function(e) { if (e.target === e.currentTarget) setLogProgress(false); }
@@ -16147,6 +16168,312 @@ function WarningBadge({ plant }) {
                     w.tip))));
         })))));
 }
+/* ===================== SALES TRACKER ===================== */
+const SALE_STATUSES = ['Drafted', 'Listed', 'Pending', 'Sold', 'Withdrawn'];
+const SALE_STATUS_COLORS = {
+    Drafted:   { bg: '#F0E8D8', fg: '#5A4A20', border: '#8B7A30' },
+    Listed:    { bg: '#E0F0FF', fg: '#1A4A7A', border: '#2A6B9A' },
+    Pending:   { bg: '#FFF0E0', fg: '#7A4A10', border: '#C87820' },
+    Sold:      { bg: '#E0F8E0', fg: '#2A5A10', border: '#3A8A28' },
+    Withdrawn: { bg: '#F0E0E0', fg: '#7A2A2A', border: '#B85C4A' }
+};
+const SALE_MARKETPLACES = ['Etsy', 'eBay', 'Facebook Marketplace', 'Instagram', 'Local / Swap', 'Shopify', 'Other'];
+
+function SaleListingModal({ plant, listing, onClose, onDone }) {
+    const { createSale, updateSale } = usePlantData();
+    const theme = useTheme();
+    const { isSmall } = useScreenSize();
+    const isEdit = !!(listing && listing.listingId);
+    const [listPrice, setListPrice] = useState(isEdit ? (listing.listPrice || '') : '');
+    const [listingLocation, setListingLocation] = useState(isEdit ? (listing.listingLocation || '') : '');
+    const [listingUrl, setListingUrl] = useState(isEdit ? (listing.listingUrl || '') : '');
+    const [notes, setNotes] = useState(isEdit ? (listing.notes || '') : '');
+    const [status, setStatus] = useState(isEdit ? (listing.status || 'Drafted') : 'Drafted');
+    const [saving, setSaving] = useState(false);
+    const [err, setErr] = useState('');
+
+    const pxS = { fontFamily: "'Pixelify Sans', cursive" };
+    const label = Object.assign({}, pxS, { fontSize: '12px', fontWeight: 700, color: theme.txtS, marginBottom: 3 });
+    const input = Object.assign({}, pxS, { fontSize: '13px', padding: '8px 10px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, width: '100%', boxSizing: 'border-box' });
+
+    async function submit() {
+        setErr('');
+        if (!listPrice && !isEdit) { setErr('List price required'); return; }
+        setSaving(true);
+        try {
+            var payload = { plantUID: plant.uid, plantName: plant.nickname || plant.primary || plant.gs || String(plant.uid),
+                listPrice: listPrice, listingLocation: listingLocation, listingUrl: listingUrl, notes: notes, status: status };
+            var res;
+            if (isEdit) res = await updateSale(listing.listingId, payload);
+            else res = await createSale(payload);
+            if (res && res.ok) { onDone && onDone(res.listing); }
+            else { setErr((res && res.error) || 'Save failed'); }
+        } catch(e) { setErr((e && e.message) || String(e)); }
+        finally { setSaving(false); }
+    }
+
+    return React.createElement('div', {
+        style: { position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.55)',
+            display: 'flex', alignItems: 'stretch', justifyContent: 'center' },
+        onClick: e => { if (e.target === e.currentTarget) onClose && onClose(); }
+    },
+        React.createElement('div', { style: { background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
+            width: '100%', maxWidth: 500, margin: isSmall ? 8 : 20, overflow: 'auto', maxHeight: '92vh', padding: 16,
+            boxShadow: '5px 5px 0 ' + theme.cardBorder } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingBottom: 10, borderBottom: '3px solid ' + theme.sep } },
+                React.createElement('span', { style: { fontSize: 22 } }, '\uD83D\uDCB0'),
+                React.createElement('div', { style: { flex: 1 } },
+                    React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtP } }, isEdit ? 'EDIT LISTING' : 'LIST FOR SALE'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginTop: 2 }) }, (plant.nickname || plant.primary || plant.gs || '#' + plant.uid))),
+                React.createElement('button', { type: 'button', onClick: onClose, style: { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: theme.txtS } }, '\u2715')),
+            React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+                React.createElement('div', null,
+                    React.createElement('div', { style: label }, 'Sale Price ($)'),
+                    React.createElement('input', { type: 'text', inputMode: 'decimal', value: listPrice, onChange: e => setListPrice(e.target.value), placeholder: '25.00', style: input })),
+                React.createElement('div', null,
+                    React.createElement('div', { style: label }, 'Where is the listing?'),
+                    React.createElement('select', { value: listingLocation, onChange: e => setListingLocation(e.target.value), style: input },
+                        React.createElement('option', { value: '' }, '\u2014 select marketplace \u2014'),
+                        SALE_MARKETPLACES.map(m => React.createElement('option', { key: m, value: m }, m)))),
+                React.createElement('div', null,
+                    React.createElement('div', { style: label }, 'Listing URL'),
+                    React.createElement('input', { type: 'url', value: listingUrl, onChange: e => setListingUrl(e.target.value), placeholder: 'https://...', style: input })),
+                React.createElement('div', null,
+                    React.createElement('div', { style: label }, 'Status'),
+                    React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+                        SALE_STATUSES.map(s => {
+                            var c = SALE_STATUS_COLORS[s];
+                            var active = status === s;
+                            return React.createElement('button', { key: s, type: 'button', onClick: () => setStatus(s),
+                                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
+                                    background: active ? c.border : c.bg, color: active ? '#fff' : c.fg,
+                                    border: '2px solid ' + c.border }) }, s);
+                        }))),
+                React.createElement('div', null,
+                    React.createElement('div', { style: label }, 'Notes (optional)'),
+                    React.createElement('textarea', { rows: 2, value: notes, onChange: e => setNotes(e.target.value), placeholder: 'e.g. mature plant, rooted, ships with moss', style: Object.assign({}, input, { resize: 'none' }) })),
+                err && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: 'var(--c-urgent)', padding: '6px 8px', background: 'rgba(192,48,30,0.08)', border: '1px solid var(--c-urgent)' }) }, err),
+                React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 6 } },
+                    React.createElement('button', { type: 'button', onClick: submit, disabled: saving,
+                        style: Object.assign({}, pxS, { flex: 1, fontSize: '13px', fontWeight: 900, padding: '10px', cursor: saving ? 'default' : 'pointer',
+                            background: '#3A8A28', color: '#fff', border: '3px solid #2A5A10', boxShadow: '0 3px 0 #1A3008' }) },
+                        saving ? 'Saving\u2026' : (isEdit ? 'Save Changes' : 'Create Listing')),
+                    React.createElement('button', { type: 'button', onClick: onClose,
+                        style: Object.assign({}, pxS, { fontSize: '13px', padding: '10px 16px', cursor: 'pointer',
+                            background: theme.rowBg, color: theme.txtP, border: '3px solid ' + theme.cardBorder }) }, 'Cancel')))));
+}
+
+function SalesSection() {
+    const { getSales, updateSaleStatus, deleteSale, allPlantsCache } = usePlantData();
+    const { navigate } = useNavigation();
+    const theme = useTheme();
+    const { isSmall, isDesktop } = useScreenSize();
+    const [sales, setSales] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState('active'); // active | all | Sold | Listed | Drafted
+    const [editing, setEditing] = useState(null); // listing object
+    const [quickSoldFor, setQuickSoldFor] = useState(null); // listingId being quick-sold
+    const [quickSoldPrice, setQuickSoldPrice] = useState('');
+
+    const pxS = { fontFamily: "'Pixelify Sans', cursive" };
+
+    function refresh() {
+        setLoading(true);
+        getSales().then(list => { setSales(list); setLoading(false); }).catch(() => { setSales([]); setLoading(false); });
+    }
+    useEffect(() => { refresh(); }, []);
+
+    // Metrics
+    var soldList = sales.filter(s => s.status === 'Sold');
+    var listedList = sales.filter(s => s.status === 'Listed');
+    var totalRevenue = soldList.reduce((sum, s) => {
+        var v = parseFloat(String(s.salePrice || s.listPrice || '').replace(/[$,]/g, ''));
+        return sum + (isNaN(v) ? 0 : v);
+    }, 0);
+    var avgSale = soldList.length > 0 ? totalRevenue / soldList.length : 0;
+    var conversionRate = sales.length > 0 ? Math.round((soldList.length / sales.length) * 100) : 0;
+    // Time-to-sell (days) average
+    function daysBetween(a, b) {
+        try { return Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000)); } catch(e) { return 0; }
+    }
+    var timeToSellDays = soldList
+        .filter(s => s.listedAt && s.soldAt)
+        .map(s => daysBetween(s.listedAt, s.soldAt));
+    var avgTimeToSell = timeToSellDays.length > 0 ? Math.round(timeToSellDays.reduce((a,b) => a+b, 0) / timeToSellDays.length) : null;
+    // Marketplace breakdown
+    var mktBreakdown = {};
+    soldList.forEach(s => {
+        var loc = s.listingLocation || 'Other';
+        mktBreakdown[loc] = (mktBreakdown[loc] || 0) + 1;
+    });
+    var mktTop = Object.keys(mktBreakdown).sort((a,b) => mktBreakdown[b] - mktBreakdown[a]);
+    // ROI per listing (if plant has purchasePrice)
+    var plantMap = {};
+    (allPlantsCache || []).forEach(p => { plantMap[String(p.uid)] = p; });
+    function getROI(listing) {
+        if (listing.status !== 'Sold') return null;
+        var p = plantMap[String(listing.plantUID)];
+        if (!p || !p.purchasePrice) return null;
+        var cost = parseFloat(String(p.purchasePrice).replace(/[$,]/g, ''));
+        var sale = parseFloat(String(listing.salePrice || listing.listPrice || '').replace(/[$,]/g, ''));
+        if (isNaN(cost) || isNaN(sale) || cost <= 0) return null;
+        return { profit: sale - cost, pct: Math.round(((sale - cost) / cost) * 100) };
+    }
+
+    // Filter
+    var filtered = sales.filter(s => {
+        if (filter === 'active') return s.status !== 'Sold' && s.status !== 'Withdrawn';
+        if (filter === 'all') return true;
+        return s.status === filter;
+    });
+
+    async function changeStatus(listingId, newStatus, salePrice) {
+        var res = await updateSaleStatus(listingId, newStatus, salePrice || '');
+        if (res && res.ok) refresh();
+    }
+
+    async function handleDelete(listingId) {
+        if (!confirm('Delete this listing? This cannot be undone.')) return;
+        var res = await deleteSale(listingId);
+        if (res && res.ok) refresh();
+    }
+
+    function exportCSV() {
+        var rows = [['Listing ID','Plant UID','Plant Name','Status','List Price','Sale Price','Marketplace','URL','Created','Listed','Sold','Notes']];
+        sales.forEach(s => {
+            rows.push([s.listingId, s.plantUID, s.plantName, s.status, s.listPrice, s.salePrice, s.listingLocation, s.listingUrl, s.createdAt, s.listedAt, s.soldAt, (s.notes || '').replace(/\n/g, ' ')]);
+        });
+        var csv = rows.map(r => r.map(c => '"' + String(c || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+        var blob = new Blob([csv], { type: 'text/csv' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'folium-sales-' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Metric card helper
+    function Metric({ icon, label, value, sub }) {
+        return React.createElement('div', {
+            style: { flex: 1, minWidth: 130, background: theme.cardBg, border: '3px solid ' + theme.cardBorder,
+                padding: '10px 8px', textAlign: 'center', boxShadow: '3px 3px 0 ' + theme.cardBorder }
+        },
+            React.createElement('div', { style: { fontSize: 18, marginBottom: 3 } }, icon),
+            React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: isDesktop ? '13px' : '11px', color: theme.txtP, lineHeight: 1.3 } }, value),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, marginTop: 2, letterSpacing: '0.03em' }) }, label),
+            sub && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, opacity: 0.7, marginTop: 1 }) }, sub));
+    }
+
+    return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+        // Header + export
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 } },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                React.createElement('span', { style: { fontSize: 20 } }, '\uD83D\uDCB0'),
+                React.createElement('div', null,
+                    React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: isSmall ? '9px' : '11px', color: theme.txtP } }, 'SALES TRACKER'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, sales.length + ' listing' + (sales.length !== 1 ? 's' : '')))),
+            sales.length > 0 && React.createElement('button', { type: 'button', onClick: exportCSV,
+                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
+                    background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\u2B07 Export CSV')),
+
+        // Metrics row
+        sales.length > 0 && React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+            React.createElement(Metric, { icon: '\uD83D\uDCB5', label: 'Revenue', value: '$' + totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), sub: soldList.length + ' sold' }),
+            React.createElement(Metric, { icon: '\uD83D\uDCCA', label: 'Avg Sale', value: soldList.length > 0 ? '$' + avgSale.toFixed(0) : '—' }),
+            React.createElement(Metric, { icon: '\uD83D\uDD04', label: 'Conversion', value: conversionRate + '%', sub: soldList.length + '/' + sales.length }),
+            avgTimeToSell != null && React.createElement(Metric, { icon: '\u23F1', label: 'Avg Days to Sell', value: avgTimeToSell + 'd' }),
+            mktTop.length > 0 && React.createElement(Metric, { icon: '\uD83C\uDFEA', label: 'Top Marketplace', value: mktTop[0].length > 14 ? mktTop[0].slice(0,12)+'…' : mktTop[0], sub: mktBreakdown[mktTop[0]] + ' sold' })),
+
+        // Filter tabs
+        React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+            [['active', 'Active'], ['Listed', 'Listed'], ['Drafted', 'Drafted'], ['Pending', 'Pending'], ['Sold', 'Sold'], ['all', 'All']].map(([id, label]) => {
+                var active = filter === id;
+                var count = id === 'active' ? sales.filter(s => s.status !== 'Sold' && s.status !== 'Withdrawn').length
+                          : id === 'all' ? sales.length
+                          : sales.filter(s => s.status === id).length;
+                return React.createElement('button', { key: id, type: 'button', onClick: () => setFilter(id),
+                    style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
+                        background: active ? theme.btnP.bg : 'transparent', color: active ? theme.btnP.text : theme.txtS,
+                        border: '2px solid ' + (active ? theme.btnP.border : theme.rowBorder) }) },
+                    label + ' (' + count + ')');
+            })),
+
+        // Listings
+        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, textAlign: 'center', padding: 20 }) }, 'Loading\u2026'),
+        !loading && filtered.length === 0 && React.createElement('div', {
+            style: { padding: 30, textAlign: 'center', background: theme.cardBg, border: '3px dashed ' + theme.cardBorder }
+        },
+            React.createElement('div', { style: { fontSize: 32, marginBottom: 6 } }, '\uD83C\uDF31'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, fontWeight: 700 }) },
+                sales.length === 0 ? 'No listings yet' : 'No listings match this filter'),
+            sales.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, opacity: 0.7, marginTop: 4 }) }, 'Open any plant and tap "List for Sale" to start')),
+
+        filtered.map(s => {
+            var c = SALE_STATUS_COLORS[s.status] || SALE_STATUS_COLORS.Drafted;
+            var roi = getROI(s);
+            return React.createElement('div', { key: s.listingId,
+                style: { background: theme.cardBg, border: '3px solid ' + theme.cardBorder, borderLeft: '6px solid ' + c.border,
+                    padding: 10, boxShadow: '3px 3px 0 ' + theme.cardBorder } },
+                React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 } },
+                    React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+                        React.createElement('div', { onClick: () => navigate('plant', { uid: s.plantUID }),
+                            style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: theme.sep, textDecorationThickness: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) },
+                            s.plantName || ('#' + s.plantUID)),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 1 }) },
+                            '#' + s.plantUID + (s.listingLocation ? '  \u2022  ' + s.listingLocation : ''))),
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '3px 8px',
+                        background: c.bg, color: c.fg, border: '2px solid ' + c.border, flexShrink: 0 }) }, s.status.toUpperCase())),
+                // Price + ROI
+                React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 } },
+                    React.createElement('div', null,
+                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, s.status === 'Sold' ? 'Sold for ' : 'Asking '),
+                        React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '12px', color: theme.txtP } }, '$' + (s.salePrice || s.listPrice || '0'))),
+                    roi && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700,
+                        color: roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)',
+                        background: roi.profit >= 0 ? 'rgba(42,107,26,0.1)' : 'rgba(192,48,30,0.08)',
+                        padding: '2px 8px', border: '1px solid ' + (roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)') }) },
+                        (roi.profit >= 0 ? '+' : '') + '$' + roi.profit.toFixed(0) + ' (' + (roi.pct >= 0 ? '+' : '') + roi.pct + '%)')),
+                s.notes && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic', padding: '4px 8px', background: theme.rowBg, marginBottom: 6 }) }, s.notes),
+                // Quick sold entry
+                quickSoldFor === s.listingId && React.createElement('div', { style: { display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, padding: 6, background: 'rgba(58,138,40,0.08)', border: '1px dashed #3A8A28' } },
+                    React.createElement('input', { type: 'text', inputMode: 'decimal', value: quickSoldPrice, onChange: e => setQuickSoldPrice(e.target.value), placeholder: 'Final sale $',
+                        style: Object.assign({}, pxS, { flex: 1, fontSize: '13px', padding: '6px 8px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP }) }),
+                    React.createElement('button', { type: 'button',
+                        onClick: () => { changeStatus(s.listingId, 'Sold', quickSoldPrice || s.listPrice); setQuickSoldFor(null); setQuickSoldPrice(''); },
+                        style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 700, padding: '6px 12px', cursor: 'pointer', background: '#3A8A28', color: '#fff', border: '2px solid #2A5A10' }) }, 'Confirm'),
+                    React.createElement('button', { type: 'button', onClick: () => { setQuickSoldFor(null); setQuickSoldPrice(''); },
+                        style: Object.assign({}, pxS, { fontSize: '12px', padding: '6px 10px', cursor: 'pointer', background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) }, '\u2715')),
+                // Actions
+                React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+                    s.listingUrl && React.createElement('a', { href: s.listingUrl, target: '_blank', rel: 'noopener noreferrer',
+                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '4px 8px',
+                            background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A', textDecoration: 'none' }) }, '\uD83D\uDD17 Open'),
+                    s.listingUrl && React.createElement('button', { type: 'button', onClick: () => { navigator.clipboard && navigator.clipboard.writeText(s.listingUrl); },
+                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\uD83D\uDCCB'),
+                    s.status !== 'Sold' && s.status !== 'Withdrawn' && React.createElement('button', { type: 'button',
+                        onClick: () => { setQuickSoldFor(s.listingId); setQuickSoldPrice(s.listPrice || ''); },
+                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '4px 8px', cursor: 'pointer',
+                            background: '#E0F8E0', color: '#2A5A10', border: '2px solid #3A8A28' }) }, '\u2713 Mark Sold'),
+                    s.status === 'Drafted' && React.createElement('button', { type: 'button', onClick: () => changeStatus(s.listingId, 'Listed'),
+                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A' }) }, 'Mark Listed'),
+                    s.status === 'Listed' && React.createElement('button', { type: 'button', onClick: () => changeStatus(s.listingId, 'Pending'),
+                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: '#FFF0E0', color: '#7A4A10', border: '2px solid #C87820' }) }, 'Mark Pending'),
+                    React.createElement('button', { type: 'button', onClick: () => setEditing(s),
+                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\u270F Edit'),
+                    React.createElement('button', { type: 'button', onClick: () => handleDelete(s.listingId),
+                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: 'transparent', color: 'var(--c-urgent)', border: '2px solid var(--c-urgent)' }) }, '\uD83D\uDDD1')));
+        }),
+
+        // Edit modal
+        editing && React.createElement(SaleListingModal, {
+            plant: { uid: editing.plantUID, nickname: editing.plantName, primary: editing.plantName },
+            listing: editing,
+            onClose: () => setEditing(null),
+            onDone: () => { setEditing(null); refresh(); }
+        }));
+}
+
 function CompostModal({ plant, onClose, onDone }) {
     const { archivePlant } = usePlantData();
     const theme = useTheme();

@@ -142,6 +142,15 @@ function plantosHome() {
     }
   }
 
+  // Sales listings revenue (plant-level sales via sales tracker)
+  try {
+    const salesSummary = plantosSalesRevenueSummary_();
+    totalSoldRevenue += salesSummary.totalRevenue || 0;
+    Object.keys(salesSummary.monthlySales || {}).forEach(function(ym) {
+      monthlySales[ym] = (monthlySales[ym] || 0) + salesSummary.monthlySales[ym];
+    });
+  } catch(e) { /* Sales.gs may not be deployed yet — ignore */ }
+
   return {
     dueNow, upcoming, fertDueNow, fertUpcoming, bothDueNow, bothUpcoming, birthdays, totalCount, progressDueNow, wateredToday, fertedToday,
     // Dashboard fields (merged — no separate API call needed)

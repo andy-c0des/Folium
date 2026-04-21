@@ -135,6 +135,11 @@ function doPost(e) {
     var dispatch = {
       plantosHome: plantosHome,
       plantosDashboard: plantosDashboard,
+      plantosGetSales: plantosGetSales,
+      plantosCreateSale: plantosCreateSale,
+      plantosUpdateSale: plantosUpdateSale,
+      plantosUpdateSaleStatus: plantosUpdateSaleStatus,
+      plantosDeleteSale: plantosDeleteSale,
       plantosGetAllPlantsLite: plantosGetAllPlantsLite,
       plantosGetPlant: plantosGetPlant,
       plantosCreatePlant: plantosCreatePlant,
