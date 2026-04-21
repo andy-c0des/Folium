@@ -11024,6 +11024,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const [selectedStatus, setSelectedStatus] = useState('');
     const [showPhotoPrompt, setShowPhotoPrompt] = useState(null);
     const [filterStatus, setFilterStatus] = useState('active'); // 'active' | 'all'
+    const [saleListOpenFor, setSaleListOpenFor] = useState(null); // propId for "List for Sale" modal
     const [propTab, setPropTab] = useState(defaultPropTab || 'all'); // 'all' | 'cutting' | 'seed' | 'hybrid'
     const [parentInCollection, setParentInCollection] = useState(
         prefill && prefill.parentUID ? true : null
@@ -11743,15 +11744,19 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         propPhotoMsg && React.createElement("div", { style: { marginBottom: 8 } },
                             React.createElement(StatusMessage, { type: propPhotoMsg.type, message: propPhotoMsg.text })),
                         /* ── SECONDARY ACTIONS ── */
-                        React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
+                        React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' } },
                             prop.status === 'Potted Up' && React.createElement("button", { type: "button",
                                 onClick: function() { setShowGraduate(function(v){ return !v; }); setShowSell(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); },
                                 style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: `2px solid ${theme.btnP.border}`, background: showGraduate ? theme.btnP.bg : 'transparent', color: showGraduate ? theme.btnP.text : theme.btnP.bg, cursor: 'pointer' })
                             }, "\uD83C\uDF93 Graduate"),
+                            prop.status !== 'Sold' && prop.status !== 'Failed' && React.createElement("button", { type: "button",
+                                onClick: function() { setSaleListOpenFor(prop.propId); },
+                                style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: '2px solid #8B7A30', background: 'rgba(200,168,75,0.15)', color: '#5A4A10', cursor: 'pointer' })
+                            }, "\uD83D\uDCB0 List for Sale"),
                             React.createElement("button", { type: "button",
                                 onClick: function() { setShowSell(function(v){ return !v; }); setShowGraduate(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setSellPrice(''); setSellStatus(null); },
                                 style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: '2px solid #4A2A88', background: showSell ? '#2A1048' : 'transparent', color: showSell ? '#D0C0FF' : '#9080C0', cursor: 'pointer' })
-                            }, "\uD83D\uDCB0 Sell")
+                            }, "\uD83D\uDCB0 Mark Sold")
                         ),
                         /* ── GRADUATE FORM ── */
                         showGraduate && React.createElement("div", { style: { border: `2px solid ${theme.btnP.border}`, padding: 10, marginBottom: 12, background: theme.rowBg } },
@@ -11832,7 +11837,25 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         }))))));
         }),
         !loading && filterStatus === 'active' && (props || []).some(p => ['Graduated', 'Failed', 'Sold'].includes(p.status)) && (React.createElement("div", { style: { textAlign: 'center', marginTop: 8 } },
-            React.createElement("button", { type: "button", onClick: () => setFilterStatus('all'), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, "Show graduated, sold & failed props")))));
+            React.createElement("button", { type: "button", onClick: () => setFilterStatus('all'), style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, "Show graduated, sold & failed props"))),
+        // List-for-Sale modal (opens when user clicks "💰 List for Sale" on a prop row)
+        saleListOpenFor && (function() {
+            var prop = (props || []).find(function(p) { return p.propId === saleListOpenFor; });
+            if (!prop) return null;
+            var gs = [prop.genus || '', prop.species || ''].filter(Boolean).join(' ') || ('Prop ' + prop.propId);
+            var pseudoPlant = {
+                uid: prop.parentUID || '',
+                nickname: '\u2702\uFE0F ' + gs,
+                primary: '\u2702\uFE0F ' + gs,
+                gs: gs
+            };
+            return React.createElement(SaleListingModal, {
+                plant: pseudoPlant,
+                extraPayload: { source: 'prop', sourceId: prop.propId, plantName: '\u2702\uFE0F ' + gs },
+                onClose: function() { setSaleListOpenFor(null); },
+                onDone: function() { setSaleListOpenFor(null); }
+            });
+        })()));
 }
 function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowForm }) {
     const { getGrafts, getGraftTimeline, createGraft, updateGraftStatus, updateGraft, addGraftNote, uploadGraftPhoto, graduateGraft, sellGraft, getPlant } = usePlantData();
@@ -11876,6 +11899,7 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     const [selectedStatus, setSelectedStatus] = useState('');
     const [showPhotoPrompt, setShowPhotoPrompt] = useState(null);
     const [filterStatus, setFilterStatus] = useState('active');
+    const [saleListOpenFor, setSaleListOpenFor] = useState(null); // graftId for "List for Sale" modal
     const [scionPlantName, setScionPlantName] = useState('');
     const [rootstockPlantName, setRootstockPlantName] = useState('');
     const GRAFT_TECHNIQUES = ['Approach graft','Cleft graft','Side graft','Wedge graft','T-bud graft','Saddle graft','Thread graft','Hypocotyl graft','Other'];
@@ -12183,9 +12207,12 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                             React.createElement(PlantButton, { variant: "secondary", onClick: () => { if (graftPhotoRef.current) graftPhotoRef.current.dataset.graftid = graftId; if (graftPhotoRef.current) graftPhotoRef.current.click(); }, className: "py-1 px-3", style: { flexShrink: 0 } }, '\uD83D\uDCF8')
                         ),
                         graftPhotoMsg && React.createElement("div", { style: { marginBottom: 8 } }, React.createElement(StatusMessage, { type: graftPhotoMsg.type, message: graftPhotoMsg.text })),
-                        React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
+                        React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' } },
                             graft.status === 'Potted Up' && React.createElement("button", { type: "button", onClick: () => { setShowGraduate(v => !v); setShowSell(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setGradForm({ nickname: '', location: '', potSize: '', everyDays: '', fertilizeEveryDays: '' }); }, style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: `2px solid ${theme.btnP.border}`, background: showGraduate ? theme.btnP.bg : 'transparent', color: showGraduate ? theme.btnP.text : theme.btnP.bg, cursor: 'pointer' }) }, '\uD83C\uDF93 Graduate'),
-                            React.createElement("button", { type: "button", onClick: () => { setShowSell(v => !v); setShowGraduate(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setSellPrice(''); setSellStatus(null); }, style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: '2px solid #4A2A88', background: showSell ? '#2A1048' : 'transparent', color: showSell ? '#D0C0FF' : '#9080C0', cursor: 'pointer' }) }, '\uD83D\uDCB0 Sell')
+                            graft.status !== 'Sold' && graft.status !== 'Failed' && React.createElement("button", { type: "button",
+                                onClick: () => { setSaleListOpenFor(graft.graftId); },
+                                style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: '2px solid #8B7A30', background: 'rgba(200,168,75,0.15)', color: '#5A4A10', cursor: 'pointer' }) }, '\uD83D\uDCB0 List for Sale'),
+                            React.createElement("button", { type: "button", onClick: () => { setShowSell(v => !v); setShowGraduate(false); setShowStatusPicker(false); setSelectedStatus(''); setShowPhotoPrompt(null); setSellPrice(''); setSellStatus(null); }, style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, padding: '4px 12px', border: '2px solid #4A2A88', background: showSell ? '#2A1048' : 'transparent', color: showSell ? '#D0C0FF' : '#9080C0', cursor: 'pointer' }) }, '\uD83D\uDCB0 Mark Sold')
                         ),
                         showGraduate && React.createElement("div", { style: { border: `2px solid ${theme.btnP.border}`, padding: 10, marginBottom: 12, background: theme.rowBg } },
                             React.createElement("div", { style: Object.assign({}, px8S, { color: theme.txtP, marginBottom: 8 }) }, 'GRADUATE TO SPECIMEN'),
@@ -12257,7 +12284,22 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         }),
         !loading && filterStatus === 'active' && (grafts || []).some(g => ['Graduated','Failed','Sold'].includes(g.status)) && React.createElement("div", { style: { textAlign: 'center', marginTop: 8 } },
             React.createElement("button", { type: "button", onClick: () => setFilterStatus('all'), style: Object.assign({}, pxS, { fontSize: '14px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }) }, 'Show graduated, sold & failed grafts')
-        )
+        ),
+        // List-for-Sale modal (graft)
+        saleListOpenFor && (function() {
+            var graft = (grafts || []).find(function(g) { return g.graftId === saleListOpenFor; });
+            if (!graft) return null;
+            var scion = [graft.scionGenus || '', graft.scionSpecies || ''].filter(Boolean).join(' ');
+            var rootstock = [graft.rootstockGenus || '', graft.rootstockSpecies || ''].filter(Boolean).join(' ');
+            var name = '\uD83D\uDD17 ' + (scion || 'Graft') + (rootstock ? ' on ' + rootstock : '');
+            var pseudoPlant = { uid: '', nickname: name, primary: name, gs: scion };
+            return React.createElement(SaleListingModal, {
+                plant: pseudoPlant,
+                extraPayload: { source: 'graft', sourceId: graft.graftId, plantName: name },
+                onClose: function() { setSaleListOpenFor(null); },
+                onDone: function() { setSaleListOpenFor(null); }
+            });
+        })()
     );
 }
 function LocationsScreen() { return React.createElement(MyPlantsScreen, null); }
@@ -16180,7 +16222,7 @@ const SALE_STATUS_COLORS = {
 };
 const SALE_MARKETPLACES = ['Etsy', 'eBay', 'Facebook Marketplace', 'Instagram', 'Local / Swap', 'Shopify', 'Other'];
 
-function SaleListingModal({ plant, listing, onClose, onDone }) {
+function SaleListingModal({ plant, listing, extraPayload, onClose, onDone }) {
     const { createSale, updateSale, archivePlant } = usePlantData();
     const theme = useTheme();
     const { isSmall } = useScreenSize();
@@ -16250,6 +16292,8 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
                 listPrice: listPrice, quantity: quantity, quantitySold: quantitySold,
                 listingLocation: listingLocation, listingUrl: listingUrl, notes: notes, status: status,
                 orderNumber: orderNumber };
+            // Merge extra payload fields (source/sourceId for prop/graft listings)
+            if (extraPayload && typeof extraPayload === 'object') Object.assign(payload, extraPayload);
             // Send unitStatuses if defined (multi-unit listings)
             if (unitStatuses && quantity > 1) payload.unitStatuses = unitStatuses;
             // Honor soldAt only when status is Sold

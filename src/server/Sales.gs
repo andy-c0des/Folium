@@ -54,7 +54,15 @@ function plantosSaveSales_(sales) {
 function plantosCreateSale(payload) {
   payload = payload || {};
   var sales = plantosGetSales();
-  var listingId = 'SALE_' + Date.now();
+  var source = plantosSafeStr_(payload.source || '').trim();
+  var sourceId = plantosSafeStr_(payload.sourceId || '').trim();
+  // Dedup: if a listing already exists for this sourceId, return it instead of creating a duplicate
+  if (sourceId) {
+    for (var di = 0; di < sales.length; di++) {
+      if (sales[di].sourceId === sourceId) return { ok: true, listingId: sales[di].listingId, listing: sales[di], alreadyExists: true };
+    }
+  }
+  var listingId = source && sourceId ? 'SALE_' + source.toUpperCase() + '_' + sourceId : 'SALE_' + Date.now();
   var now = plantosFmtDate_(plantosNow_());
   var status = plantosSafeStr_(payload.status || 'Drafted').trim();
   if (SALE_STATUSES.indexOf(status) < 0) status = 'Drafted';
@@ -71,6 +79,8 @@ function plantosCreateSale(payload) {
     status: status,
     quantity: qty,
     quantitySold: qtySold,
+    source: source,
+    sourceId: sourceId,
     unitStatuses: unitStatuses,
     listPrice: plantosSafeStr_(payload.listPrice || '').trim(),
     salePrice: plantosSafeStr_(payload.salePrice || '').trim(),
@@ -166,13 +176,28 @@ function plantosDeleteSale(listingId) {
   return { ok: true };
 }
 
-/* Create a Sold sales listing from a sold prop. Idempotent via sourceId.
-   Called by plantosSellProp() and the backfill routine. */
+/* Create or upgrade a sales listing from a prop. Idempotent via sourceId.
+   If a listing already exists for this propId AND the prop is now Sold,
+   upgrades that listing to Sold status. Called by plantosSellProp() + backfill. */
 function salesCreateFromProp_(prop) {
   if (!prop || !prop.propId) return null;
   var sales = plantosGetSales();
-  // Skip if listing already exists for this propId
-  for (var i = 0; i < sales.length; i++) { if (sales[i].sourceId === prop.propId) return sales[i]; }
+  // Check if a listing already exists for this propId — upgrade to Sold if prop is Sold
+  for (var i = 0; i < sales.length; i++) {
+    if (sales[i].sourceId === prop.propId) {
+      if (prop.status === 'Sold' && sales[i].status !== 'Sold') {
+        var existing = sales[i];
+        var q = parseInt(existing.quantity, 10) || 1;
+        existing.status = 'Sold';
+        existing.quantitySold = q;
+        existing.unitStatuses = { Drafted: 0, Listed: 0, Pending: 0, Sold: q, Withdrawn: 0 };
+        if (prop.priceSold) existing.salePrice = plantosSafeStr_(prop.priceSold).trim();
+        existing.soldAt = plantosSafeStr_(prop.soldDate || plantosFmtDate_(plantosNow_())).trim();
+        plantosSaveSales_(sales);
+      }
+      return sales[i];
+    }
+  }
   var price = plantosSafeStr_(prop.priceSold || '').trim();
   var soldDate = plantosSafeStr_(prop.soldDate || '').trim() || plantosFmtDate_(plantosNow_());
   var genusSp = [plantosSafeStr_(prop.genus || '').trim(), plantosSafeStr_(prop.species || '').trim()].filter(Boolean).join(' ');
@@ -195,11 +220,26 @@ function salesCreateFromProp_(prop) {
   return listing;
 }
 
-/* Create a Sold sales listing from a sold graft. Idempotent via sourceId. */
+/* Create or upgrade a sales listing from a graft. Idempotent via sourceId.
+   Upgrades existing listing to Sold when graft is sold. */
 function salesCreateFromGraft_(graft) {
   if (!graft || !graft.graftId) return null;
   var sales = plantosGetSales();
-  for (var i = 0; i < sales.length; i++) { if (sales[i].sourceId === graft.graftId) return sales[i]; }
+  for (var i = 0; i < sales.length; i++) {
+    if (sales[i].sourceId === graft.graftId) {
+      if (graft.status === 'Sold' && sales[i].status !== 'Sold') {
+        var existing = sales[i];
+        var q = parseInt(existing.quantity, 10) || 1;
+        existing.status = 'Sold';
+        existing.quantitySold = q;
+        existing.unitStatuses = { Drafted: 0, Listed: 0, Pending: 0, Sold: q, Withdrawn: 0 };
+        if (graft.priceSold) existing.salePrice = plantosSafeStr_(graft.priceSold).trim();
+        existing.soldAt = plantosSafeStr_(graft.soldDate || plantosFmtDate_(plantosNow_())).trim();
+        plantosSaveSales_(sales);
+      }
+      return sales[i];
+    }
+  }
   var price = plantosSafeStr_(graft.priceSold || '').trim();
   var soldDate = plantosSafeStr_(graft.soldDate || '').trim() || plantosFmtDate_(plantosNow_());
   var scion = [plantosSafeStr_(graft.scionGenus || '').trim(), plantosSafeStr_(graft.scionSpecies || '').trim()].filter(Boolean).join(' ');
