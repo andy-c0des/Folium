@@ -372,6 +372,8 @@ function plantosGetAllPlantsLite() {
   const pidCol = plantosCol_(hmap, H.PLANT_ID);
   const ppCol = plantosCol_(hmap, H.PLANT_PAGE_URL);
   const purchCol = plantosCol_(hmap, H.PURCHASE_PRICE);
+  const thumbCol = plantosCol_(hmap, H.LATEST_PHOTO_THUMB);
+  const viewCol = plantosCol_(hmap, H.LATEST_PHOTO_VIEW);
 
   const out = [], errors = [];
   let skipped = 0;
@@ -424,6 +426,8 @@ function plantosGetAllPlantsLite() {
         potShape:    potShpCol >= 0 ? plantosSafeStr_(row[potShpCol]).trim() : '', // FIX #15
         cultivar:    cultivarCol >= 0 ? plantosSafeStr_(row[cultivarCol]).trim() : '', // FIX #15
         purchasePrice: purchCol >= 0 ? plantosSafeStr_(row[purchCol]).trim() : '',
+        thumbUrl:    thumbCol >= 0 ? plantosSafeStr_(row[thumbCol]).trim() : '',
+        viewUrl:     viewCol >= 0 ? plantosSafeStr_(row[viewCol]).trim() : '',
       });
     } catch(e) {
       let failUid = '';

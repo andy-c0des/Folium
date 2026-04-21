@@ -16515,7 +16515,16 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
         { label: 'Good',      icon: '\uD83D\uDE0A', color: '#27ae60', bg: '#e8f5e9' },
         { label: 'Excellent', icon: '\uD83C\uDF1F', color: '#2980b9', bg: '#e3f2fd' },
     ];
-    const obsOptions = ['New leaf', 'Flowering', 'Plantlet', 'Big leaves', 'New shoots', 'Done flowering'];
+    const obsOptions = [
+        'New leaf', 'New shoots', 'Big leaves', 'Plantlet', 'Flowering', 'Done flowering',
+        'High variegation', 'Low variegation', 'Reverting', 'Fenestration',
+        'Healthy roots', 'Root bound', 'Aerial roots', 'New roots',
+        'Fruiting', 'Buds forming', 'Seed pod', 'Dormant', 'Waking up',
+        'Color change', 'Sunburn', 'Leaf drop', 'Yellowing', 'Browning tips',
+        'Pest spotted', 'Pest treated', 'Disease', 'Recovered',
+        'Repotted', 'Pruned', 'Propagated', 'Top-dressed', 'Staked / trellised',
+        'Glow-up', 'Stressed', 'Thirsty', 'Overwatered', 'Leggy'
+    ];
 
     async function handlePhoto(e) {
         const file = e.target.files && e.target.files[0];
