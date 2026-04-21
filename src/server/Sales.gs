@@ -42,9 +42,10 @@ function plantosCreateSale(payload) {
     notes: plantosSafeStr_(payload.notes || '').trim(),
     shipped: !!payload.shipped,
     trackingNumber: plantosSafeStr_(payload.trackingNumber || '').trim(),
+    orderNumber: plantosSafeStr_(payload.orderNumber || '').trim(),
     createdAt: now,
-    listedAt: status === 'Listed' ? now : '',
-    soldAt: status === 'Sold' ? now : ''
+    listedAt: payload.listedAt ? plantosSafeStr_(payload.listedAt).trim() : (status === 'Listed' ? now : ''),
+    soldAt: payload.soldAt ? plantosSafeStr_(payload.soldAt).trim() : (status === 'Sold' ? now : '')
   };
   sales.unshift(listing);
   plantosSaveSales_(sales);
@@ -58,7 +59,7 @@ function plantosUpdateSale(listingId, patch) {
   var idx = -1;
   for (var i = 0; i < sales.length; i++) { if (sales[i].listingId === listingId) { idx = i; break; } }
   if (idx < 0) return { ok: false, error: 'Listing not found' };
-  var allowed = ['plantName','listPrice','salePrice','listingUrl','listingLocation','buyer','notes','shipped','trackingNumber'];
+  var allowed = ['plantName','listPrice','salePrice','listingUrl','listingLocation','buyer','notes','shipped','trackingNumber','orderNumber','listedAt','soldAt'];
   patch = patch || {};
   for (var k = 0; k < allowed.length; k++) {
     var field = allowed[k];
@@ -77,7 +78,7 @@ function plantosUpdateSale(listingId, patch) {
   return { ok: true, listing: sales[idx] };
 }
 
-function plantosUpdateSaleStatus(listingId, newStatus, salePrice) {
+function plantosUpdateSaleStatus(listingId, newStatus, salePrice, soldAt) {
   listingId = plantosSafeStr_(listingId).trim();
   if (!listingId) return { ok: false, error: 'Missing listingId' };
   newStatus = plantosSafeStr_(newStatus).trim();
@@ -87,10 +88,11 @@ function plantosUpdateSaleStatus(listingId, newStatus, salePrice) {
   for (var i = 0; i < sales.length; i++) { if (sales[i].listingId === listingId) { idx = i; break; } }
   if (idx < 0) return { ok: false, error: 'Listing not found' };
   var now = plantosFmtDate_(plantosNow_());
+  var soldDateOverride = plantosSafeStr_(soldAt || '').trim();
   sales[idx].status = newStatus;
   if (newStatus === 'Listed' && !sales[idx].listedAt) sales[idx].listedAt = now;
   if (newStatus === 'Sold') {
-    sales[idx].soldAt = now;
+    sales[idx].soldAt = soldDateOverride || sales[idx].soldAt || now;
     if (salePrice != null && String(salePrice).trim()) sales[idx].salePrice = plantosSafeStr_(salePrice).trim();
   }
   plantosSaveSales_(sales);

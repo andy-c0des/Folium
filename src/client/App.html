@@ -11496,16 +11496,16 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Notes"),
                     React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "e.g. 4 seeds set, germination in ~3 weeks...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))),
             !form.hybridType && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, marginBottom: 4 } },
-                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, 'How many?'),
-                    React.createElement('div', { style: { display: 'flex', gap: 0, alignItems: 'center' } },
-                        React.createElement('button', { type: 'button', onClick: () => setBulkCount(c => Math.max(1, c - 1)),
-                            style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 8px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, '\u2212'),
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 12px', border: '3px solid ' + theme.cardBorder, borderLeft: 'none', borderRight: 'none', background: theme.rowBg, color: theme.txtP, minWidth: 36, textAlign: 'center' }) }, bulkCount),
-                        React.createElement('button', { type: 'button', onClick: () => setBulkCount(c => Math.min(20, c + 1)),
-                            style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 8px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, '+')),
-                    bulkCount > 1 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, opacity: 0.7 }) }, bulkCount + ' cuttings from same parent')),
-                React.createElement("div", { style: { marginTop: 8 } },
-                    React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : (bulkCount > 1 ? '🌱 Start ' + bulkCount + ' Props' : '🌱 Start Prop')))))),
+                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, 'How many?'),
+                React.createElement('div', { style: { display: 'flex', gap: 0, alignItems: 'center' } },
+                    React.createElement('button', { type: 'button', onClick: () => setBulkCount(c => Math.max(1, c - 1)),
+                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 8px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, '\u2212'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 12px', border: '3px solid ' + theme.cardBorder, borderLeft: 'none', borderRight: 'none', background: theme.rowBg, color: theme.txtP, minWidth: 36, textAlign: 'center' }) }, bulkCount),
+                    React.createElement('button', { type: 'button', onClick: () => setBulkCount(c => Math.min(20, c + 1)),
+                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '2px 8px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, '+')),
+                bulkCount > 1 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, opacity: 0.7 }) }, bulkCount + ' cuttings from same parent')),
+            React.createElement("div", { style: { marginTop: 8 } },
+                React.createElement(PlantButton, { onClick: handleCreateProp }, form.hybridType ? '🧬 Log Hybrid Cross' : (bulkCount > 1 ? '🌱 Start ' + bulkCount + ' Props' : '🌱 Start Prop')))))),
         (props || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 8 } }, [['active', 'Active'], ['all', 'All']].map(([id, label]) => (React.createElement("button", { key: id, type: "button", onClick: () => setFilterStatus(id), style: Object.assign(Object.assign({}, pxS), { fontSize: isSmall ? '12px' : '14px', fontWeight: 900, padding: '5px 12px', border: `2px solid ${filterStatus === id ? theme.btnP.border : theme.rowBorder}`, background: filterStatus === id ? theme.btnP.bg : 'transparent', color: filterStatus === id ? theme.btnP.text : theme.txtS, cursor: 'pointer' }) }, label))))),
         !showForm && !defaultPropTab && React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' } },
             [
@@ -16180,10 +16180,11 @@ const SALE_STATUS_COLORS = {
 const SALE_MARKETPLACES = ['Etsy', 'eBay', 'Facebook Marketplace', 'Instagram', 'Local / Swap', 'Shopify', 'Other'];
 
 function SaleListingModal({ plant, listing, onClose, onDone }) {
-    const { createSale, updateSale } = usePlantData();
+    const { createSale, updateSale, archivePlant } = usePlantData();
     const theme = useTheme();
     const { isSmall } = useScreenSize();
     const isEdit = !!(listing && listing.listingId);
+    const todayIso = new Date().toISOString().slice(0, 10);
     const [listPrice, setListPrice] = useState(isEdit ? (listing.listPrice || '') : '');
     const [quantity, setQuantity] = useState(isEdit ? (parseInt(listing.quantity, 10) || 1) : 1);
     const [quantitySold, setQuantitySold] = useState(isEdit ? (parseInt(listing.quantitySold, 10) || 0) : 0);
@@ -16191,6 +16192,9 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
     const [listingUrl, setListingUrl] = useState(isEdit ? (listing.listingUrl || '') : '');
     const [notes, setNotes] = useState(isEdit ? (listing.notes || '') : '');
     const [status, setStatus] = useState(isEdit ? (listing.status || 'Drafted') : 'Drafted');
+    const [soldAt, setSoldAt] = useState(isEdit && listing.soldAt ? listing.soldAt : todayIso);
+    const [orderNumber, setOrderNumber] = useState(isEdit ? (listing.orderNumber || '') : '');
+    const [archivePlantOnSold, setArchivePlantOnSold] = useState(false);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState('');
 
@@ -16201,15 +16205,28 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
     async function submit() {
         setErr('');
         if (!listPrice && !isEdit) { setErr('List price required'); return; }
+        if (status === 'Sold' && archivePlantOnSold && !confirm('Remove plant ' + (plant.nickname || plant.primary || '#' + plant.uid) + ' from your active collection? This moves it to the Archive (sale price will be saved there too). The listing will remain in Sales Tracker. This cannot be undone.')) {
+            return;
+        }
         setSaving(true);
         try {
             var payload = { plantUID: plant.uid, plantName: plant.nickname || plant.primary || plant.gs || String(plant.uid),
                 listPrice: listPrice, quantity: quantity, quantitySold: quantitySold,
-                listingLocation: listingLocation, listingUrl: listingUrl, notes: notes, status: status };
+                listingLocation: listingLocation, listingUrl: listingUrl, notes: notes, status: status,
+                orderNumber: orderNumber };
+            // Honor soldAt only when status is Sold
+            if (status === 'Sold') payload.soldAt = soldAt;
             var res;
             if (isEdit) res = await updateSale(listing.listingId, payload);
             else res = await createSale(payload);
-            if (res && res.ok) { onDone && onDone(res.listing); }
+            if (res && res.ok) {
+                // Optional: archive the plant from collection (manual opt-in)
+                if (status === 'Sold' && archivePlantOnSold) {
+                    try { await archivePlant(plant.uid, 'rehomed', 'Sold via Sales Tracker', '', { salePrice: listPrice, rehomeDate: soldAt }); }
+                    catch(arcErr) { console.warn('Archive failed but listing saved:', arcErr); }
+                }
+                onDone && onDone(res.listing);
+            }
             else { setErr((res && res.error) || 'Save failed'); }
         } catch(e) { setErr((e && e.message) || String(e)); }
         finally { setSaving(false); }
@@ -16271,6 +16288,25 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
                                     background: active ? c.border : c.bg, color: active ? '#fff' : c.fg,
                                     border: '2px solid ' + c.border }) }, s);
                         }))),
+                // Sale date + Order # — shown when sold (or partial sale)
+                (status === 'Sold' || (isEdit && quantitySold > 0)) && React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+                    React.createElement('div', null,
+                        React.createElement('div', { style: label }, 'Date sold'),
+                        React.createElement('input', { type: 'date', value: soldAt, onChange: e => setSoldAt(e.target.value), style: input })),
+                    React.createElement('div', null,
+                        React.createElement('div', { style: label }, 'Order # (optional)'),
+                        React.createElement('input', { type: 'text', value: orderNumber, onChange: e => setOrderNumber(e.target.value), placeholder: 'ETSY-12345', style: input }))),
+                // Optional: archive plant from collection (manual opt-in)
+                status === 'Sold' && plant.uid && React.createElement('div', {
+                    style: { padding: '10px 12px', background: 'rgba(192,48,30,0.06)', border: '2px dashed var(--c-urgent)', display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' },
+                    onClick: () => setArchivePlantOnSold(v => !v)
+                },
+                    React.createElement('input', { type: 'checkbox', checked: archivePlantOnSold,
+                        onChange: e => setArchivePlantOnSold(e.target.checked),
+                        style: { width: 18, height: 18, marginTop: 2, cursor: 'pointer', flexShrink: 0 } }),
+                    React.createElement('div', { style: { flex: 1 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 800, color: 'var(--c-urgent)' }) }, 'Also remove plant from active collection'),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2, lineHeight: 1.4 }) }, 'Optional. Moves the plant to the Archive (with sale price). Listing stays in Sales Tracker. Leave unchecked to keep the plant in your active collection.'))),
                 React.createElement('div', null,
                     React.createElement('div', { style: label }, 'Notes (optional)'),
                     React.createElement('textarea', { rows: 2, value: notes, onChange: e => setNotes(e.target.value), placeholder: 'e.g. mature plant, rooted, ships with moss', style: Object.assign({}, input, { resize: 'none' }) })),
@@ -16458,7 +16494,7 @@ function SalesSection() {
                             style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: theme.sep, textDecorationThickness: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) },
                             s.plantName || ('#' + s.plantUID)),
                         React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 1 }) },
-                            '#' + s.plantUID + (s.listingLocation ? '  \u2022  ' + s.listingLocation : ''))),
+                            '#' + s.plantUID + (s.listingLocation ? '  \u2022  ' + s.listingLocation : '') + (s.orderNumber ? '  \u2022  ' + s.orderNumber : '') + (s.soldAt && s.status === 'Sold' ? '  \u2022  ' + s.soldAt : ''))),
                     React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '3px 8px',
                         background: c.bg, color: c.fg, border: '2px solid ' + c.border, flexShrink: 0 }) }, s.status.toUpperCase())),
                 // Price + quantity + ROI
