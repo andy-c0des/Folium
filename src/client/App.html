@@ -16196,6 +16196,40 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
     const [soldAt, setSoldAt] = useState(isEdit && listing.soldAt ? listing.soldAt : todayIso);
     const [orderNumber, setOrderNumber] = useState(isEdit ? (listing.orderNumber || '') : '');
     const [archivePlantOnSold, setArchivePlantOnSold] = useState(false);
+    // Per-unit status breakdown (only meaningful when quantity > 1)
+    function initUnitStatuses() {
+        if (isEdit) {
+            // Use the same migration logic as SalesSection.getUnitStatuses
+            var qty = parseInt(listing.quantity, 10) || 1;
+            var base = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+            if (listing.unitStatuses && typeof listing.unitStatuses === 'object') {
+                var sum = 0;
+                SALE_STATUSES.forEach(function(st) { var v = parseInt(listing.unitStatuses[st], 10); if (!isNaN(v) && v > 0) { base[st] = v; sum += v; } });
+                if (sum === qty) return base;
+                base = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+            }
+            var sold = parseInt(listing.quantitySold, 10) || (listing.status === 'Sold' ? qty : 0);
+            base.Sold = Math.min(sold, qty);
+            var rest = qty - base.Sold;
+            if (rest > 0) {
+                var fb = (listing.status && listing.status !== 'Sold') ? listing.status : 'Listed';
+                base[fb] = (base[fb] || 0) + rest;
+            }
+            return base;
+        }
+        return null; // Will be derived on submit from initial status + quantity
+    }
+    const [unitStatuses, setUnitStatuses] = useState(initUnitStatuses);
+    // Sync unitStatuses with quantity changes for new listings (all units → current status)
+    useEffect(() => {
+        if (!isEdit && quantity > 0) {
+            var us = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+            us[status] = quantity;
+            setUnitStatuses(us);
+        }
+    }, [quantity, status, isEdit]);
+    var unitTotal = unitStatuses ? Object.keys(unitStatuses).reduce(function(a, k) { return a + (parseInt(unitStatuses[k], 10) || 0); }, 0) : quantity;
+    var unitMismatch = unitStatuses && unitTotal !== quantity;
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState('');
 
@@ -16206,6 +16240,7 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
     async function submit() {
         setErr('');
         if (!listPrice && !isEdit) { setErr('List price required'); return; }
+        if (unitMismatch) { setErr('Per-unit status total must equal ' + quantity + '. Currently ' + unitTotal + '.'); return; }
         if (status === 'Sold' && archivePlantOnSold && !confirm('Remove plant ' + (plant.nickname || plant.primary || '#' + plant.uid) + ' from your active collection? This moves it to the Archive (sale price will be saved there too). The listing will remain in Sales Tracker. This cannot be undone.')) {
             return;
         }
@@ -16215,6 +16250,8 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
                 listPrice: listPrice, quantity: quantity, quantitySold: quantitySold,
                 listingLocation: listingLocation, listingUrl: listingUrl, notes: notes, status: status,
                 orderNumber: orderNumber };
+            // Send unitStatuses if defined (multi-unit listings)
+            if (unitStatuses && quantity > 1) payload.unitStatuses = unitStatuses;
             // Honor soldAt only when status is Sold
             if (status === 'Sold') payload.soldAt = soldAt;
             var res;
@@ -16265,11 +16302,32 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
                 // Line total hint + partial units sold (edit only)
                 (listPrice || quantity > 1) && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic' }) },
                     'Total value: $' + ((parseFloat(String(listPrice).replace(/[$,]/g, '')) || 0) * (parseInt(quantity,10) || 1)).toFixed(2) + (quantity > 1 ? ' (' + quantity + ' units)' : '')),
-                isEdit && quantity > 1 && React.createElement('div', null,
-                    React.createElement('div', { style: label }, 'Units sold so far (0–' + quantity + ')'),
-                    React.createElement('input', { type: 'number', min: 0, max: quantity, value: quantitySold,
-                        onChange: e => { var v = parseInt(e.target.value, 10); setQuantitySold(isNaN(v) || v < 0 ? 0 : Math.min(v, quantity)); },
-                        style: input })),
+                // Per-unit status breakdown (only when multi-unit listing on edit)
+                isEdit && quantity > 1 && unitStatuses && React.createElement('div', { style: { padding: 10, background: theme.rowBg, border: '2px solid ' + theme.cardBorder } },
+                    React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+                        React.createElement('div', { style: Object.assign({}, label, { marginBottom: 0 }) }, 'Per-unit status (' + quantity + ' total)'),
+                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, color: unitMismatch ? 'var(--c-urgent)' : '#3A8A28' }) },
+                            unitTotal + ' / ' + quantity + (unitMismatch ? ' \u26A0' : ' \u2713'))),
+                    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 5 } },
+                        SALE_STATUSES.map(function(st) {
+                            var sc = SALE_STATUS_COLORS[st];
+                            var v = parseInt(unitStatuses[st], 10) || 0;
+                            return React.createElement('div', { key: st, style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                                React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '3px 7px',
+                                    background: sc.bg, color: sc.fg, border: '2px solid ' + sc.border, minWidth: 76, textAlign: 'center' }) }, st),
+                                React.createElement('div', { style: { display: 'flex', gap: 0, alignItems: 'center', marginLeft: 'auto' } },
+                                    React.createElement('button', { type: 'button',
+                                        onClick: function() { var n = Math.max(0, v - 1); setUnitStatuses(function(prev) { var nx = Object.assign({}, prev); nx[st] = n; return nx; }); },
+                                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '3px 10px', cursor: 'pointer', background: theme.cardBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, lineHeight: 1 }) }, '\u2212'),
+                                    React.createElement('input', { type: 'number', min: 0, max: quantity, value: v,
+                                        onChange: function(e) { var nv = parseInt(e.target.value, 10); if (isNaN(nv) || nv < 0) nv = 0; setUnitStatuses(function(prev) { var nx = Object.assign({}, prev); nx[st] = Math.min(nv, quantity); return nx; }); },
+                                        style: Object.assign({}, pxS, { fontSize: '13px', padding: '4px 6px', width: 50, textAlign: 'center', border: '2px solid ' + theme.cardBorder, borderLeft: 'none', borderRight: 'none', background: theme.cardBg, color: theme.txtP, boxSizing: 'border-box' }) }),
+                                    React.createElement('button', { type: 'button',
+                                        onClick: function() { var n = v + 1; if (n > quantity) n = quantity; setUnitStatuses(function(prev) { var nx = Object.assign({}, prev); nx[st] = n; return nx; }); },
+                                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '3px 10px', cursor: 'pointer', background: theme.cardBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, lineHeight: 1 }) }, '+')));
+                        })),
+                    unitMismatch && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: 'var(--c-urgent)', marginTop: 6, fontWeight: 700 }) },
+                        '\u26A0 Total must equal ' + quantity + '. Adjust counts before saving.')),
                 React.createElement('div', null,
                     React.createElement('div', { style: label }, 'Where is the listing?'),
                     React.createElement('select', { value: listingLocation, onChange: e => setListingLocation(e.target.value), style: input },
@@ -16345,12 +16403,32 @@ function SalesSection() {
     }
     useEffect(() => { refresh(); }, []);
 
+    // Read unitStatuses from listing (migrates legacy listings on the fly)
+    function getUnitStatuses(s) {
+        var qty = parseInt(s.quantity, 10) || 1;
+        var base = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+        if (s && s.unitStatuses && typeof s.unitStatuses === 'object') {
+            var sum = 0;
+            SALE_STATUSES.forEach(function(st) { var v = parseInt(s.unitStatuses[st], 10); if (!isNaN(v) && v > 0) { base[st] = v; sum += v; } });
+            if (sum === qty) return base;
+            base = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+        }
+        // Migrate from legacy fields
+        var sold = parseInt(s.quantitySold, 10);
+        if (isNaN(sold) || sold < 0) sold = 0;
+        if (s.status === 'Sold' && sold === 0) sold = qty;
+        if (sold > qty) sold = qty;
+        base.Sold = sold;
+        var rest = qty - sold;
+        if (rest > 0) {
+            var fb = (s.status && s.status !== 'Sold') ? s.status : 'Listed';
+            base[fb] = (base[fb] || 0) + rest;
+        }
+        return base;
+    }
     // Metrics
     function unitsSoldFor(s) {
-        var qs = parseInt(s.quantitySold, 10);
-        if (!isNaN(qs) && qs > 0) return qs;
-        if (s.status === 'Sold') return parseInt(s.quantity, 10) || 1;
-        return 0;
+        return getUnitStatuses(s).Sold;
     }
     function unitPrice(s) {
         var v = parseFloat(String(s.salePrice || s.listPrice || '').replace(/[$,]/g, ''));
@@ -16575,10 +16653,24 @@ function SalesSection() {
                                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.7 }) },
                                         '#' + s.plantUID + (s.orderNumber ? ' \u00B7 ' + s.orderNumber : '')),
                                     s.notes && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontStyle: 'italic', opacity: 0.8, marginTop: 2 }) }, s.notes.length > 60 ? s.notes.slice(0, 58) + '\u2026' : s.notes)),
-                                // Status
-                                React.createElement('td', { style: tdStyle },
-                                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '2px 7px',
-                                        background: c.bg, color: c.fg, border: '2px solid ' + c.border, whiteSpace: 'nowrap' }) }, s.status.toUpperCase())),
+                                // Status (per-unit breakdown when mixed)
+                                React.createElement('td', { style: tdStyle }, (function() {
+                                    var us = getUnitStatuses(s);
+                                    var nonZero = SALE_STATUSES.filter(function(st) { return us[st] > 0; });
+                                    if (nonZero.length <= 1) {
+                                        return React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '2px 7px',
+                                            background: c.bg, color: c.fg, border: '2px solid ' + c.border, whiteSpace: 'nowrap' }) }, s.status.toUpperCase());
+                                    }
+                                    // Mixed — show stacked mini-pills
+                                    return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 2 } },
+                                        nonZero.map(function(st) {
+                                            var sc = SALE_STATUS_COLORS[st];
+                                            return React.createElement('span', { key: st,
+                                                style: Object.assign({}, pxS, { fontSize: '9px', fontWeight: 900, padding: '1px 5px',
+                                                    background: sc.bg, color: sc.fg, border: '1px solid ' + sc.border, whiteSpace: 'nowrap', display: 'inline-block' }) },
+                                                us[st] + '\u00D7 ' + st.toUpperCase());
+                                        }));
+                                })()),
                                 // Qty
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'center', fontFamily: "'Press Start 2P'", fontSize: '11px' }) }, qtyDisplay),
                                 // Price (per unit)

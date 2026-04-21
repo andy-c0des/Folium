@@ -7,6 +7,41 @@ const PLANTOS_SALES_KEY = 'PLANTOS_SALES';
 
 const SALE_STATUSES = ['Drafted', 'Listed', 'Pending', 'Sold', 'Withdrawn'];
 
+/* Normalize a unitStatuses object — ensure all keys present, all values non-negative ints,
+   total === expectedQty. Falls back to placing all units in fallbackStatus if invalid. */
+function salesNormalizeUnitStatuses_(raw, expectedQty, fallbackStatus, qtySold) {
+  var out = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+  if (raw && typeof raw === 'object') {
+    var total = 0;
+    SALE_STATUSES.forEach(function(st) {
+      var v = parseInt(raw[st], 10);
+      if (!isNaN(v) && v > 0) { out[st] = v; total += v; }
+    });
+    if (total === expectedQty) return out;
+    // Invalid — fall through to derive from fallback
+    out = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+  }
+  // Derive from fallback status + quantitySold
+  var sold = parseInt(qtySold, 10);
+  if (isNaN(sold) || sold < 0) sold = 0;
+  if (sold > expectedQty) sold = expectedQty;
+  out.Sold = sold;
+  var remaining = expectedQty - sold;
+  if (remaining > 0) {
+    var fb = SALE_STATUSES.indexOf(fallbackStatus) >= 0 ? fallbackStatus : 'Drafted';
+    if (fb === 'Sold') fb = 'Listed';  // Don't double-count Sold
+    out[fb] = (out[fb] || 0) + remaining;
+  }
+  return out;
+}
+
+/* Read unitStatuses from a listing, migrating from legacy fields if needed. */
+function salesGetUnitStatuses_(listing) {
+  if (!listing) return { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+  var qty = parseInt(listing.quantity, 10) || 1;
+  return salesNormalizeUnitStatuses_(listing.unitStatuses, qty, listing.status || 'Drafted', listing.quantitySold);
+}
+
 function plantosGetSales() {
   try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(plantosUserKey_(PLANTOS_SALES_KEY)) || '[]'); }
   catch(e) { return []; }
@@ -27,6 +62,8 @@ function plantosCreateSale(payload) {
   if (isNaN(qty) || qty < 1) qty = 1;
   var qtySold = parseInt(payload.quantitySold, 10);
   if (isNaN(qtySold) || qtySold < 0) qtySold = 0;
+  // Build unitStatuses: all units start in chosen status (or honor explicit payload)
+  var unitStatuses = salesNormalizeUnitStatuses_(payload.unitStatuses, qty, status, qtySold);
   var listing = {
     listingId: listingId,
     plantUID: plantosSafeStr_(payload.plantUID || '').trim(),
@@ -34,6 +71,7 @@ function plantosCreateSale(payload) {
     status: status,
     quantity: qty,
     quantitySold: qtySold,
+    unitStatuses: unitStatuses,
     listPrice: plantosSafeStr_(payload.listPrice || '').trim(),
     salePrice: plantosSafeStr_(payload.salePrice || '').trim(),
     listingUrl: plantosSafeStr_(payload.listingUrl || '').trim(),
@@ -73,6 +111,25 @@ function plantosUpdateSale(listingId, patch) {
   }
   if (Object.prototype.hasOwnProperty.call(patch, 'quantitySold')) {
     var qs = parseInt(patch.quantitySold, 10); if (!isNaN(qs) && qs >= 0) sales[idx].quantitySold = qs;
+  }
+  // Per-unit status breakdown
+  if (Object.prototype.hasOwnProperty.call(patch, 'unitStatuses')) {
+    var qtyForUS = parseInt(sales[idx].quantity, 10) || 1;
+    var newUS = salesNormalizeUnitStatuses_(patch.unitStatuses, qtyForUS, sales[idx].status || 'Drafted', sales[idx].quantitySold);
+    sales[idx].unitStatuses = newUS;
+    // Sync quantitySold + overall status from breakdown
+    sales[idx].quantitySold = newUS.Sold;
+    // Derive primary status: prefer Sold if all sold, else most-populated non-zero
+    if (newUS.Sold === qtyForUS) {
+      sales[idx].status = 'Sold';
+      if (!sales[idx].soldAt) sales[idx].soldAt = plantosFmtDate_(plantosNow_());
+    } else {
+      // Pick highest-priority non-zero status (Pending > Listed > Drafted > Withdrawn > Sold)
+      var priority = ['Pending', 'Listed', 'Drafted', 'Withdrawn', 'Sold'];
+      for (var pi = 0; pi < priority.length; pi++) {
+        if ((newUS[priority[pi]] || 0) > 0) { sales[idx].status = priority[pi]; break; }
+      }
+    }
   }
   plantosSaveSales_(sales);
   return { ok: true, listing: sales[idx] };
@@ -169,9 +226,8 @@ function plantosSalesRevenueSummary_() {
   var monthlySales = {};
   for (var i = 0; i < sales.length; i++) {
     var s = sales[i];
-    var qty = 0;
-    if (s.quantitySold && parseInt(s.quantitySold, 10) > 0) qty = parseInt(s.quantitySold, 10);
-    else if (s.status === 'Sold') qty = parseInt(s.quantity, 10) || 1;
+    var us = salesGetUnitStatuses_(s);
+    var qty = us.Sold || 0;
     if (qty <= 0) continue;
     var raw = s.salePrice || s.listPrice || '';
     var v = parseFloat(String(raw).replace(/[$,]/g, ''));
