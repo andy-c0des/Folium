@@ -23,11 +23,17 @@ function plantosCreateSale(payload) {
   var now = plantosFmtDate_(plantosNow_());
   var status = plantosSafeStr_(payload.status || 'Drafted').trim();
   if (SALE_STATUSES.indexOf(status) < 0) status = 'Drafted';
+  var qty = parseInt(payload.quantity, 10);
+  if (isNaN(qty) || qty < 1) qty = 1;
+  var qtySold = parseInt(payload.quantitySold, 10);
+  if (isNaN(qtySold) || qtySold < 0) qtySold = 0;
   var listing = {
     listingId: listingId,
     plantUID: plantosSafeStr_(payload.plantUID || '').trim(),
     plantName: plantosSafeStr_(payload.plantName || '').trim(),
     status: status,
+    quantity: qty,
+    quantitySold: qtySold,
     listPrice: plantosSafeStr_(payload.listPrice || '').trim(),
     salePrice: plantosSafeStr_(payload.salePrice || '').trim(),
     listingUrl: plantosSafeStr_(payload.listingUrl || '').trim(),
@@ -59,6 +65,13 @@ function plantosUpdateSale(listingId, patch) {
     if (Object.prototype.hasOwnProperty.call(patch, field)) {
       sales[idx][field] = field === 'shipped' ? !!patch[field] : plantosSafeStr_(patch[field] || '').trim();
     }
+  }
+  // Quantity fields (numeric)
+  if (Object.prototype.hasOwnProperty.call(patch, 'quantity')) {
+    var q = parseInt(patch.quantity, 10); if (!isNaN(q) && q >= 1) sales[idx].quantity = q;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'quantitySold')) {
+    var qs = parseInt(patch.quantitySold, 10); if (!isNaN(qs) && qs >= 0) sales[idx].quantitySold = qs;
   }
   plantosSaveSales_(sales);
   return { ok: true, listing: sales[idx] };
@@ -94,21 +107,26 @@ function plantosDeleteSale(listingId) {
   return { ok: true };
 }
 
-/* Sum revenue from Sold sales listings (used by plantosHome() dashboard). */
+/* Sum revenue from Sold sales listings (used by plantosHome() dashboard).
+   If listing has quantitySold > 0, use that; else if status=Sold use quantity; else 1. */
 function plantosSalesRevenueSummary_() {
   var sales = plantosGetSales();
   var totalRevenue = 0;
   var monthlySales = {};
   for (var i = 0; i < sales.length; i++) {
     var s = sales[i];
-    if (s.status !== 'Sold') continue;
+    var qty = 0;
+    if (s.quantitySold && parseInt(s.quantitySold, 10) > 0) qty = parseInt(s.quantitySold, 10);
+    else if (s.status === 'Sold') qty = parseInt(s.quantity, 10) || 1;
+    if (qty <= 0) continue;
     var raw = s.salePrice || s.listPrice || '';
     var v = parseFloat(String(raw).replace(/[$,]/g, ''));
     if (isNaN(v) || v <= 0) continue;
-    totalRevenue += v;
+    var total = v * qty;
+    totalRevenue += total;
     if (s.soldAt) {
       var ym = String(s.soldAt).slice(0, 7);
-      monthlySales[ym] = (monthlySales[ym] || 0) + v;
+      monthlySales[ym] = (monthlySales[ym] || 0) + total;
     }
   }
   return { totalRevenue: Math.round(totalRevenue * 100) / 100, monthlySales: monthlySales };

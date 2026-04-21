@@ -16185,6 +16185,8 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
     const { isSmall } = useScreenSize();
     const isEdit = !!(listing && listing.listingId);
     const [listPrice, setListPrice] = useState(isEdit ? (listing.listPrice || '') : '');
+    const [quantity, setQuantity] = useState(isEdit ? (parseInt(listing.quantity, 10) || 1) : 1);
+    const [quantitySold, setQuantitySold] = useState(isEdit ? (parseInt(listing.quantitySold, 10) || 0) : 0);
     const [listingLocation, setListingLocation] = useState(isEdit ? (listing.listingLocation || '') : '');
     const [listingUrl, setListingUrl] = useState(isEdit ? (listing.listingUrl || '') : '');
     const [notes, setNotes] = useState(isEdit ? (listing.notes || '') : '');
@@ -16202,7 +16204,8 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
         setSaving(true);
         try {
             var payload = { plantUID: plant.uid, plantName: plant.nickname || plant.primary || plant.gs || String(plant.uid),
-                listPrice: listPrice, listingLocation: listingLocation, listingUrl: listingUrl, notes: notes, status: status };
+                listPrice: listPrice, quantity: quantity, quantitySold: quantitySold,
+                listingLocation: listingLocation, listingUrl: listingUrl, notes: notes, status: status };
             var res;
             if (isEdit) res = await updateSale(listing.listingId, payload);
             else res = await createSale(payload);
@@ -16227,9 +16230,28 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginTop: 2 }) }, (plant.nickname || plant.primary || plant.gs || '#' + plant.uid))),
                 React.createElement('button', { type: 'button', onClick: onClose, style: { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: theme.txtS } }, '\u2715')),
             React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
-                React.createElement('div', null,
-                    React.createElement('div', { style: label }, 'Sale Price ($)'),
-                    React.createElement('input', { type: 'text', inputMode: 'decimal', value: listPrice, onChange: e => setListPrice(e.target.value), placeholder: '25.00', style: input })),
+                React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 } },
+                    React.createElement('div', null,
+                        React.createElement('div', { style: label }, 'Price per unit ($)'),
+                        React.createElement('input', { type: 'text', inputMode: 'decimal', value: listPrice, onChange: e => setListPrice(e.target.value), placeholder: '25.00', style: input })),
+                    React.createElement('div', null,
+                        React.createElement('div', { style: label }, 'Qty available'),
+                        React.createElement('div', { style: { display: 'flex', gap: 0 } },
+                            React.createElement('button', { type: 'button', onClick: () => setQuantity(q => Math.max(1, (parseInt(q,10)||1) - 1)),
+                                style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '0 10px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer' }) }, '\u2212'),
+                            React.createElement('input', { type: 'number', min: 1, value: quantity,
+                                onChange: e => { var v = parseInt(e.target.value, 10); setQuantity(isNaN(v) || v < 1 ? 1 : v); },
+                                style: Object.assign({}, input, { textAlign: 'center', borderLeft: 'none', borderRight: 'none' }) }),
+                            React.createElement('button', { type: 'button', onClick: () => setQuantity(q => (parseInt(q,10)||1) + 1),
+                                style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '0 10px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer' }) }, '+')))),
+                // Line total hint + partial units sold (edit only)
+                (listPrice || quantity > 1) && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic' }) },
+                    'Total value: $' + ((parseFloat(String(listPrice).replace(/[$,]/g, '')) || 0) * (parseInt(quantity,10) || 1)).toFixed(2) + (quantity > 1 ? ' (' + quantity + ' units)' : '')),
+                isEdit && quantity > 1 && React.createElement('div', null,
+                    React.createElement('div', { style: label }, 'Units sold so far (0–' + quantity + ')'),
+                    React.createElement('input', { type: 'number', min: 0, max: quantity, value: quantitySold,
+                        onChange: e => { var v = parseInt(e.target.value, 10); setQuantitySold(isNaN(v) || v < 0 ? 0 : Math.min(v, quantity)); },
+                        style: input })),
                 React.createElement('div', null,
                     React.createElement('div', { style: label }, 'Where is the listing?'),
                     React.createElement('select', { value: listingLocation, onChange: e => setListingLocation(e.target.value), style: input },
@@ -16264,7 +16286,7 @@ function SaleListingModal({ plant, listing, onClose, onDone }) {
 }
 
 function SalesSection() {
-    const { getSales, updateSaleStatus, deleteSale, allPlantsCache } = usePlantData();
+    const { getSales, updateSale, updateSaleStatus, deleteSale, allPlantsCache } = usePlantData();
     const { navigate } = useNavigation();
     const theme = useTheme();
     const { isSmall, isDesktop } = useScreenSize();
@@ -16274,6 +16296,7 @@ function SalesSection() {
     const [editing, setEditing] = useState(null); // listing object
     const [quickSoldFor, setQuickSoldFor] = useState(null); // listingId being quick-sold
     const [quickSoldPrice, setQuickSoldPrice] = useState('');
+    const [quickSoldQty, setQuickSoldQty] = useState(1);
 
     const pxS = { fontFamily: "'Pixelify Sans', cursive" };
 
@@ -16284,13 +16307,21 @@ function SalesSection() {
     useEffect(() => { refresh(); }, []);
 
     // Metrics
-    var soldList = sales.filter(s => s.status === 'Sold');
-    var listedList = sales.filter(s => s.status === 'Listed');
-    var totalRevenue = soldList.reduce((sum, s) => {
+    function unitsSoldFor(s) {
+        var qs = parseInt(s.quantitySold, 10);
+        if (!isNaN(qs) && qs > 0) return qs;
+        if (s.status === 'Sold') return parseInt(s.quantity, 10) || 1;
+        return 0;
+    }
+    function unitPrice(s) {
         var v = parseFloat(String(s.salePrice || s.listPrice || '').replace(/[$,]/g, ''));
-        return sum + (isNaN(v) ? 0 : v);
-    }, 0);
-    var avgSale = soldList.length > 0 ? totalRevenue / soldList.length : 0;
+        return isNaN(v) ? 0 : v;
+    }
+    var soldList = sales.filter(s => s.status === 'Sold' || unitsSoldFor(s) > 0);
+    var listedList = sales.filter(s => s.status === 'Listed');
+    var totalRevenue = sales.reduce((sum, s) => sum + (unitPrice(s) * unitsSoldFor(s)), 0);
+    var totalUnitsSold = sales.reduce((sum, s) => sum + unitsSoldFor(s), 0);
+    var avgSale = totalUnitsSold > 0 ? totalRevenue / totalUnitsSold : 0;
     var conversionRate = sales.length > 0 ? Math.round((soldList.length / sales.length) * 100) : 0;
     // Time-to-sell (days) average
     function daysBetween(a, b) {
@@ -16311,13 +16342,17 @@ function SalesSection() {
     var plantMap = {};
     (allPlantsCache || []).forEach(p => { plantMap[String(p.uid)] = p; });
     function getROI(listing) {
-        if (listing.status !== 'Sold') return null;
+        var sold = unitsSoldFor(listing);
+        if (sold <= 0) return null;
         var p = plantMap[String(listing.plantUID)];
         if (!p || !p.purchasePrice) return null;
         var cost = parseFloat(String(p.purchasePrice).replace(/[$,]/g, ''));
-        var sale = parseFloat(String(listing.salePrice || listing.listPrice || '').replace(/[$,]/g, ''));
-        if (isNaN(cost) || isNaN(sale) || cost <= 0) return null;
-        return { profit: sale - cost, pct: Math.round(((sale - cost) / cost) * 100) };
+        var unit = unitPrice(listing);
+        if (isNaN(cost) || cost <= 0 || unit <= 0) return null;
+        // Cost per sold unit = original cost (assumes 1 parent × N propagules sold)
+        var totalRev = unit * sold;
+        var profit = totalRev - cost;
+        return { profit: profit, pct: Math.round((profit / cost) * 100) };
     }
 
     // Filter
@@ -16339,9 +16374,12 @@ function SalesSection() {
     }
 
     function exportCSV() {
-        var rows = [['Listing ID','Plant UID','Plant Name','Status','List Price','Sale Price','Marketplace','URL','Created','Listed','Sold','Notes']];
+        var rows = [['Listing ID','Plant UID','Plant Name','Status','Qty','Units Sold','Unit Price','Sale Price','Line Total','Marketplace','URL','Created','Listed','Sold','Notes']];
         sales.forEach(s => {
-            rows.push([s.listingId, s.plantUID, s.plantName, s.status, s.listPrice, s.salePrice, s.listingLocation, s.listingUrl, s.createdAt, s.listedAt, s.soldAt, (s.notes || '').replace(/\n/g, ' ')]);
+            var qty = parseInt(s.quantity, 10) || 1;
+            var sold = unitsSoldFor(s);
+            var lineTotal = unitPrice(s) * sold;
+            rows.push([s.listingId, s.plantUID, s.plantName, s.status, qty, sold, s.listPrice, s.salePrice, lineTotal.toFixed(2), s.listingLocation, s.listingUrl, s.createdAt, s.listedAt, s.soldAt, (s.notes || '').replace(/\n/g, ' ')]);
         });
         var csv = rows.map(r => r.map(c => '"' + String(c || '').replace(/"/g, '""') + '"').join(',')).join('\n');
         var blob = new Blob([csv], { type: 'text/csv' });
@@ -16368,8 +16406,8 @@ function SalesSection() {
     return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
         // Metrics row (top)
         sales.length > 0 && React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
-            React.createElement(Metric, { icon: '\uD83D\uDCB5', label: 'Revenue', value: '$' + totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), sub: soldList.length + ' sold' }),
-            React.createElement(Metric, { icon: '\uD83D\uDCCA', label: 'Avg Sale', value: soldList.length > 0 ? '$' + avgSale.toFixed(0) : '—' }),
+            React.createElement(Metric, { icon: '\uD83D\uDCB5', label: 'Revenue', value: '$' + totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), sub: totalUnitsSold + ' unit' + (totalUnitsSold !== 1 ? 's' : '') + ' sold' }),
+            React.createElement(Metric, { icon: '\uD83D\uDCCA', label: 'Avg Sale', value: totalUnitsSold > 0 ? '$' + avgSale.toFixed(0) : '—', sub: totalUnitsSold > 0 ? 'per unit' : null }),
             React.createElement(Metric, { icon: '\uD83D\uDD04', label: 'Conversion', value: conversionRate + '%', sub: soldList.length + '/' + sales.length }),
             avgTimeToSell != null && React.createElement(Metric, { icon: '\u23F1', label: 'Avg Days to Sell', value: avgTimeToSell + 'd' }),
             mktTop.length > 0 && React.createElement(Metric, { icon: '\uD83C\uDFEA', label: 'Top Marketplace', value: mktTop[0].length > 14 ? mktTop[0].slice(0,12)+'…' : mktTop[0], sub: mktBreakdown[mktTop[0]] + ' sold' })),
@@ -16420,26 +16458,57 @@ function SalesSection() {
                             '#' + s.plantUID + (s.listingLocation ? '  \u2022  ' + s.listingLocation : ''))),
                     React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '3px 8px',
                         background: c.bg, color: c.fg, border: '2px solid ' + c.border, flexShrink: 0 }) }, s.status.toUpperCase())),
-                // Price + ROI
-                React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 } },
-                    React.createElement('div', null,
-                        React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, s.status === 'Sold' ? 'Sold for ' : 'Asking '),
-                        React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '12px', color: theme.txtP } }, '$' + (s.salePrice || s.listPrice || '0'))),
-                    roi && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700,
-                        color: roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)',
-                        background: roi.profit >= 0 ? 'rgba(42,107,26,0.1)' : 'rgba(192,48,30,0.08)',
-                        padding: '2px 8px', border: '1px solid ' + (roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)') }) },
-                        (roi.profit >= 0 ? '+' : '') + '$' + roi.profit.toFixed(0) + ' (' + (roi.pct >= 0 ? '+' : '') + roi.pct + '%)')),
+                // Price + quantity + ROI
+                (function() {
+                    var qty = parseInt(s.quantity, 10) || 1;
+                    var sold = unitsSoldFor(s);
+                    var unit = unitPrice(s);
+                    var lineTotal = unit * sold;
+                    var priceLabel = s.status === 'Sold' || sold > 0 ? 'Sold for ' : 'Asking ';
+                    var priceValue = '$' + (s.salePrice || s.listPrice || '0');
+                    return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 } },
+                        React.createElement('div', null,
+                            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, priceLabel),
+                            React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '12px', color: theme.txtP } }, priceValue),
+                            qty > 1 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginLeft: 6 }) },
+                                '\u00D7 ' + (sold > 0 && sold < qty ? sold + '/' + qty : qty) + ' unit' + (qty !== 1 ? 's' : '')),
+                            sold > 0 && qty > 1 && React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#2A6B1A', marginLeft: 6 } },
+                                '= $' + lineTotal.toFixed(0))),
+                        roi && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700,
+                            color: roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)',
+                            background: roi.profit >= 0 ? 'rgba(42,107,26,0.1)' : 'rgba(192,48,30,0.08)',
+                            padding: '2px 8px', border: '1px solid ' + (roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)') }) },
+                            (roi.profit >= 0 ? '+' : '') + '$' + roi.profit.toFixed(0) + ' (' + (roi.pct >= 0 ? '+' : '') + roi.pct + '%)'));
+                })(),
                 s.notes && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic', padding: '4px 8px', background: theme.rowBg, marginBottom: 6 }) }, s.notes),
                 // Quick sold entry
-                quickSoldFor === s.listingId && React.createElement('div', { style: { display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, padding: 6, background: 'rgba(58,138,40,0.08)', border: '1px dashed #3A8A28' } },
-                    React.createElement('input', { type: 'text', inputMode: 'decimal', value: quickSoldPrice, onChange: e => setQuickSoldPrice(e.target.value), placeholder: 'Final sale $',
-                        style: Object.assign({}, pxS, { flex: 1, fontSize: '13px', padding: '6px 8px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP }) }),
-                    React.createElement('button', { type: 'button',
-                        onClick: () => { changeStatus(s.listingId, 'Sold', quickSoldPrice || s.listPrice); setQuickSoldFor(null); setQuickSoldPrice(''); },
-                        style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 700, padding: '6px 12px', cursor: 'pointer', background: '#3A8A28', color: '#fff', border: '2px solid #2A5A10' }) }, 'Confirm'),
-                    React.createElement('button', { type: 'button', onClick: () => { setQuickSoldFor(null); setQuickSoldPrice(''); },
-                        style: Object.assign({}, pxS, { fontSize: '12px', padding: '6px 10px', cursor: 'pointer', background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) }, '\u2715')),
+                quickSoldFor === s.listingId && (function() {
+                    var qty = parseInt(s.quantity, 10) || 1;
+                    var alreadySold = unitsSoldFor(s);
+                    var remaining = Math.max(0, qty - alreadySold);
+                    return React.createElement('div', { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6, padding: 8, background: 'rgba(58,138,40,0.08)', border: '1px dashed #3A8A28' } },
+                        React.createElement('input', { type: 'text', inputMode: 'decimal', value: quickSoldPrice, onChange: e => setQuickSoldPrice(e.target.value), placeholder: 'Price per unit $',
+                            style: Object.assign({}, pxS, { flex: 1, minWidth: 100, fontSize: '13px', padding: '6px 8px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP }) }),
+                        qty > 1 && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4 } },
+                            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) }, 'Qty:'),
+                            React.createElement('input', { type: 'number', min: 1, max: remaining, value: quickSoldQty,
+                                onChange: e => { var v = parseInt(e.target.value, 10); setQuickSoldQty(isNaN(v) || v < 1 ? 1 : Math.min(v, remaining)); },
+                                style: Object.assign({}, pxS, { width: 60, fontSize: '13px', padding: '6px 8px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, textAlign: 'center' }) }),
+                            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, '/ ' + remaining + ' left')),
+                        React.createElement('button', { type: 'button',
+                            onClick: async () => {
+                                var sellQty = qty > 1 ? Math.min(quickSoldQty, remaining) : 1;
+                                var newTotalSold = alreadySold + sellQty;
+                                var finalStatus = newTotalSold >= qty ? 'Sold' : s.status;
+                                // Update quantitySold + salePrice, then status if fully sold
+                                await updateSale(s.listingId, { quantitySold: newTotalSold, salePrice: quickSoldPrice || s.listPrice });
+                                if (finalStatus === 'Sold' && s.status !== 'Sold') await updateSaleStatus(s.listingId, 'Sold', quickSoldPrice || s.listPrice);
+                                setQuickSoldFor(null); setQuickSoldPrice(''); setQuickSoldQty(1); refresh();
+                            },
+                            style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 700, padding: '6px 12px', cursor: 'pointer', background: '#3A8A28', color: '#fff', border: '2px solid #2A5A10' }) }, 'Confirm'),
+                        React.createElement('button', { type: 'button', onClick: () => { setQuickSoldFor(null); setQuickSoldPrice(''); setQuickSoldQty(1); },
+                            style: Object.assign({}, pxS, { fontSize: '12px', padding: '6px 10px', cursor: 'pointer', background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) }, '\u2715'));
+                })(),
                 // Actions
                 React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
                     s.listingUrl && React.createElement('a', { href: s.listingUrl, target: '_blank', rel: 'noopener noreferrer',
@@ -16447,10 +16516,11 @@ function SalesSection() {
                             background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A', textDecoration: 'none' }) }, '\uD83D\uDD17 Open'),
                     s.listingUrl && React.createElement('button', { type: 'button', onClick: () => { navigator.clipboard && navigator.clipboard.writeText(s.listingUrl); },
                         style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\uD83D\uDCCB'),
-                    s.status !== 'Sold' && s.status !== 'Withdrawn' && React.createElement('button', { type: 'button',
-                        onClick: () => { setQuickSoldFor(s.listingId); setQuickSoldPrice(s.listPrice || ''); },
+                    s.status !== 'Withdrawn' && unitsSoldFor(s) < ((parseInt(s.quantity, 10) || 1)) && React.createElement('button', { type: 'button',
+                        onClick: () => { setQuickSoldFor(s.listingId); setQuickSoldPrice(s.listPrice || ''); setQuickSoldQty(1); },
                         style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '4px 8px', cursor: 'pointer',
-                            background: '#E0F8E0', color: '#2A5A10', border: '2px solid #3A8A28' }) }, '\u2713 Mark Sold'),
+                            background: '#E0F8E0', color: '#2A5A10', border: '2px solid #3A8A28' }) },
+                        (parseInt(s.quantity, 10) || 1) > 1 ? '\u2713 Record Sale' : '\u2713 Mark Sold'),
                     s.status === 'Drafted' && React.createElement('button', { type: 'button', onClick: () => changeStatus(s.listingId, 'Listed'),
                         style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A' }) }, 'Mark Listed'),
                     s.status === 'Listed' && React.createElement('button', { type: 'button', onClick: () => changeStatus(s.listingId, 'Pending'),
