@@ -16333,6 +16333,8 @@ function SalesSection() {
     const [quickSoldFor, setQuickSoldFor] = useState(null); // listingId being quick-sold
     const [quickSoldPrice, setQuickSoldPrice] = useState('');
     const [quickSoldQty, setQuickSoldQty] = useState(1);
+    const [sortKey, setSortKey] = useState('sold');
+    const [sortDir, setSortDir] = useState('desc');
 
     const pxS = { fontFamily: "'Pixelify Sans', cursive" };
 
@@ -16396,6 +16398,25 @@ function SalesSection() {
         if (filter === 'active') return s.status !== 'Sold' && s.status !== 'Withdrawn';
         if (filter === 'all') return true;
         return s.status === filter;
+    });
+    // Sort
+    var sortedFiltered = filtered.slice().sort((a, b) => {
+        function val(s) {
+            switch (sortKey) {
+                case 'plant':  return (s.plantName || s.plantUID || '').toLowerCase();
+                case 'status': return SALE_STATUSES.indexOf(s.status);
+                case 'qty':    return parseInt(s.quantity, 10) || 1;
+                case 'price':  return unitPrice(s);
+                case 'total':  return unitsSoldFor(s) > 0 ? unitPrice(s) * unitsSoldFor(s) : unitPrice(s) * (parseInt(s.quantity, 10) || 1);
+                case 'market': return (s.listingLocation || '').toLowerCase();
+                case 'sold':   return s.soldAt || s.listedAt || s.createdAt || '';
+                default:       return '';
+            }
+        }
+        var av = val(a), bv = val(b);
+        if (av < bv) return sortDir === 'asc' ? -1 : 1;
+        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        return 0;
     });
 
     async function changeStatus(listingId, newStatus, salePrice) {
@@ -16482,93 +16503,134 @@ function SalesSection() {
                 React.createElement('span', { style: { fontWeight: 700, color: theme.txtP } }, '\uD83D\uDCB0 List for Sale'),
                 ' to create your first listing.')),
 
-        filtered.map(s => {
-            var c = SALE_STATUS_COLORS[s.status] || SALE_STATUS_COLORS.Drafted;
-            var roi = getROI(s);
-            return React.createElement('div', { key: s.listingId,
-                style: { background: theme.cardBg, border: '3px solid ' + theme.cardBorder, borderLeft: '6px solid ' + c.border,
-                    padding: 10, boxShadow: '3px 3px 0 ' + theme.cardBorder } },
-                React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 } },
-                    React.createElement('div', { style: { flex: 1, minWidth: 0 } },
-                        React.createElement('div', { onClick: () => navigate('plant', { uid: s.plantUID }),
-                            style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, color: theme.txtP, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: theme.sep, textDecorationThickness: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) },
-                            s.plantName || ('#' + s.plantUID)),
-                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 1 }) },
-                            '#' + s.plantUID + (s.listingLocation ? '  \u2022  ' + s.listingLocation : '') + (s.orderNumber ? '  \u2022  ' + s.orderNumber : '') + (s.soldAt && s.status === 'Sold' ? '  \u2022  ' + s.soldAt : ''))),
-                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '3px 8px',
-                        background: c.bg, color: c.fg, border: '2px solid ' + c.border, flexShrink: 0 }) }, s.status.toUpperCase())),
-                // Price + quantity + ROI
-                (function() {
-                    var qty = parseInt(s.quantity, 10) || 1;
-                    var sold = unitsSoldFor(s);
-                    var unit = unitPrice(s);
-                    var lineTotal = unit * sold;
-                    var priceLabel = s.status === 'Sold' || sold > 0 ? 'Sold for ' : 'Asking ';
-                    var priceValue = '$' + (s.salePrice || s.listPrice || '0');
-                    return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 } },
+        // Spreadsheet-style listing table
+        filtered.length > 0 && (function() {
+            var thStyle = Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, color: theme.txtS, padding: '8px 6px',
+                textAlign: 'left', borderBottom: '2px solid ' + theme.cardBorder, background: theme.rowBg, whiteSpace: 'nowrap',
+                letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' });
+            var tdStyle = Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, padding: '7px 6px',
+                borderBottom: '1px solid ' + theme.sep, verticalAlign: 'middle' });
+            function sortIndicator(key) {
+                if (sortKey !== key) return React.createElement('span', { style: { opacity: 0.3, marginLeft: 3 } }, '\u2195');
+                return React.createElement('span', { style: { color: '#3A8A28', marginLeft: 3 } }, sortDir === 'asc' ? '\u2191' : '\u2193');
+            }
+            function ThSort({ id, label, align }) {
+                return React.createElement('th', {
+                    onClick: () => { if (sortKey === id) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortKey(id); setSortDir('asc'); } },
+                    style: Object.assign({}, thStyle, { textAlign: align || 'left' })
+                }, label, sortIndicator(id));
+            }
+            return React.createElement('div', { style: { width: '100%', overflowX: 'auto', border: '3px solid ' + theme.cardBorder,
+                background: theme.cardBg, boxShadow: '3px 3px 0 ' + theme.cardBorder } },
+                React.createElement('table', { style: { width: '100%', minWidth: isSmall ? 600 : 'auto', borderCollapse: 'collapse', tableLayout: 'auto' } },
+                    React.createElement('thead', null,
+                        React.createElement('tr', null,
+                            React.createElement(ThSort, { id: 'plant', label: 'Plant' }),
+                            React.createElement(ThSort, { id: 'status', label: 'Status' }),
+                            React.createElement(ThSort, { id: 'qty', label: 'Qty', align: 'center' }),
+                            React.createElement(ThSort, { id: 'price', label: 'Price', align: 'right' }),
+                            React.createElement(ThSort, { id: 'total', label: 'Total', align: 'right' }),
+                            React.createElement(ThSort, { id: 'market', label: 'Market' }),
+                            React.createElement(ThSort, { id: 'sold', label: 'Sold' }),
+                            React.createElement('th', { style: Object.assign({}, thStyle, { textAlign: 'right', cursor: 'default' }) }, 'Actions'))),
+                    React.createElement('tbody', null,
+                        sortedFiltered.map((s, rowIdx) => {
+                            var c = SALE_STATUS_COLORS[s.status] || SALE_STATUS_COLORS.Drafted;
+                            var roi = getROI(s);
+                            var qty = parseInt(s.quantity, 10) || 1;
+                            var sold = unitsSoldFor(s);
+                            var unit = unitPrice(s);
+                            var lineTotal = sold > 0 ? unit * sold : unit * qty;
+                            var qtyDisplay = qty > 1 ? (sold > 0 && sold < qty ? sold + '/' + qty : String(qty)) : '1';
+                            var rowBg = rowIdx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)';
+                            return React.createElement('tr', { key: s.listingId, style: { background: rowBg, borderLeft: '4px solid ' + c.border } },
+                                // Plant
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { minWidth: 130 }) },
+                                    React.createElement('div', { onClick: () => navigate('plant', { uid: s.plantUID }),
+                                        style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtP, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: theme.sep }) },
+                                        s.plantName || ('#' + s.plantUID)),
+                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.7 }) },
+                                        '#' + s.plantUID + (s.orderNumber ? ' \u00B7 ' + s.orderNumber : '')),
+                                    s.notes && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontStyle: 'italic', opacity: 0.8, marginTop: 2 }) }, s.notes.length > 60 ? s.notes.slice(0, 58) + '\u2026' : s.notes)),
+                                // Status
+                                React.createElement('td', { style: tdStyle },
+                                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '2px 7px',
+                                        background: c.bg, color: c.fg, border: '2px solid ' + c.border, whiteSpace: 'nowrap' }) }, s.status.toUpperCase())),
+                                // Qty
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'center', fontFamily: "'Press Start 2P'", fontSize: '11px' }) }, qtyDisplay),
+                                // Price (per unit)
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', fontFamily: "'Press Start 2P'", fontSize: '11px' }) },
+                                    '$' + (s.salePrice || s.listPrice || '0')),
+                                // Total
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right' }) },
+                                    React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: sold > 0 ? '#2A6B1A' : theme.txtP } },
+                                        '$' + lineTotal.toFixed(0)),
+                                    roi && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 700,
+                                        color: roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)' }) },
+                                        (roi.profit >= 0 ? '+' : '') + (roi.pct >= 0 ? '+' : '') + roi.pct + '%')),
+                                // Marketplace
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS }) }, s.listingLocation || '\u2014'),
+                                // Sold date
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) }, s.soldAt || (s.listedAt ? '(listed ' + s.listedAt + ')' : '\u2014')),
+                                // Actions
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', whiteSpace: 'nowrap' }) },
+                                    React.createElement('div', { style: { display: 'inline-flex', gap: 3 } },
+                                        s.listingUrl && React.createElement('a', { href: s.listingUrl, target: '_blank', rel: 'noopener noreferrer', title: 'Open listing',
+                                            style: { padding: '4px 6px', background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A', textDecoration: 'none', fontSize: 12, lineHeight: 1 } }, '\uD83D\uDD17'),
+                                        s.listingUrl && React.createElement('button', { type: 'button', title: 'Copy URL',
+                                            onClick: () => { navigator.clipboard && navigator.clipboard.writeText(s.listingUrl); },
+                                            style: { padding: '4px 6px', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\uD83D\uDCCB'),
+                                        s.status !== 'Withdrawn' && sold < qty && React.createElement('button', { type: 'button', title: qty > 1 ? 'Record sale' : 'Mark sold',
+                                            onClick: () => { setQuickSoldFor(s.listingId); setQuickSoldPrice(s.listPrice || ''); setQuickSoldQty(1); },
+                                            style: { padding: '4px 6px', background: '#E0F8E0', color: '#2A5A10', border: '2px solid #3A8A28', cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\u2713'),
+                                        React.createElement('button', { type: 'button', title: 'Edit', onClick: () => setEditing(s),
+                                            style: { padding: '4px 6px', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\u270F'),
+                                        React.createElement('button', { type: 'button', title: 'Delete', onClick: () => handleDelete(s.listingId),
+                                            style: { padding: '4px 6px', background: 'transparent', color: 'var(--c-urgent)', border: '2px solid var(--c-urgent)', cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\uD83D\uDDD1'))));
+                        }))));
+        })(),
+
+        // Quick-sold inline modal (replaces inline expansion now that we use a table)
+        quickSoldFor && (function() {
+            var s = sales.find(x => x.listingId === quickSoldFor);
+            if (!s) return null;
+            var qty = parseInt(s.quantity, 10) || 1;
+            var alreadySold = unitsSoldFor(s);
+            var remaining = Math.max(0, qty - alreadySold);
+            return React.createElement('div', {
+                style: { position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.55)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
+                onClick: e => { if (e.target === e.currentTarget) { setQuickSoldFor(null); setQuickSoldPrice(''); setQuickSoldQty(1); } }
+            },
+                React.createElement('div', { style: { background: theme.cardBg, border: '4px solid ' + theme.cardBorder,
+                    padding: 16, maxWidth: 380, width: '100%', boxShadow: '5px 5px 0 ' + theme.cardBorder } },
+                    React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtP, marginBottom: 4 } }, qty > 1 ? 'RECORD SALE' : 'MARK SOLD'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 12 }) }, s.plantName || ('#' + s.plantUID)),
+                    React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
                         React.createElement('div', null,
-                            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, priceLabel),
-                            React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '12px', color: theme.txtP } }, priceValue),
-                            qty > 1 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginLeft: 6 }) },
-                                '\u00D7 ' + (sold > 0 && sold < qty ? sold + '/' + qty : qty) + ' unit' + (qty !== 1 ? 's' : '')),
-                            sold > 0 && qty > 1 && React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#2A6B1A', marginLeft: 6 } },
-                                '= $' + lineTotal.toFixed(0))),
-                        roi && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700,
-                            color: roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)',
-                            background: roi.profit >= 0 ? 'rgba(42,107,26,0.1)' : 'rgba(192,48,30,0.08)',
-                            padding: '2px 8px', border: '1px solid ' + (roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)') }) },
-                            (roi.profit >= 0 ? '+' : '') + '$' + roi.profit.toFixed(0) + ' (' + (roi.pct >= 0 ? '+' : '') + roi.pct + '%)'));
-                })(),
-                s.notes && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic', padding: '4px 8px', background: theme.rowBg, marginBottom: 6 }) }, s.notes),
-                // Quick sold entry
-                quickSoldFor === s.listingId && (function() {
-                    var qty = parseInt(s.quantity, 10) || 1;
-                    var alreadySold = unitsSoldFor(s);
-                    var remaining = Math.max(0, qty - alreadySold);
-                    return React.createElement('div', { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6, padding: 8, background: 'rgba(58,138,40,0.08)', border: '1px dashed #3A8A28' } },
-                        React.createElement('input', { type: 'text', inputMode: 'decimal', value: quickSoldPrice, onChange: e => setQuickSoldPrice(e.target.value), placeholder: 'Price per unit $',
-                            style: Object.assign({}, pxS, { flex: 1, minWidth: 100, fontSize: '13px', padding: '6px 8px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP }) }),
-                        qty > 1 && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4 } },
-                            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) }, 'Qty:'),
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, color: theme.txtS, marginBottom: 3 }) }, 'Final price per unit ($)'),
+                            React.createElement('input', { type: 'text', inputMode: 'decimal', value: quickSoldPrice, onChange: e => setQuickSoldPrice(e.target.value), placeholder: '25.00',
+                                style: Object.assign({}, pxS, { width: '100%', boxSizing: 'border-box', fontSize: '13px', padding: '8px 10px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP }) })),
+                        qty > 1 && React.createElement('div', null,
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, color: theme.txtS, marginBottom: 3 }) }, 'Units sold (1\u2013' + remaining + ')'),
                             React.createElement('input', { type: 'number', min: 1, max: remaining, value: quickSoldQty,
                                 onChange: e => { var v = parseInt(e.target.value, 10); setQuickSoldQty(isNaN(v) || v < 1 ? 1 : Math.min(v, remaining)); },
-                                style: Object.assign({}, pxS, { width: 60, fontSize: '13px', padding: '6px 8px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, textAlign: 'center' }) }),
-                            React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS }) }, '/ ' + remaining + ' left')),
-                        React.createElement('button', { type: 'button',
-                            onClick: async () => {
-                                var sellQty = qty > 1 ? Math.min(quickSoldQty, remaining) : 1;
-                                var newTotalSold = alreadySold + sellQty;
-                                var finalStatus = newTotalSold >= qty ? 'Sold' : s.status;
-                                // Update quantitySold + salePrice, then status if fully sold
-                                await updateSale(s.listingId, { quantitySold: newTotalSold, salePrice: quickSoldPrice || s.listPrice });
-                                if (finalStatus === 'Sold' && s.status !== 'Sold') await updateSaleStatus(s.listingId, 'Sold', quickSoldPrice || s.listPrice);
-                                setQuickSoldFor(null); setQuickSoldPrice(''); setQuickSoldQty(1); refresh();
-                            },
-                            style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 700, padding: '6px 12px', cursor: 'pointer', background: '#3A8A28', color: '#fff', border: '2px solid #2A5A10' }) }, 'Confirm'),
-                        React.createElement('button', { type: 'button', onClick: () => { setQuickSoldFor(null); setQuickSoldPrice(''); setQuickSoldQty(1); },
-                            style: Object.assign({}, pxS, { fontSize: '12px', padding: '6px 10px', cursor: 'pointer', background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) }, '\u2715'));
-                })(),
-                // Actions
-                React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
-                    s.listingUrl && React.createElement('a', { href: s.listingUrl, target: '_blank', rel: 'noopener noreferrer',
-                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '4px 8px',
-                            background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A', textDecoration: 'none' }) }, '\uD83D\uDD17 Open'),
-                    s.listingUrl && React.createElement('button', { type: 'button', onClick: () => { navigator.clipboard && navigator.clipboard.writeText(s.listingUrl); },
-                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\uD83D\uDCCB'),
-                    s.status !== 'Withdrawn' && unitsSoldFor(s) < ((parseInt(s.quantity, 10) || 1)) && React.createElement('button', { type: 'button',
-                        onClick: () => { setQuickSoldFor(s.listingId); setQuickSoldPrice(s.listPrice || ''); setQuickSoldQty(1); },
-                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '4px 8px', cursor: 'pointer',
-                            background: '#E0F8E0', color: '#2A5A10', border: '2px solid #3A8A28' }) },
-                        (parseInt(s.quantity, 10) || 1) > 1 ? '\u2713 Record Sale' : '\u2713 Mark Sold'),
-                    s.status === 'Drafted' && React.createElement('button', { type: 'button', onClick: () => changeStatus(s.listingId, 'Listed'),
-                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A' }) }, 'Mark Listed'),
-                    s.status === 'Listed' && React.createElement('button', { type: 'button', onClick: () => changeStatus(s.listingId, 'Pending'),
-                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: '#FFF0E0', color: '#7A4A10', border: '2px solid #C87820' }) }, 'Mark Pending'),
-                    React.createElement('button', { type: 'button', onClick: () => setEditing(s),
-                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\u270F Edit'),
-                    React.createElement('button', { type: 'button', onClick: () => handleDelete(s.listingId),
-                        style: Object.assign({}, pxS, { fontSize: '11px', padding: '4px 8px', cursor: 'pointer', background: 'transparent', color: 'var(--c-urgent)', border: '2px solid var(--c-urgent)' }) }, '\uD83D\uDDD1')));
-        }),
+                                style: Object.assign({}, pxS, { width: '100%', boxSizing: 'border-box', fontSize: '13px', padding: '8px 10px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, textAlign: 'center' }) }),
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 3, opacity: 0.7 }) }, alreadySold > 0 ? alreadySold + ' already sold \u00B7 ' + remaining + ' remaining' : qty + ' total units')),
+                        React.createElement('div', { style: { display: 'flex', gap: 6, marginTop: 4 } },
+                            React.createElement('button', { type: 'button',
+                                onClick: async () => {
+                                    var sellQty = qty > 1 ? Math.min(quickSoldQty, remaining) : 1;
+                                    var newTotalSold = alreadySold + sellQty;
+                                    var finalStatus = newTotalSold >= qty ? 'Sold' : s.status;
+                                    await updateSale(s.listingId, { quantitySold: newTotalSold, salePrice: quickSoldPrice || s.listPrice });
+                                    if (finalStatus === 'Sold' && s.status !== 'Sold') await updateSaleStatus(s.listingId, 'Sold', quickSoldPrice || s.listPrice);
+                                    setQuickSoldFor(null); setQuickSoldPrice(''); setQuickSoldQty(1); refresh();
+                                },
+                                style: Object.assign({}, pxS, { flex: 1, fontSize: '13px', fontWeight: 900, padding: '10px', cursor: 'pointer', background: '#3A8A28', color: '#fff', border: '3px solid #2A5A10', boxShadow: '0 3px 0 #1A3008' }) }, 'Confirm'),
+                            React.createElement('button', { type: 'button', onClick: () => { setQuickSoldFor(null); setQuickSoldPrice(''); setQuickSoldQty(1); },
+                                style: Object.assign({}, pxS, { fontSize: '13px', padding: '10px 16px', cursor: 'pointer', background: theme.rowBg, color: theme.txtP, border: '3px solid ' + theme.cardBorder }) }, 'Cancel')))));
+        })(),
 
         // Edit modal
         editing && React.createElement(SaleListingModal, {
