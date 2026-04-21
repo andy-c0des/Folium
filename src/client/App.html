@@ -16666,11 +16666,22 @@ function SalesSection() {
                             return React.createElement('tr', { key: s.listingId, style: { background: rowBg, borderLeft: '4px solid ' + c.border } },
                                 // Product
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { minWidth: 140 }) },
-                                    React.createElement('div', { onClick: () => navigate('plant', { uid: s.plantUID }),
-                                        style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtP, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: theme.sep }) },
-                                        s.plantName || ('#' + s.plantUID)),
-                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.7 }) },
-                                        '#' + s.plantUID)),
+                                    React.createElement('div', {
+                                        onClick: () => {
+                                            if (s.source === 'prop') navigate('my-plants', { openTab: 'props' });
+                                            else if (s.source === 'graft') navigate('my-plants', { openTab: 'grafts' });
+                                            else if (s.plantUID) navigate('plant', { uid: s.plantUID });
+                                        },
+                                        style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtP,
+                                            cursor: (s.source || s.plantUID) ? 'pointer' : 'default',
+                                            textDecoration: (s.source || s.plantUID) ? 'underline' : 'none', textDecorationColor: theme.sep }) },
+                                        s.plantName || (s.plantUID ? '#' + s.plantUID : 'Unnamed')),
+                                    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: 1 } },
+                                        s.plantUID && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.7 }) }, '#' + s.plantUID),
+                                        s.source === 'prop' && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '9px', fontWeight: 900, padding: '1px 5px',
+                                            background: 'rgba(74,124,30,0.12)', color: '#2A5A10', border: '1px solid #3A8A28' }) }, 'FROM PROP'),
+                                        s.source === 'graft' && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '9px', fontWeight: 900, padding: '1px 5px',
+                                            background: 'rgba(123,74,140,0.12)', color: '#4A2868', border: '1px solid #7B4A8C' }) }, 'FROM GRAFT'))),
                                 // # Order
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'center', fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) },
                                     s.orderNumber || '\u2014'),

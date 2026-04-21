@@ -166,9 +166,66 @@ function plantosDeleteSale(listingId) {
   return { ok: true };
 }
 
+/* Create a Sold sales listing from a sold prop. Idempotent via sourceId.
+   Called by plantosSellProp() and the backfill routine. */
+function salesCreateFromProp_(prop) {
+  if (!prop || !prop.propId) return null;
+  var sales = plantosGetSales();
+  // Skip if listing already exists for this propId
+  for (var i = 0; i < sales.length; i++) { if (sales[i].sourceId === prop.propId) return sales[i]; }
+  var price = plantosSafeStr_(prop.priceSold || '').trim();
+  var soldDate = plantosSafeStr_(prop.soldDate || '').trim() || plantosFmtDate_(plantosNow_());
+  var genusSp = [plantosSafeStr_(prop.genus || '').trim(), plantosSafeStr_(prop.species || '').trim()].filter(Boolean).join(' ');
+  var name = '\u2702\uFE0F ' + (genusSp || 'Prop ' + prop.propId);  // ✂ scissors icon prefix
+  var listing = {
+    listingId: 'SALE_PROP_' + prop.propId,
+    plantUID: plantosSafeStr_(prop.parentUID || '').trim(),  // parent plant if known
+    plantName: name,
+    status: 'Sold',
+    quantity: 1, quantitySold: 1,
+    unitStatuses: { Drafted: 0, Listed: 0, Pending: 0, Sold: 1, Withdrawn: 0 },
+    listPrice: price, salePrice: price,
+    listingUrl: '', listingLocation: '', buyer: '', notes: 'Synced from propagation ' + prop.propId + (prop.propType ? ' (' + prop.propType + ')' : ''),
+    shipped: false, trackingNumber: '', orderNumber: '',
+    createdAt: soldDate, listedAt: '', soldAt: soldDate,
+    source: 'prop', sourceId: prop.propId
+  };
+  sales.unshift(listing);
+  plantosSaveSales_(sales);
+  return listing;
+}
+
+/* Create a Sold sales listing from a sold graft. Idempotent via sourceId. */
+function salesCreateFromGraft_(graft) {
+  if (!graft || !graft.graftId) return null;
+  var sales = plantosGetSales();
+  for (var i = 0; i < sales.length; i++) { if (sales[i].sourceId === graft.graftId) return sales[i]; }
+  var price = plantosSafeStr_(graft.priceSold || '').trim();
+  var soldDate = plantosSafeStr_(graft.soldDate || '').trim() || plantosFmtDate_(plantosNow_());
+  var scion = [plantosSafeStr_(graft.scionGenus || '').trim(), plantosSafeStr_(graft.scionSpecies || '').trim()].filter(Boolean).join(' ');
+  var rootstock = [plantosSafeStr_(graft.rootstockGenus || '').trim(), plantosSafeStr_(graft.rootstockSpecies || '').trim()].filter(Boolean).join(' ');
+  var name = '\uD83D\uDD17 ' + (scion || 'Graft') + (rootstock ? ' on ' + rootstock : '');
+  var listing = {
+    listingId: 'SALE_GRAFT_' + graft.graftId,
+    plantUID: '',
+    plantName: name,
+    status: 'Sold',
+    quantity: 1, quantitySold: 1,
+    unitStatuses: { Drafted: 0, Listed: 0, Pending: 0, Sold: 1, Withdrawn: 0 },
+    listPrice: price, salePrice: price,
+    listingUrl: '', listingLocation: '', buyer: '', notes: 'Synced from graft ' + graft.graftId + (graft.graftTechnique ? ' (' + graft.graftTechnique + ')' : ''),
+    shipped: false, trackingNumber: '', orderNumber: '',
+    createdAt: soldDate, listedAt: '', soldAt: soldDate,
+    source: 'graft', sourceId: graft.graftId
+  };
+  sales.unshift(listing);
+  plantosSaveSales_(sales);
+  return listing;
+}
+
 /* Backfill sales tracker from the Archive — imports any plant that was archived
-   as 'rehomed' with a salePrice. Skips entries that already have a sales listing
-   for the same plantUID. Returns { ok, imported, skipped, total }. */
+   as 'rehomed' with a salePrice. Also imports sold props + grafts as listings.
+   Skips entries that already have a listing (via sourceId or plantUID). */
 function plantosBackfillSalesFromArchive() {
   var archive;
   try { archive = plantosGetArchive(); } catch(e) { return { ok: false, error: 'Archive unavailable: ' + (e && e.message || String(e)) }; }
@@ -215,7 +272,41 @@ function plantosBackfillSalesFromArchive() {
     imported++;
   }
   if (imported > 0) plantosSaveSales_(sales);
-  return { ok: true, imported: imported, skipped: skipped, total: scanned };
+
+  // Also import sold props
+  var propImported = 0, propSkipped = 0;
+  try {
+    var props = plantosGetProps();
+    for (var pi = 0; pi < props.length; pi++) {
+      var p = props[pi];
+      if (p.status !== 'Sold') continue;
+      scanned++;
+      // salesCreateFromProp_ is idempotent — returns existing listing if sourceId matches
+      var beforeLen = plantosGetSales().length;
+      var created = salesCreateFromProp_(p);
+      if (created && plantosGetSales().length > beforeLen) { propImported++; imported++; }
+      else propSkipped++;
+    }
+  } catch(e) { /* props unavailable — ignore */ }
+
+  // Also import sold grafts
+  var graftImported = 0, graftSkipped = 0;
+  try {
+    var grafts = plantosGetGrafts();
+    for (var gi = 0; gi < grafts.length; gi++) {
+      var g = grafts[gi];
+      if (g.status !== 'Sold') continue;
+      scanned++;
+      var beforeLen2 = plantosGetSales().length;
+      var created2 = salesCreateFromGraft_(g);
+      if (created2 && plantosGetSales().length > beforeLen2) { graftImported++; imported++; }
+      else graftSkipped++;
+    }
+  } catch(e) { /* grafts unavailable — ignore */ }
+
+  return { ok: true, imported: imported, skipped: skipped + propSkipped + graftSkipped, total: scanned,
+    fromArchive: scanned - propImported - graftImported - propSkipped - graftSkipped,
+    fromProps: propImported, fromGrafts: graftImported };
 }
 
 /* Sum revenue from Sold sales listings (used by plantosHome() dashboard).
@@ -226,6 +317,9 @@ function plantosSalesRevenueSummary_() {
   var monthlySales = {};
   for (var i = 0; i < sales.length; i++) {
     var s = sales[i];
+    // Skip listings sourced from props/grafts — those are already counted by
+    // the prop/graft aggregators in plantosHome() to avoid double-counting.
+    if (s.source === 'prop' || s.source === 'graft') continue;
     var us = salesGetUnitStatuses_(s);
     var qty = us.Sold || 0;
     if (qty <= 0) continue;

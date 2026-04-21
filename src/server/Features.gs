@@ -452,6 +452,8 @@ function plantosSellProp(propId, priceSold) {
   PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_PROPS_KEY), JSON.stringify(props));
   const priceStr = props[idx].priceSold ? ` for ${props[idx].priceSold}` : '';
   plantosPropTimelineAppend_(id, { action: 'SOLD', details: `Prop sold${priceStr}.` });
+  // Mirror into Sales Tracker (idempotent — skips if already exists for this propId)
+  try { if (typeof salesCreateFromProp_ === 'function') salesCreateFromProp_(props[idx]); } catch(e) { /* Sales.gs may be absent */ }
   return { ok: true };
 }
 
@@ -609,6 +611,8 @@ function plantosSellGraft(graftId, priceSold) {
   PropertiesService.getScriptProperties().setProperty(plantosUserKey_(PLANTOS_GRAFTS_KEY), JSON.stringify(grafts));
   const priceStr = grafts[idx].priceSold ? ` for ${grafts[idx].priceSold}` : '';
   plantosGraftTimelineAppend_(id, { action: 'SOLD', details: `Graft sold${priceStr}.` });
+  // Mirror into Sales Tracker (idempotent — skips if already exists for this graftId)
+  try { if (typeof salesCreateFromGraft_ === 'function') salesCreateFromGraft_(grafts[idx]); } catch(e) { /* Sales.gs may be absent */ }
   return { ok: true };
 }
 
