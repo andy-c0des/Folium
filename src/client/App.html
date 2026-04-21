@@ -16366,18 +16366,7 @@ function SalesSection() {
     }
 
     return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
-        // Header + export
-        React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 } },
-            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
-                React.createElement('span', { style: { fontSize: 20 } }, '\uD83D\uDCB0'),
-                React.createElement('div', null,
-                    React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: isSmall ? '9px' : '11px', color: theme.txtP } }, 'SALES TRACKER'),
-                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, sales.length + ' listing' + (sales.length !== 1 ? 's' : '')))),
-            sales.length > 0 && React.createElement('button', { type: 'button', onClick: exportCSV,
-                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
-                    background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\u2B07 Export CSV')),
-
-        // Metrics row
+        // Metrics row (top)
         sales.length > 0 && React.createElement('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
             React.createElement(Metric, { icon: '\uD83D\uDCB5', label: 'Revenue', value: '$' + totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), sub: soldList.length + ' sold' }),
             React.createElement(Metric, { icon: '\uD83D\uDCCA', label: 'Avg Sale', value: soldList.length > 0 ? '$' + avgSale.toFixed(0) : '—' }),
@@ -16385,29 +16374,36 @@ function SalesSection() {
             avgTimeToSell != null && React.createElement(Metric, { icon: '\u23F1', label: 'Avg Days to Sell', value: avgTimeToSell + 'd' }),
             mktTop.length > 0 && React.createElement(Metric, { icon: '\uD83C\uDFEA', label: 'Top Marketplace', value: mktTop[0].length > 14 ? mktTop[0].slice(0,12)+'…' : mktTop[0], sub: mktBreakdown[mktTop[0]] + ' sold' })),
 
-        // Filter tabs
-        React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
-            [['active', 'Active'], ['Listed', 'Listed'], ['Drafted', 'Drafted'], ['Pending', 'Pending'], ['Sold', 'Sold'], ['all', 'All']].map(([id, label]) => {
-                var active = filter === id;
-                var count = id === 'active' ? sales.filter(s => s.status !== 'Sold' && s.status !== 'Withdrawn').length
-                          : id === 'all' ? sales.length
-                          : sales.filter(s => s.status === id).length;
-                return React.createElement('button', { key: id, type: 'button', onClick: () => setFilter(id),
-                    style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
-                        background: active ? theme.btnP.bg : 'transparent', color: active ? theme.btnP.text : theme.txtS,
-                        border: '2px solid ' + (active ? theme.btnP.border : theme.rowBorder) }) },
-                    label + ' (' + count + ')');
-            })),
+        // Filter tabs + export (aligned on one row, wraps on narrow screens)
+        React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' } },
+            React.createElement('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap', flex: 1, minWidth: 0 } },
+                [['active', 'Active'], ['Listed', 'Listed'], ['Drafted', 'Drafted'], ['Pending', 'Pending'], ['Sold', 'Sold'], ['all', 'All']].map(([id, label]) => {
+                    var active = filter === id;
+                    var count = id === 'active' ? sales.filter(s => s.status !== 'Sold' && s.status !== 'Withdrawn').length
+                              : id === 'all' ? sales.length
+                              : sales.filter(s => s.status === id).length;
+                    return React.createElement('button', { key: id, type: 'button', onClick: () => setFilter(id),
+                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
+                            background: active ? theme.btnP.bg : 'transparent', color: active ? theme.btnP.text : theme.txtS,
+                            border: '2px solid ' + (active ? theme.btnP.border : theme.rowBorder) }) },
+                        label + ' (' + count + ')');
+                })),
+            sales.length > 0 && React.createElement('button', { type: 'button', onClick: exportCSV,
+                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
+                    background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\u2B07 CSV')),
 
         // Listings
-        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, textAlign: 'center', padding: 20 }) }, 'Loading\u2026'),
+        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, textAlign: 'center', padding: 20 }) }, 'Loading\u2026'),
         !loading && filtered.length === 0 && React.createElement('div', {
-            style: { padding: 30, textAlign: 'center', background: theme.cardBg, border: '3px dashed ' + theme.cardBorder }
+            style: { padding: '36px 20px', textAlign: 'center', background: theme.cardBg, border: '3px dashed ' + theme.cardBorder }
         },
-            React.createElement('div', { style: { fontSize: 32, marginBottom: 6 } }, '\uD83C\uDF31'),
-            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, fontWeight: 700 }) },
+            React.createElement('div', { style: { fontSize: 44, marginBottom: 10, lineHeight: 1 } }, sales.length === 0 ? '\uD83D\uDCB0' : '\uD83D\uDD0D'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '15px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) },
                 sales.length === 0 ? 'No listings yet' : 'No listings match this filter'),
-            sales.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, opacity: 0.7, marginTop: 4 }) }, 'Open any plant and tap "List for Sale" to start')),
+            sales.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, lineHeight: 1.5, maxWidth: 300, margin: '0 auto' }) },
+                'Open any plant and tap ',
+                React.createElement('span', { style: { fontWeight: 700, color: theme.txtP } }, '\uD83D\uDCB0 List for Sale'),
+                ' to create your first listing.')),
 
         filtered.map(s => {
             var c = SALE_STATUS_COLORS[s.status] || SALE_STATUS_COLORS.Drafted;
