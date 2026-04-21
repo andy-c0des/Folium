@@ -16482,14 +16482,24 @@ function SalesSection() {
     var sortedFiltered = filtered.slice().sort((a, b) => {
         function val(s) {
             switch (sortKey) {
-                case 'plant':  return (s.plantName || s.plantUID || '').toLowerCase();
-                case 'status': return SALE_STATUSES.indexOf(s.status);
-                case 'qty':    return parseInt(s.quantity, 10) || 1;
-                case 'price':  return unitPrice(s);
-                case 'total':  return unitsSoldFor(s) > 0 ? unitPrice(s) * unitsSoldFor(s) : unitPrice(s) * (parseInt(s.quantity, 10) || 1);
-                case 'market': return (s.listingLocation || '').toLowerCase();
-                case 'sold':   return s.soldAt || s.listedAt || s.createdAt || '';
-                default:       return '';
+                case 'plant':       return (s.plantName || s.plantUID || '').toLowerCase();
+                case 'orderNum':    return (s.orderNumber || '').toLowerCase();
+                case 'status':      return SALE_STATUSES.indexOf(s.status);
+                case 'qty':         return parseInt(s.quantity, 10) || 1;
+                case 'price':
+                case 'priceListed': return parseFloat(String(s.listPrice || '').replace(/[$,]/g, '')) || 0;
+                case 'priceSold':   return parseFloat(String(s.salePrice || '').replace(/[$,]/g, '')) || 0;
+                case 'total':       return unitsSoldFor(s) > 0 ? unitPrice(s) * unitsSoldFor(s) : unitPrice(s) * (parseInt(s.quantity, 10) || 1);
+                case 'market':      return (s.listingLocation || '').toLowerCase();
+                case 'sold':        return s.soldAt || s.listedAt || s.createdAt || '';
+                case 'age': {
+                    var start = s.createdAt || s.listedAt || '';
+                    var end = s.soldAt || new Date().toISOString().slice(0, 10);
+                    if (!start) return 0;
+                    try { return Math.max(0, Math.round((new Date(end) - new Date(start)) / 86400000)); } catch(e) { return 0; }
+                }
+                case 'notes':       return (s.notes || '').toLowerCase();
+                default:            return '';
             }
         }
         var av = val(a), bv = val(b);
@@ -16623,16 +16633,20 @@ function SalesSection() {
             }
             return React.createElement('div', { style: { width: '100%', overflowX: 'auto', border: '3px solid ' + theme.cardBorder,
                 background: theme.cardBg, boxShadow: '3px 3px 0 ' + theme.cardBorder } },
-                React.createElement('table', { style: { width: '100%', minWidth: isSmall ? 600 : 'auto', borderCollapse: 'collapse', tableLayout: 'auto' } },
+                React.createElement('table', { style: { width: '100%', minWidth: 1050, borderCollapse: 'collapse', tableLayout: 'auto' } },
                     React.createElement('thead', null,
                         React.createElement('tr', null,
-                            React.createElement(ThSort, { id: 'plant', label: 'Plant' }),
-                            React.createElement(ThSort, { id: 'status', label: 'Status' }),
-                            React.createElement(ThSort, { id: 'qty', label: 'Qty', align: 'center' }),
-                            React.createElement(ThSort, { id: 'price', label: 'Price', align: 'right' }),
-                            React.createElement(ThSort, { id: 'total', label: 'Total', align: 'right' }),
-                            React.createElement(ThSort, { id: 'market', label: 'Market' }),
-                            React.createElement(ThSort, { id: 'sold', label: 'Sold' }),
+                            React.createElement(ThSort, { id: 'plant',      label: 'Product' }),
+                            React.createElement(ThSort, { id: 'orderNum',   label: '# Order', align: 'center' }),
+                            React.createElement(ThSort, { id: 'status',     label: 'Status' }),
+                            React.createElement(ThSort, { id: 'qty',        label: 'Qty', align: 'center' }),
+                            React.createElement(ThSort, { id: 'sold',       label: 'Order Date' }),
+                            React.createElement(ThSort, { id: 'priceListed', label: 'Price Listed', align: 'right' }),
+                            React.createElement(ThSort, { id: 'priceSold',  label: 'Price Sold', align: 'right' }),
+                            React.createElement(ThSort, { id: 'total',      label: 'Total', align: 'right' }),
+                            React.createElement(ThSort, { id: 'market',     label: 'Market' }),
+                            React.createElement(ThSort, { id: 'age',        label: 'Days', align: 'center' }),
+                            React.createElement(ThSort, { id: 'notes',      label: 'Notes' }),
                             React.createElement('th', { style: Object.assign({}, thStyle, { textAlign: 'right', cursor: 'default' }) }, 'Actions'))),
                     React.createElement('tbody', null,
                         sortedFiltered.map((s, rowIdx) => {
@@ -16644,15 +16658,22 @@ function SalesSection() {
                             var lineTotal = sold > 0 ? unit * sold : unit * qty;
                             var qtyDisplay = qty > 1 ? (sold > 0 && sold < qty ? sold + '/' + qty : String(qty)) : '1';
                             var rowBg = rowIdx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)';
+                            // Compute age in days (listing → sold, or listing → today if unsold)
+                            var ageStart = s.createdAt || s.listedAt || '';
+                            var ageEnd = s.soldAt || new Date().toISOString().slice(0, 10);
+                            var ageDays = 0;
+                            if (ageStart) { try { ageDays = Math.max(0, Math.round((new Date(ageEnd) - new Date(ageStart)) / 86400000)); } catch(e) {} }
                             return React.createElement('tr', { key: s.listingId, style: { background: rowBg, borderLeft: '4px solid ' + c.border } },
-                                // Plant
-                                React.createElement('td', { style: Object.assign({}, tdStyle, { minWidth: 130 }) },
+                                // Product
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { minWidth: 140 }) },
                                     React.createElement('div', { onClick: () => navigate('plant', { uid: s.plantUID }),
                                         style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtP, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: theme.sep }) },
                                         s.plantName || ('#' + s.plantUID)),
                                     React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.7 }) },
-                                        '#' + s.plantUID + (s.orderNumber ? ' \u00B7 ' + s.orderNumber : '')),
-                                    s.notes && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontStyle: 'italic', opacity: 0.8, marginTop: 2 }) }, s.notes.length > 60 ? s.notes.slice(0, 58) + '\u2026' : s.notes)),
+                                        '#' + s.plantUID)),
+                                // # Order
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'center', fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) },
+                                    s.orderNumber || '\u2014'),
                                 // Status (per-unit breakdown when mixed)
                                 React.createElement('td', { style: tdStyle }, (function() {
                                     var us = getUnitStatuses(s);
@@ -16661,7 +16682,6 @@ function SalesSection() {
                                         return React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, padding: '2px 7px',
                                             background: c.bg, color: c.fg, border: '2px solid ' + c.border, whiteSpace: 'nowrap' }) }, s.status.toUpperCase());
                                     }
-                                    // Mixed — show stacked mini-pills
                                     return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 2 } },
                                         nonZero.map(function(st) {
                                             var sc = SALE_STATUS_COLORS[st];
@@ -16673,20 +16693,30 @@ function SalesSection() {
                                 })()),
                                 // Qty
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'center', fontFamily: "'Press Start 2P'", fontSize: '11px' }) }, qtyDisplay),
-                                // Price (per unit)
-                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', fontFamily: "'Press Start 2P'", fontSize: '11px' }) },
-                                    '$' + (s.salePrice || s.listPrice || '0')),
-                                // Total
+                                // Order Date (sold date, or listed date fallback, or —)
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) },
+                                    s.soldAt || (s.listedAt ? '(listed ' + s.listedAt + ')' : '\u2014')),
+                                // Price Listed
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtS }) },
+                                    s.listPrice ? '$' + s.listPrice : '\u2014'),
+                                // Price Sold
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', fontFamily: "'Press Start 2P'", fontSize: '11px', color: sold > 0 ? '#2A6B1A' : theme.txtS }) },
+                                    s.salePrice ? '$' + s.salePrice : (sold > 0 ? '$' + s.listPrice : '\u2014')),
+                                // Total (sold × price, with ROI)
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right' }) },
                                     React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: sold > 0 ? '#2A6B1A' : theme.txtP } },
                                         '$' + lineTotal.toFixed(0)),
                                     roi && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', fontWeight: 700,
                                         color: roi.profit >= 0 ? '#2A6B1A' : 'var(--c-urgent)' }) },
                                         (roi.profit >= 0 ? '+' : '') + (roi.pct >= 0 ? '+' : '') + roi.pct + '%')),
-                                // Marketplace
+                                // Market
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS }) }, s.listingLocation || '\u2014'),
-                                // Sold date
-                                React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) }, s.soldAt || (s.listedAt ? '(listed ' + s.listedAt + ')' : '\u2014')),
+                                // Days on market (or days to sell)
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'center', fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) },
+                                    ageStart ? (ageDays + 'd') : '\u2014'),
+                                // Notes
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic', maxWidth: 180, minWidth: 100 }) },
+                                    s.notes ? (s.notes.length > 60 ? React.createElement('span', { title: s.notes }, s.notes.slice(0, 58) + '\u2026') : s.notes) : '\u2014'),
                                 // Actions
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', whiteSpace: 'nowrap' }) },
                                     React.createElement('div', { style: { display: 'inline-flex', gap: 3 } },
@@ -16702,7 +16732,28 @@ function SalesSection() {
                                             style: { padding: '4px 6px', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\u270F'),
                                         React.createElement('button', { type: 'button', title: 'Delete', onClick: () => handleDelete(s.listingId),
                                             style: { padding: '4px 6px', background: 'transparent', color: 'var(--c-urgent)', border: '2px solid var(--c-urgent)', cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\uD83D\uDDD1'))));
-                        }))));
+                        }))),
+                // Totals footer (like Excel status bar) — visible count + revenue sum for filtered rows
+                React.createElement('div', {
+                    style: { display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', padding: '8px 12px',
+                        borderTop: '2px solid ' + theme.cardBorder, background: theme.rowBg }
+                },
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, color: theme.txtS }) },
+                        sortedFiltered.length + ' row' + (sortedFiltered.length !== 1 ? 's' : '')),
+                    (function() {
+                        var filteredRevenue = sortedFiltered.reduce(function(a, x) { return a + (unitPrice(x) * unitsSoldFor(x)); }, 0);
+                        var filteredUnitsSold = sortedFiltered.reduce(function(a, x) { return a + unitsSoldFor(x); }, 0);
+                        var filteredListedValue = sortedFiltered.reduce(function(a, x) {
+                            var q = parseInt(x.quantity, 10) || 1;
+                            var sold = unitsSoldFor(x);
+                            return a + (unitPrice(x) * (q - sold));
+                        }, 0);
+                        return React.createElement(React.Fragment, null,
+                            filteredUnitsSold > 0 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) },
+                                'Sold: ', React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#2A6B1A' } }, filteredUnitsSold + ' units / $' + filteredRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }))),
+                            filteredListedValue > 0 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) },
+                                'Listed value: ', React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtP } }, '$' + filteredListedValue.toLocaleString(undefined, { maximumFractionDigits: 0 }))));
+                    })()));
         })(),
 
         // Quick-sold inline modal (replaces inline expansion now that we use a table)
