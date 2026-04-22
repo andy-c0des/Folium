@@ -16557,6 +16557,8 @@ function SalesSection() {
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [subView, setSubView] = useState('listings'); // 'listings' | 'orders'
+    const [orderSortDir, setOrderSortDir] = useState('desc'); // 'asc' | 'desc' for Orders view
+    const [expandedOrders, setExpandedOrders] = useState({}); // orderKey -> bool
     const [filter, setFilter] = useState('active'); // active | all | Sold | Listed | Drafted
     const [editing, setEditing] = useState(null); // listing object
     const [quickSoldFor, setQuickSoldFor] = useState(null); // listingId being quick-sold
@@ -16772,11 +16774,12 @@ function SalesSection() {
             if (s.buyer && !groups[key].buyer) groups[key].buyer = s.buyer;
         });
         var arr = Object.keys(groups).map(function(k) { return Object.assign({ _key: k }, groups[k]); });
-        // Sort by order number (natural — "10" > "2"), untagged at the end
+        // Sort by order number (natural — "10" > "2"), untagged always at the end
+        var dirMult = orderSortDir === 'asc' ? 1 : -1;
         arr.sort(function(a, b) {
             if (a._key === '__NO_ORDER__') return 1;
             if (b._key === '__NO_ORDER__') return -1;
-            return String(a.orderNumber).localeCompare(String(b.orderNumber), undefined, { numeric: true });
+            return dirMult * String(a.orderNumber).localeCompare(String(b.orderNumber), undefined, { numeric: true });
         });
         return arr;
     })();
@@ -17032,27 +17035,62 @@ function SalesSection() {
                         React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.04em' }) }, 'GRAND TOTAL'),
                         React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '14px', color: '#2A6B1A', marginTop: 2 } }, '$' + grandTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })))),
 
-                // Invoice cards
+                // Sort + expand-all controls row
+                React.createElement('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' } },
+                    React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontWeight: 700 }) }, 'Sort by order #:'),
+                    React.createElement('button', { type: 'button',
+                        onClick: function() { setOrderSortDir(function(d) { return d === 'asc' ? 'desc' : 'asc'; }); },
+                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '4px 10px', cursor: 'pointer',
+                            background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) },
+                        orderSortDir === 'asc' ? '\u2191 1 \u2192 10 (asc)' : '\u2193 10 \u2192 1 (desc)'),
+                    React.createElement('span', { style: { flex: 1 } }),
+                    React.createElement('button', { type: 'button',
+                        onClick: function() {
+                            var allOpen = orderGroups.every(function(g) { return expandedOrders[g._key]; });
+                            if (allOpen) { setExpandedOrders({}); }
+                            else {
+                                var next = {}; orderGroups.forEach(function(g) { next[g._key] = true; }); setExpandedOrders(next);
+                            }
+                        },
+                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '4px 10px', cursor: 'pointer',
+                            background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) },
+                        (function() {
+                            var allOpen = orderGroups.every(function(g) { return expandedOrders[g._key]; });
+                            return allOpen ? 'Collapse all' : 'Expand all';
+                        })())),
+
+                // Invoice cards (accordion — collapsed by default)
                 orderGroups.map(function(g) {
                     var orderLabel = g.orderNumber || 'Untagged sale' + (g.listings.length > 1 ? 's' : '');
                     var orderKey = g._key;
                     var markets = Object.keys(g.marketplaces);
                     var unitCount = g.listings.reduce(function(a, s) { return a + getUnitStatuses(s).Sold; }, 0);
+                    var isExpanded = !!expandedOrders[orderKey];
                     return React.createElement('div', { key: orderKey, style: { background: theme.cardBg, border: '3px solid ' + theme.cardBorder, boxShadow: '4px 4px 0 ' + theme.cardBorder } },
-                        // Invoice header
-                        React.createElement('div', { style: { padding: '10px 14px', borderBottom: '2px dashed ' + theme.sep, background: theme.rowBg, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 } },
-                            React.createElement('div', { style: { minWidth: 0 } },
-                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.05em' }) }, 'ORDER'),
-                                React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '13px', color: theme.txtP, marginTop: 2 } }, '#' + orderLabel),
-                                g.date && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 4 }) }, '\uD83D\uDCC5 ' + g.date),
-                                markets.length > 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, '\uD83C\uDFEA ' + markets.join(', ')),
-                                g.buyer && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, '\uD83D\uDC64 ' + g.buyer)),
-                            React.createElement('div', { style: { textAlign: 'right' } },
+                        // Invoice header (clickable — toggles accordion)
+                        React.createElement('button', { type: 'button',
+                            onClick: function() { setExpandedOrders(function(prev) { var n = Object.assign({}, prev); n[orderKey] = !n[orderKey]; return n; }); },
+                            style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8,
+                                padding: '10px 14px', width: '100%', border: 'none', background: isExpanded ? theme.rowBg : 'transparent',
+                                borderBottom: isExpanded ? '2px dashed ' + theme.sep : 'none', cursor: 'pointer', textAlign: 'left' } },
+                            React.createElement('div', { style: { minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 } },
+                                React.createElement('span', { style: { fontSize: 14, color: theme.txtS, flexShrink: 0, transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', marginTop: 4 } }, '\u25B6'),
+                                React.createElement('div', { style: { minWidth: 0 } },
+                                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.05em' }) }, 'ORDER'),
+                                    React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '13px', color: theme.txtP, marginTop: 2 } }, '#' + orderLabel),
+                                    // Only show full meta when expanded to keep collapsed header slim
+                                    isExpanded && g.date && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 4 }) }, '\uD83D\uDCC5 ' + g.date),
+                                    isExpanded && markets.length > 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, '\uD83C\uDFEA ' + markets.join(', ')),
+                                    isExpanded && g.buyer && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, '\uD83D\uDC64 ' + g.buyer),
+                                    // Collapsed — compact one-line meta
+                                    !isExpanded && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 3 }) },
+                                        [g.date && ('\uD83D\uDCC5 ' + g.date), markets.length > 0 && ('\uD83C\uDFEA ' + markets.join(', '))].filter(Boolean).join('  \u2022  ')))),
+                            React.createElement('div', { style: { textAlign: 'right', flexShrink: 0 } },
                                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.05em' }) }, 'TOTAL'),
                                 React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '15px', color: '#2A6B1A', marginTop: 2 } }, '$' + g.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })),
                                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, unitCount + ' unit' + (unitCount !== 1 ? 's' : '')))),
-                        // Line items table
-                        React.createElement('div', { style: { width: '100%', overflowX: 'auto' } },
+                        // Line items table (expanded only)
+                        isExpanded && React.createElement('div', { style: { width: '100%', overflowX: 'auto' } },
                             React.createElement('table', { style: { width: '100%', minWidth: isSmall ? 360 : 'auto', borderCollapse: 'collapse' } },
                                 React.createElement('thead', null,
                                     React.createElement('tr', null,
@@ -17075,8 +17113,8 @@ function SalesSection() {
                                             React.createElement('td', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtP, padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', borderBottom: idx < g.listings.length - 1 ? '1px solid ' + theme.sep : 'none' } }, '$' + unit.toFixed(2)),
                                             React.createElement('td', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#2A6B1A', padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 900, borderBottom: idx < g.listings.length - 1 ? '1px solid ' + theme.sep : 'none' } }, '$' + line.toFixed(2)));
                                     })))),
-                        // Footer — actions
-                        React.createElement('div', { style: { padding: '8px 14px', borderTop: '2px dashed ' + theme.sep, background: 'rgba(0,0,0,0.02)', display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' } },
+                        // Footer — actions (expanded only)
+                        isExpanded && React.createElement('div', { style: { padding: '8px 14px', borderTop: '2px dashed ' + theme.sep, background: 'rgba(0,0,0,0.02)', display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' } },
                             g.listings.some(function(s) { return s.listingUrl; }) && g.listings.filter(function(s) { return s.listingUrl; }).map(function(s, i) {
                                 return React.createElement('a', { key: 'u' + i, href: s.listingUrl, target: '_blank', rel: 'noopener noreferrer',
                                     style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px',
