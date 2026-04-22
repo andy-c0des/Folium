@@ -7333,14 +7333,17 @@ function WateringScreen() {
                         }, label)
                     )
                 ),
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: '#2C1000', marginBottom: 6 }) }, 'Search plants to select:'),
                 React.createElement('input', { value: manualQ, onChange: e => setManualQ(e.target.value),
                     className: 'w-full border-4 border-[#3C1800] p-2 input-depth mb-2',
                     style: Object.assign({}, pxS, { fontSize: '14px', color: '#2C1000' }),
-                    placeholder: 'Search by name, genus, UID\u2026' }),
-                !manualQ && !subPreset && !locFilter && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A', opacity: 0.7 }) }, 'Type to search or select a Medium filter above\u2026'),
-                !manualQ && (subPreset || locFilter) && manualFilteredPlants.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A' }) }, 'No plants match this filter.'),
-                manualQ && manualResults.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#6A4A2A' }) }, 'No matches.'),
+                    placeholder: '\uD83D\uDD0D Search plants by name, genus, or UID\u2026' }),
+                // Consolidated status line
+                (function() {
+                    if (!manualQ && !subPreset && !locFilter) return React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#6A4A2A', opacity: 0.7, fontStyle: 'italic', marginBottom: 6 }) }, 'Search above, or filter by Location/Medium to get started.');
+                    if (!manualQ && (subPreset || locFilter) && manualFilteredPlants.length === 0) return React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#6A4A2A', marginBottom: 6 }) }, 'No plants match this filter.');
+                    if (manualQ && manualResults.length === 0) return React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#6A4A2A', marginBottom: 6 }) }, 'No matches for \u201C' + manualQ + '\u201D.');
+                    return null;
+                })(),
                 (function() { var list = manualQ ? manualResults : manualFilteredPlants; return list.length > 0 ? React.createElement('div', { style: { display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' } },
                     React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '12px', color: '#6A4A2A' }) }, list.length + ' plant' + (list.length !== 1 ? 's' : '')),
                     React.createElement('button', { type: 'button', onClick: () => selectAll(list), className: 'underline', style: Object.assign({}, pxS, { fontSize: '12px', color: '#2C1000', fontWeight: 900 }) }, 'Select All'),
@@ -9908,10 +9911,9 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 React.createElement("button", { type: "button", onClick: e => { e.stopPropagation(); isEditing ? closeEdit() : openEdit(p); }, className: "px-3 py-2 border-4 active:scale-[0.98]", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: isEditing ? theme.btnP.text : theme.txtP, fontSize: '12px', borderColor: isEditing ? theme.btnP.border : theme.sep, background: isEditing ? theme.btnP.bg : theme.cardBg }), title: isEditing ? "Close" : "Edit" }, isEditing ? "\u2715" : "\u270F\uFE0F")));
                     })
                 )) : (React.createElement(React.Fragment, null,
-                    React.createElement("div", { className: "mb-3" },
-                        React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: '700', color: theme.txtP, marginBottom: '8px' }) }, "Browse by location:"),
-                        React.createElement("div", { className: "flex flex-wrap gap-2" },
-                            React.createElement(LocChip, { id: "__any__", label: "\uD83C\uDF0D Any", active: isAny, onClick: () => toggleLoc('__any__') }),
+                    React.createElement("div", { className: "mb-2" },
+                        React.createElement("div", { className: "flex flex-wrap gap-1" },
+                            React.createElement(LocChip, { id: "__any__", label: "\uD83C\uDF0D All", active: isAny, onClick: () => toggleLoc('__any__') }),
                             (locations || []).map(loc => (React.createElement(LocChip, { key: loc, id: loc, label: loc, active: !isAny && selectedLocs.includes(loc), onClick: () => toggleLoc(loc) }))),
                             addingLoc ? (React.createElement("div", { className: "flex items-center gap-1" },
                                 React.createElement("input", { autoFocus: true, value: newLocName, onChange: e => setNewLocName(e.target.value), onKeyDown: e => { if (e.key === 'Enter')
@@ -9921,20 +9923,20 @@ function MyPlantsScreen({ openTab, prefill }) {
                                     } }, placeholder: "Room name...", className: "border-4  px-3 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, width: 120, color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
                                 React.createElement("button", { type: "button", onClick: handleAddLocation, className: "btn-press  border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, borderColor: theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text }) }, "\u2713"),
                                 React.createElement("button", { type: "button", onClick: () => { setAddingLoc(false); setNewLocName(''); }, className: "btn-press  border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, borderColor: theme.sep, background: theme.cardBg, color: theme.txtS }) }, "\u2715"))) : (React.createElement("button", { type: "button", onClick: () => setAddingLoc(true), className: "btn-press  border-4 px-3 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, borderColor: theme.sep, background: 'transparent', color: theme.txtS }) }, "\uFF0B Add"))),
-                        selectedLocs.length > 1 && !isAny && (React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.btnP.bg, marginTop: '6px' }) },
-                            selectedLocs.length,
-                            " locations selected"))),
-                    hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-3" },
-                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 4 }) }, plants.length + ' plants loaded · ' + filteredPlants.length + ' showing'),
+                        selectedLocs.length > 1 && !isAny && (React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.btnP.bg, marginLeft: 6, fontStyle: 'italic' }) },
+                            selectedLocs.length + ' selected'))),
+                    hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-2", style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
                         React.createElement("select", {
                             value: substrateFilter,
                             onChange: function(e) { setSubstrateFilter(e.target.value); },
-                            className: "w-full border-4 p-2",
-                            style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg })
+                            className: "border-2 px-2 py-1",
+                            style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, flex: 1, minWidth: 120 })
                         },
-                            React.createElement("option", { value: "" }, "Filter by substrate..."),
+                            React.createElement("option", { value: "" }, "All substrates"),
                             substrateOptions.map(function(s) { return React.createElement("option", { key: s, value: s }, s); })
-                        ))),
+                        ),
+                        React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) },
+                            filteredPlants.length + ' / ' + plants.length))),
                     loading && React.createElement("div", { className: "space-y-2" },
                         Array.from({ length: 6 }).map(function(_, i) {
                             return React.createElement("div", { key: 'skel-' + i, className: "flex items-center gap-2 border-2 p-2", style: { borderColor: '#7A4A1A', opacity: 1 - i * 0.1 } },
@@ -12140,17 +12142,21 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             formStatus && React.createElement("div", { className: "mb-3" }, React.createElement(StatusMessage, { type: formStatus.type, message: formStatus.message })),
             React.createElement("div", { style: { marginBottom: 8 } },
                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 4 }) }, '\uD83C\uDF3F SCION (top / bud)'),
-                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 6 } },
-                    React.createElement("input", { value: form.scionGenus, onChange: e => setForm(f => Object.assign({}, f, { scionGenus: e.target.value })), placeholder: 'Genus *', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) }),
-                    React.createElement("input", { value: form.scionSpecies, onChange: e => setForm(f => Object.assign({}, f, { scionSpecies: e.target.value })), placeholder: 'species', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })
-                )
+                React.createElement(GenusAutocompleteInput, {
+                    genusValue: form.scionGenus, speciesValue: form.scionSpecies,
+                    onGenusChange: v => setForm(f => Object.assign({}, f, { scionGenus: v })),
+                    onSpeciesChange: v => setForm(f => Object.assign({}, f, { scionSpecies: v })),
+                    theme: theme, pxS: pxS, genusPlaceholder: 'Genus *', speciesPlaceholder: 'species'
+                })
             ),
             React.createElement("div", { style: { marginBottom: 8 } },
                 React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 4 }) }, '\uD83E\uDEA8 ROOTSTOCK (base / host)'),
-                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 6 } },
-                    React.createElement("input", { value: form.rootstockGenus, onChange: e => setForm(f => Object.assign({}, f, { rootstockGenus: e.target.value })), placeholder: 'Genus', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) }),
-                    React.createElement("input", { value: form.rootstockSpecies, onChange: e => setForm(f => Object.assign({}, f, { rootstockSpecies: e.target.value })), placeholder: 'species', className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.cardBg }) })
-                )
+                React.createElement(GenusAutocompleteInput, {
+                    genusValue: form.rootstockGenus, speciesValue: form.rootstockSpecies,
+                    onGenusChange: v => setForm(f => Object.assign({}, f, { rootstockGenus: v })),
+                    onSpeciesChange: v => setForm(f => Object.assign({}, f, { rootstockSpecies: v })),
+                    theme: theme, pxS: pxS, genusPlaceholder: 'Genus', speciesPlaceholder: 'species'
+                })
             ),
             React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 6, marginBottom: 8 } },
                 React.createElement("div", null,
@@ -12234,20 +12240,24 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                                     graft.rootstockUID && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'Rootstock: ', React.createElement("button", { type: "button", onClick: () => navigate('plant', { uid: graft.rootstockUID }), style: Object.assign({}, pxS, { fontSize: '12px', color: theme.btnP.bg, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }) }, rootstockPlantName || graft.rootstockUID)))
                             ),
                             isEditing && React.createElement("div", { style: { padding: 10 } },
-                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
+                                React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 } },
                                     React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, '\uD83C\uDF3F SCION GENUS'),
-                                        React.createElement("input", { value: ef.scionGenus || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { scionGenus: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, '\uD83C\uDF3F SCION'),
+                                        React.createElement(GenusAutocompleteInput, {
+                                            genusValue: ef.scionGenus || '', speciesValue: ef.scionSpecies || '',
+                                            onGenusChange: v => setEditGraftForm(p => Object.assign({}, p, { scionGenus: v })),
+                                            onSpeciesChange: v => setEditGraftForm(p => Object.assign({}, p, { scionSpecies: v })),
+                                            theme: theme, pxS: pxS, genusPlaceholder: 'Genus', speciesPlaceholder: 'species'
+                                        })),
                                     React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#2E6A18', marginBottom: 3 }) }, 'SCION SPECIES'),
-                                        React.createElement("input", { value: ef.scionSpecies || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { scionSpecies: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
+                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, '\uD83E\uDEA8 ROOTSTOCK'),
+                                        React.createElement(GenusAutocompleteInput, {
+                                            genusValue: ef.rootstockGenus || '', speciesValue: ef.rootstockSpecies || '',
+                                            onGenusChange: v => setEditGraftForm(p => Object.assign({}, p, { rootstockGenus: v })),
+                                            onSpeciesChange: v => setEditGraftForm(p => Object.assign({}, p, { rootstockSpecies: v })),
+                                            theme: theme, pxS: pxS, genusPlaceholder: 'Genus', speciesPlaceholder: 'species'
+                                        })),
                                     React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, '\uD83E\uDEA8 ROOTSTOCK GENUS'),
-                                        React.createElement("input", { value: ef.rootstockGenus || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { rootstockGenus: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                    React.createElement("div", null,
-                                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: '#5A3808', marginBottom: 3 }) }, 'ROOTSTOCK SPECIES'),
-                                        React.createElement("input", { value: ef.rootstockSpecies || '', onChange: e => setEditGraftForm(p => Object.assign({}, p, { rootstockSpecies: e.target.value })), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) })),
-                                    React.createElement("div", { style: { gridColumn: 'span 2' } },
                                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtS, marginBottom: 3 }) }, 'TECHNIQUE'),
                                         React.createElement("select", { value: ef.graftTechnique || 'Approach graft', onChange: e => setEditGraftForm(p => Object.assign({}, p, { graftTechnique: e.target.value })), className: "w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', borderColor: theme.cardBorder, color: theme.txtP, background: theme.rowBg }) },
                                             GRAFT_TECHNIQUES.map(t => React.createElement("option", { key: t, value: t }, t))))
@@ -13796,65 +13806,73 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 boxShadow: '0 3px 0 #1A3008',
                             })
                         }, '\uD83D\uDCDD Save Note'),
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+                        // Primary action — Log Progress (emphasized, full width)
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: () => { window.scrollTo(0, 0); setLogProgress(true); },
+                            className: "btn-press w-full hover-lift",
+                            style: {
+                                fontFamily: "'Press Start 2P',cursive", fontSize: '12px',
+                                padding: '12px 4px', background: '#3A6B28', color: '#E8FFD0',
+                                border: '3px solid #2C1200', outline: '2px solid rgba(255,255,255,0.15)', outlineOffset: '-5px',
+                                boxShadow: '0 4px 0 #1A3008, 0 5px 0 rgba(0,0,0,0.4)',
+                                letterSpacing: '0.05em', textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            }
+                        },
+                            React.createElement('span', { style: { fontSize: '16px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '📊'),
+                            'LOG PROGRESS UPDATE'
+                        ),
+                        // Secondary actions — 2-col grid (Repot + Edit + List for Sale)
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 6, marginTop: 6 } },
                             React.createElement("button", {
                                 type: "button",
                                 onClick: () => { window.scrollTo(0, 0); setRepotOpen(v => !v); setRepotPot(plant.potSize || ''); setRepotSub(plant.substrate || plant.medium || ''); },
                                 className: "btn-press hover-lift",
                                 style: {
-                                    fontFamily: "'Press Start 2P',cursive", fontSize: '14px',
-                                    padding: '10px 4px', background: '#3A6B28', color: '#E8FFD0',
-                                    border: '3px solid #2C1200', outline: '2px solid rgba(255,255,255,0.15)', outlineOffset: '-5px',
-                                    boxShadow: '0 4px 0 #1A3008, 0 5px 0 rgba(0,0,0,0.4)',
-                                    textTransform: 'uppercase', letterSpacing: '0.05em', textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                                    fontFamily: "'Press Start 2P',cursive", fontSize: '11px',
+                                    padding: '10px 4px', background: theme.rowBg, color: theme.txtP,
+                                    border: '3px solid ' + theme.cardBorder, outline: '2px solid rgba(255,255,255,0.1)', outlineOffset: '-5px',
+                                    boxShadow: '0 3px 0 ' + theme.cardBorder,
+                                    letterSpacing: '0.05em',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                                 }
                             },
-                                React.createElement('span', { style: { fontSize: '18px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '🪴'),
+                                React.createElement('span', { style: { fontSize: '16px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '🪴'),
                                 'REPOT'
                             ),
                             React.createElement("button", {
-                                type: "button", onClick: function(e) { e.preventDefault(); e.stopPropagation(); console.log('[PlantOS] EDIT btn clicked, plant=', !!plant); if (plant) { openEdit(plant); } else { console.error('[PlantOS] EDIT btn: plant is null'); } },
+                                type: "button", onClick: function(e) { e.preventDefault(); e.stopPropagation(); if (plant) openEdit(plant); },
                                 className: "btn-press hover-lift",
                                 style: {
-                                    fontFamily: "'Press Start 2P',cursive", fontSize: '14px',
-                                    padding: '10px 4px', background: '#8A6020', color: '#FFF4D8',
-                                    border: '3px solid #2C1200', outline: '2px solid rgba(255,255,255,0.15)', outlineOffset: '-5px',
-                                    boxShadow: '0 4px 0 #3C2008, 0 5px 0 rgba(0,0,0,0.4)',
-                                    textTransform: 'uppercase', letterSpacing: '0.05em', textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                                    fontFamily: "'Press Start 2P',cursive", fontSize: '11px',
+                                    padding: '10px 4px', background: theme.rowBg, color: theme.txtP,
+                                    border: '3px solid ' + theme.cardBorder, outline: '2px solid rgba(255,255,255,0.1)', outlineOffset: '-5px',
+                                    boxShadow: '0 3px 0 ' + theme.cardBorder,
+                                    letterSpacing: '0.05em',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                                 }
                             },
-                                React.createElement('span', { style: { fontSize: '18px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '\u270F\uFE0F'),
+                                React.createElement('span', { style: { fontSize: '16px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '\u270F\uFE0F'),
                                 'EDIT'
+                            ),
+                            React.createElement("button", {
+                                type: "button",
+                                onClick: () => { window.scrollTo(0, 0); setSaleListOpen(true); },
+                                className: "btn-press hover-lift",
+                                style: {
+                                    fontFamily: "'Press Start 2P',cursive", fontSize: '11px',
+                                    padding: '10px 4px', background: 'rgba(200,168,75,0.15)', color: theme.txtP,
+                                    border: '3px solid #8B7A30', outline: '2px solid rgba(255,255,255,0.1)', outlineOffset: '-5px',
+                                    boxShadow: '0 3px 0 #5A4A10',
+                                    letterSpacing: '0.05em', gridColumn: isSmall ? 'span 2' : 'auto',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                                }
+                            },
+                                React.createElement('span', { style: { fontSize: '16px', lineHeight: 1, fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" } }, '💰'),
+                                'LIST FOR SALE'
                             )
-                        ),
-                        React.createElement("button", {
-                            type: "button",
-                            onClick: () => { window.scrollTo(0, 0); setLogProgress(true); },
-                            className: "btn-press w-full",
-                            style: Object.assign({}, pxS, {
-                                fontWeight: 900, fontSize: '13px', padding: '10px 4px', marginTop: 6,
-                                border: '3px solid #2A6B1A',
-                                background: theme.rowBg,
-                                color: theme.txtP,
-                                boxShadow: '0 3px 0 #0A1800',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                            })
-                        }, '\uD83D\uDCCA Log Progress Update'),
-                        React.createElement("button", {
-                            type: "button",
-                            onClick: () => { window.scrollTo(0, 0); setSaleListOpen(true); },
-                            className: "btn-press w-full",
-                            style: Object.assign({}, pxS, {
-                                fontWeight: 900, fontSize: '13px', padding: '10px 4px', marginTop: 6,
-                                border: '3px solid #8B7A30',
-                                background: 'rgba(200,168,75,0.15)',
-                                color: theme.txtP,
-                                boxShadow: '0 3px 0 #5A4A10',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                            })
-                        }, '\uD83D\uDCB0 List for Sale')
+                        )
                     )), repotOpen && (React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
@@ -16546,6 +16564,10 @@ function SalesSection() {
     const [sortKey, setSortKey] = useState('sold');
     const [pickerOpen, setPickerOpen] = useState(false);
     const [pickerQuery, setPickerQuery] = useState('');
+    const [pickerManualMode, setPickerManualMode] = useState(false);
+    const [manualGenus, setManualGenus] = useState('');
+    const [manualSpecies, setManualSpecies] = useState('');
+    const [manualNickname, setManualNickname] = useState('');
     const [pickedPlant, setPickedPlant] = useState(null);
     const [sortDir, setSortDir] = useState('desc');
 
@@ -17028,20 +17050,47 @@ function SalesSection() {
                                 React.createElement('div', { style: { fontSize: '13px', fontWeight: 700, color: theme.txtP } }, name),
                                 sub && React.createElement('div', { style: { fontSize: '11px', color: theme.txtS, opacity: 0.7, marginTop: 1 } }, sub));
                         })),
-                    React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 12 } },
+                    // Manual entry section — expanded inline with genus autocomplete
+                    !pickerManualMode && React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 12 } },
                         React.createElement('button', { type: 'button',
-                            onClick: () => {
-                                var name = window.prompt('Enter the plant / product name for this listing:', pickerQuery || '');
-                                if (!name || !name.trim()) return;
-                                var trimmed = name.trim();
-                                setPickedPlant({ uid: '', nickname: trimmed, primary: trimmed, gs: trimmed, _manual: true });
-                                setPickerOpen(false); setPickerQuery('');
-                            },
+                            onClick: () => { setPickerManualMode(true); setManualNickname(pickerQuery || ''); },
                             style: Object.assign({}, pxS, { flex: 1, fontSize: '12px', fontWeight: 700, padding: '9px', cursor: 'pointer',
-                                background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, 'Skip \u2014 enter manually'),
-                        React.createElement('button', { type: 'button', onClick: () => { setPickerOpen(false); setPickerQuery(''); },
+                                background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '+ Enter plant manually'),
+                        React.createElement('button', { type: 'button', onClick: () => { setPickerOpen(false); setPickerQuery(''); setPickerManualMode(false); },
                             style: Object.assign({}, pxS, { fontSize: '12px', padding: '9px 14px', cursor: 'pointer',
-                                background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) }, 'Cancel'))));
+                                background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) }, 'Cancel')),
+                    pickerManualMode && React.createElement('div', { style: { marginTop: 12, padding: 10, background: theme.rowBg, border: '2px solid ' + theme.cardBorder } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: theme.txtP, marginBottom: 8 }) }, 'New plant for listing'),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 3, fontWeight: 700 }) }, 'Nickname / label (optional)'),
+                        React.createElement('input', { type: 'text', value: manualNickname, onChange: e => setManualNickname(e.target.value),
+                            placeholder: 'e.g. Thai Constellation cutting', style: Object.assign({}, pxS, { width: '100%', boxSizing: 'border-box', fontSize: '13px', padding: '7px 9px', border: '2px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, marginBottom: 8 }) }),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 3, fontWeight: 700 }) }, 'Genus / species'),
+                        React.createElement(GenusAutocompleteInput, {
+                            genusValue: manualGenus, speciesValue: manualSpecies,
+                            onGenusChange: setManualGenus, onSpeciesChange: setManualSpecies,
+                            theme: theme, pxS: pxS, genusPlaceholder: 'Genus', speciesPlaceholder: 'species'
+                        }),
+                        React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 10 } },
+                            React.createElement('button', { type: 'button',
+                                onClick: () => {
+                                    var nick = manualNickname.trim();
+                                    var g = manualGenus.trim();
+                                    var s = manualSpecies.trim();
+                                    var gs = [g, s].filter(Boolean).join(' ');
+                                    var primary = nick || gs || 'New listing';
+                                    if (!nick && !g) { return; } // need at least something
+                                    setPickedPlant({ uid: '', nickname: nick, primary: primary, gs: gs, genus: g, species: s, taxon: s, _manual: true });
+                                    setPickerOpen(false); setPickerQuery(''); setPickerManualMode(false);
+                                    setManualGenus(''); setManualSpecies(''); setManualNickname('');
+                                },
+                                disabled: !manualNickname.trim() && !manualGenus.trim(),
+                                style: Object.assign({}, pxS, { flex: 1, fontSize: '12px', fontWeight: 900, padding: '9px', cursor: (!manualNickname.trim() && !manualGenus.trim()) ? 'default' : 'pointer',
+                                    background: (!manualNickname.trim() && !manualGenus.trim()) ? theme.rowBorder : '#3A8A28',
+                                    color: '#fff', border: '2px solid #2A5A10', opacity: (!manualNickname.trim() && !manualGenus.trim()) ? 0.5 : 1 }) }, 'Continue \u2192'),
+                            React.createElement('button', { type: 'button',
+                                onClick: () => { setPickerManualMode(false); setManualGenus(''); setManualSpecies(''); setManualNickname(''); },
+                                style: Object.assign({}, pxS, { fontSize: '12px', padding: '9px 14px', cursor: 'pointer',
+                                    background: 'transparent', color: theme.txtS, border: '2px solid ' + theme.cardBorder }) }, 'Back')))));
         })(),
 
         // New listing modal (step 2 — opens after plant picked or manual name entered)
