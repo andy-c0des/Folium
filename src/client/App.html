@@ -5605,7 +5605,8 @@ function PlantDataProvider({ children }) {
         sendFriendRequest: function() { return Promise.resolve({ ok: true }); },
         respondFriendRequest: function() { return Promise.resolve({ ok: true }); },
         removeFriend: function() { return Promise.resolve({ ok: true }); },
-        getFriendGarden: function() { return Promise.resolve({ ok: true, friend: null, plants: [], notes: [] }); },
+        getFriendGarden: function() { return Promise.resolve({ ok: true, friend: null, plants: [], notes: [], friendStats: { plantCount: 0, genusCount: 0, photoCount: 0, topGenera: [] } }); },
+        getFriendPlantDetail: function() { return Promise.resolve({ ok: true, plant: null, photos: [], notes: [], friend: null }); },
         getPlantNotesForGarden: function() { return Promise.resolve({ ok: true, notes: [] }); },
         addPlantNote: function() { return Promise.resolve({ ok: true }); },
         getNotesOnMyPlants: function() { return Promise.resolve({ ok: true, notes: [] }); },
@@ -5672,6 +5673,7 @@ function PlantDataProvider({ children }) {
         respondFriendRequest: (friendshipId, action) => gasCall('plantosRespondFriendRequest', friendshipId, action),
         removeFriend: (friendUserId) => gasCall('plantosRemoveFriend', friendUserId),
         getFriendGarden: (friendUserId) => gasCall('plantosGetFriendGarden', friendUserId),
+        getFriendPlantDetail: (friendUserId, plantId) => gasCall('plantosGetFriendPlantDetail', friendUserId, plantId),
         getPlantNotesForGarden: (recipientId) => gasCall('plantosGetPlantNotesForGarden', recipientId),
         addPlantNote: (plantId, recipientId, noteText) => gasCall('plantosAddPlantNote', plantId, recipientId, noteText),
         getNotesOnMyPlants: () => gasCall('plantosGetNotesOnMyPlants'),
@@ -18911,11 +18913,110 @@ function DiaryScreen({ uid, name }) {
                 filter !== 'ALL' && ` (${timeline.length} total)`)))));
 }
 
+// Read-only modal showing full detail for one of a friend's plants.
+// Loaded from plantosGetFriendPlantDetail; shows photo carousel, metadata grid, and note thread.
+function FriendPlantDetailModal(props) {
+    const { detail, loading, photoIdx, setPhotoIdx, noteDraft, setNoteDraft, postNote, onClose, me, theme, isSmall } = props;
+    if (!detail) return null;
+    const plant = detail.plant || {};
+    const photos = detail.photos || [];
+    const notes = detail.notes || [];
+    const friend = detail.friend || {};
+
+    // Fallback to lite-payload thumb if no photos array yet (still loading)
+    const hasPhotos = photos.length > 0;
+    const currentPhoto = hasPhotos ? photos[Math.max(0, Math.min(photoIdx, photos.length - 1))] : null;
+    const fallbackThumb = !hasPhotos && plant.thumbUrl ? plant.thumbUrl : null;
+
+    const displayName = plant.nickname || plant.primary || plant.uid || '';
+    const botanical = [plant.genus, plant.taxon || plant.species].filter(Boolean).join(' ');
+
+    function MetaRow(label, value) {
+        if (!value && value !== 0) return null;
+        return React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid ' + theme.rowBorder, gap: 10 } },
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, textTransform: 'uppercase', letterSpacing: '0.05em' }) }, label),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 700, textAlign: 'right', wordBreak: 'break-word' }) }, String(value)));
+    }
+
+    return React.createElement('div', {
+        onClick: function(e) { if (e.target === e.currentTarget) onClose(); },
+        style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isSmall ? 8 : 20, overflow: 'auto' }
+    },
+        React.createElement('div', { style: {
+            background: theme.cardBg, border: '3px solid ' + theme.cardBorder,
+            maxWidth: 560, width: '100%', maxHeight: '95vh', overflowY: 'auto',
+            boxShadow: '0 0 0 4px rgba(0,0,0,0.4)'
+        }},
+            // Header
+            React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '2px solid ' + theme.rowBorder, background: theme.rowBg, position: 'sticky', top: 0, zIndex: 2 } },
+                React.createElement('div', null,
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP }) }, displayName),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) }, '@' + (friend.username || friend.userId || '?'))),
+                React.createElement('button', { type: 'button', onClick: onClose,
+                    style: Object.assign({}, pxS, { fontSize: '14px', padding: '4px 10px', cursor: 'pointer', background: theme.cardBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, fontWeight: 900 }) }, '✕')
+            ),
+            // Photo carousel
+            React.createElement('div', { style: { position: 'relative', width: '100%', aspectRatio: '4/3', background: '#000', overflow: 'hidden' } },
+                currentPhoto
+                    ? React.createElement('img', { src: currentPhoto.thumbUrl || currentPhoto.viewUrl, alt: displayName, style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' } })
+                    : fallbackThumb
+                        ? React.createElement('img', { src: fallbackThumb, alt: displayName, style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' } })
+                        : React.createElement('div', { style: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '72px' } }, '🌱'),
+                // Carousel arrows
+                hasPhotos && photos.length > 1 && React.createElement(React.Fragment, null,
+                    React.createElement('button', { type: 'button', onClick: function(){ setPhotoIdx((photoIdx - 1 + photos.length) % photos.length); },
+                        style: { position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', fontSize: '18px', fontWeight: 900 } }, '‹'),
+                    React.createElement('button', { type: 'button', onClick: function(){ setPhotoIdx((photoIdx + 1) % photos.length); },
+                        style: { position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', fontSize: '18px', fontWeight: 900 } }, '›'),
+                    React.createElement('div', { style: { position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', fontFamily: "'Pixelify Sans',cursive", fontSize: '11px', background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '2px 8px' } }, (photoIdx + 1) + ' / ' + photos.length)
+                ),
+                loading && React.createElement('div', { style: { position: 'absolute', top: 6, right: 6, fontFamily: "'Pixelify Sans',cursive", fontSize: '11px', background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '2px 8px' } }, 'Loading photos…')
+            ),
+            // Body
+            React.createElement('div', { style: { padding: '12px 14px' } },
+                // Overlap badges
+                (plant.overlapInCollection || plant.overlapInWishlist) && React.createElement('div', { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 } },
+                    plant.overlapInCollection && React.createElement('span', { style: { fontFamily:"'Pixelify Sans',cursive", fontSize: '11px', background: '#1E4A14', color: '#B8E89A', border: '1px solid #3A7A20', padding: '2px 8px' } }, '✅ You have this!'),
+                    plant.overlapInWishlist && React.createElement('span', { style: { fontFamily:"'Pixelify Sans',cursive", fontSize: '11px', background: '#4A3A10', color: '#FFE08A', border: '1px solid #8A6A20', padding: '2px 8px' } }, '⭐ On your wishlist!')),
+                // Botanical name
+                botanical && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontStyle: 'italic', color: theme.txtP, marginBottom: 10 }) }, botanical),
+                // Metadata grid
+                React.createElement('div', { style: { background: theme.rowBg, border: '2px solid ' + theme.rowBorder, padding: '8px 12px', marginBottom: 12 } },
+                    MetaRow('Location', plant.location),
+                    MetaRow('Potted', plant.birthday),
+                    MetaRow('Last watered', plant.lastWatered),
+                    MetaRow('Water every', plant.waterEveryDays ? plant.waterEveryDays + ' days' : ''),
+                    MetaRow('Last fertilized', plant.lastFertilized),
+                    MetaRow('Fertilize every', plant.fertEveryDays || plant.fertilizeEveryDays ? (plant.fertEveryDays || plant.fertilizeEveryDays) + ' days' : ''),
+                    MetaRow('Medium', plant.medium || plant.substrate),
+                    MetaRow('Pot', [plant.potSize, plant.potMaterial, plant.potShape].filter(Boolean).join(' · ')),
+                    MetaRow('Cultivar', plant.cultivar)
+                ),
+                // Notes thread
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, color: theme.txtP, marginBottom: 6 }) }, '💬 Notes (' + notes.length + ')'),
+                notes.length === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 8 }) }, 'No notes yet — leave one below.'),
+                notes.map(function(n, idx) {
+                    return React.createElement('div', { key: String(n.id || idx), style: { padding: '6px 8px', border: '1px solid ' + theme.rowBorder, background: theme.rowBg, marginBottom: 5 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginBottom: 2 }) },
+                            (n.author_id === me ? 'You' : (n.author_id || '?')) + ' · ' + (n.created_at || '').replace('T', ' ').slice(0, 16)),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP }) }, n.note_text || ''));
+                }),
+                React.createElement('div', { className: 'flex gap-2', style: { marginTop: 8 } },
+                    React.createElement('input', { value: noteDraft || '',
+                        onChange: function(e){ setNoteDraft(e.target.value); },
+                        placeholder: 'Leave a note on this plant…', className: 'flex-1 border-2 px-2 py-1',
+                        style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.rowBorder, background: theme.cardBg }) }),
+                    React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: postNote, disabled: !String(noteDraft || '').trim() }, 'Post'))
+            )
+        )
+    );
+}
+
 function FriendsScreen() {
     const { navigate } = useNavigation();
     const theme = useTheme();
     const { isSmall, isDesktop } = useScreenSize();
-    const { listPublicUsers, getFriendsOverview, sendFriendRequest, respondFriendRequest, removeFriend, getFriendGarden, addPlantNote, getNotesOnMyPlants } = usePlantData();
+    const { listPublicUsers, getFriendsOverview, sendFriendRequest, respondFriendRequest, removeFriend, getFriendGarden, getFriendPlantDetail, addPlantNote, getNotesOnMyPlants } = usePlantData();
     const me = (function(){ try { return (localStorage.getItem('plantos_username') || '').toLowerCase(); } catch(e){ return ''; } })();
 
     const [query, setQuery] = React.useState('');
@@ -18925,8 +19026,13 @@ function FriendsScreen() {
     const [friendNotes, setFriendNotes] = React.useState([]);
     const [status, setStatus] = React.useState(null);
     const [visiting, setVisiting] = React.useState(null);
-    const [garden, setGarden] = React.useState({ friend: null, plants: [], notes: [] });
+    const [garden, setGarden] = React.useState({ friend: null, plants: [], notes: [], friendStats: null });
     const [noteDrafts, setNoteDrafts] = React.useState({});
+    // Selected plant for the read-only detail modal (holds { plant, photos, notes, friend } from getFriendPlantDetail)
+    const [detail, setDetail] = React.useState(null);
+    const [detailLoading, setDetailLoading] = React.useState(false);
+    const [detailPhotoIdx, setDetailPhotoIdx] = React.useState(0);
+    const [detailNoteDraft, setDetailNoteDraft] = React.useState('');
 
     const [refreshing, setRefreshing] = React.useState(false);
     const [lastRefreshAt, setLastRefreshAt] = React.useState(null);
@@ -18972,10 +19078,56 @@ function FriendsScreen() {
         setVisiting(userId);
         try {
             const res = await getFriendGarden(userId);
-            setGarden({ friend: (res && res.friend) || null, plants: (res && res.plants) || [], notes: (res && res.notes) || [] });
+            setGarden({
+                friend: (res && res.friend) || null,
+                plants: (res && res.plants) || [],
+                notes: (res && res.notes) || [],
+                friendStats: (res && res.friendStats) || null
+            });
         } catch (e) {
             setStatus({ type: 'error', message: e && e.message ? e.message : 'Failed to load garden' });
         } finally { setVisiting(null); }
+    }
+
+    async function openPlantDetail(plant) {
+        if (!garden.friend || !plant || !plant.uid) return;
+        setDetailLoading(true);
+        setDetail({ plant: plant, photos: [], notes: [], friend: garden.friend, _stub: true }); // show modal immediately with lite data
+        setDetailPhotoIdx(0);
+        setDetailNoteDraft('');
+        try {
+            const res = await getFriendPlantDetail(garden.friend.userId, plant.uid);
+            if (res && res.ok) {
+                setDetail({
+                    plant: res.plant || plant,
+                    photos: res.photos || [],
+                    notes: res.notes || [],
+                    friend: res.friend || garden.friend
+                });
+            } else {
+                setStatus({ type: 'error', message: (res && res.error) || 'Could not load plant detail' });
+            }
+        } catch (e) {
+            setStatus({ type: 'error', message: e && e.message ? e.message : 'Could not load plant detail' });
+        } finally { setDetailLoading(false); }
+    }
+
+    function closePlantDetail() { setDetail(null); setDetailPhotoIdx(0); setDetailNoteDraft(''); }
+
+    async function postDetailNote() {
+        if (!detail || !detail.plant || !detail.friend) return;
+        const txt = String(detailNoteDraft || '').trim();
+        if (!txt) return;
+        try {
+            const res = await addPlantNote(detail.plant.uid, detail.friend.userId, txt);
+            if (res && res.ok === false) { setStatus({ type: 'error', message: res.error || 'Could not post note' }); return; }
+            setDetailNoteDraft('');
+            // Refresh detail notes
+            const fresh = await getFriendPlantDetail(detail.friend.userId, detail.plant.uid);
+            if (fresh && fresh.ok) setDetail(prev => Object.assign({}, prev, { notes: fresh.notes || [] }));
+        } catch (e) {
+            setStatus({ type: 'error', message: e && e.message ? e.message : 'Could not post note' });
+        }
     }
 
     async function leaveNote(plant) {
@@ -19106,34 +19258,99 @@ function FriendsScreen() {
                         React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP }) }, n.note_text || ''));
                 })
             ),
-            garden.friend && React.createElement('div', { style: { marginTop: 18, borderTop: '3px solid ' + theme.cardBorder, paddingTop: 12 } },
-                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtP, marginBottom: 8 }) }, '🌱 ' + (garden.friend.username || garden.friend.userId) + "'s Garden"),
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 8 }) }, 'Read-only view. You can leave notes, but cannot edit plants.'),
-                (garden.plants || []).map(function(p) {
-                    const pNotes = notesForPlant(p.uid);
-                    return React.createElement('div', { key: p.uid, style: { border: '2px solid ' + theme.rowBorder, background: theme.rowBg, padding: '9px 10px', marginBottom: 8 } },
-                        React.createElement('div', { style: { display:'flex', justifyContent:'space-between', gap:8, alignItems:'center' } },
+            garden.friend && (function() {
+                const stats = garden.friendStats || { plantCount: (garden.plants||[]).length, genusCount: 0, photoCount: 0, topGenera: [] };
+                const gridCols = isSmall ? 'repeat(2, 1fr)' : (isDesktop ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)');
+                return React.createElement('div', { style: { marginTop: 18, borderTop: '3px solid ' + theme.cardBorder, paddingTop: 12 } },
+                    // ---------- GARDEN HEADER BANNER ----------
+                    React.createElement('div', { style: {
+                        background: 'linear-gradient(135deg, ' + theme.rowBg + ' 0%, ' + theme.cardBg + ' 100%)',
+                        border: '3px solid ' + theme.cardBorder,
+                        padding: isSmall ? '10px 12px' : '14px 16px',
+                        marginBottom: 12,
+                        position: 'relative'
+                    } },
+                        React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' } },
                             React.createElement('div', null,
-                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize:'13px', fontWeight:900, color: theme.txtP }) }, p.nickname || p.primary || p.uid),
-                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize:'12px', color: theme.txtS }) }, [p.genus, p.taxon || p.species].filter(Boolean).join(' '))),
-                            React.createElement('div', { style: { display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end' } },
-                                p.overlapInCollection && React.createElement('span', { style: { fontFamily:"'Pixelify Sans',cursive", fontSize:'11px', background:'#1E4A14', color:'#B8E89A', border:'1px solid #3A7A20', padding:'2px 6px' } }, '✅ You have this!'),
-                                p.overlapInWishlist && React.createElement('span', { style: { fontFamily:"'Pixelify Sans',cursive", fontSize:'11px', background:'#4A3A10', color:'#FFE08A', border:'1px solid #8A6A20', padding:'2px 6px' } }, '⭐ On your wishlist!')
-                            )
+                                React.createElement('div', { style: Object.assign({}, px8, { fontSize: isSmall ? '10px' : '12px', color: theme.txtP, marginBottom: 6 }) },
+                                    '🌱 ' + (garden.friend.username || garden.friend.userId) + "'s Garden"),
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
+                                    stats.plantCount + ' plant' + (stats.plantCount === 1 ? '' : 's') +
+                                    '  ·  ' + stats.genusCount + ' gen' + (stats.genusCount === 1 ? 'us' : 'era') +
+                                    '  ·  ' + stats.photoCount + ' 📷')
+                            ),
+                            React.createElement('button', { type: 'button',
+                                onClick: function() { setGarden({ friend: null, plants: [], notes: [], friendStats: null }); closePlantDetail(); },
+                                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '6px 12px', cursor: 'pointer', background: theme.cardBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '← Back')
                         ),
-                        React.createElement('div', { style: { marginTop: 8 } },
-                            pNotes.slice(0, 5).map(function(n, idx) {
-                                return React.createElement('div', { key: String(n.id || idx), style: { fontFamily:"'Pixelify Sans',cursive", fontSize:'12px', color: theme.txtS, marginBottom: 3 } },
-                                    (n.author_id === me ? 'You' : (n.author_id || '?')) + ' · ' + (n.created_at || '').replace('T', ' ').slice(0, 16) + ' — ' + (n.note_text || ''));
-                            }),
-                            React.createElement('div', { className: 'flex gap-2', style: { marginTop: 6 } },
-                                React.createElement('input', { value: noteDrafts[p.uid] || '', onChange: function(e){ setNoteDrafts(prev => Object.assign({}, prev, { [p.uid]: e.target.value })); }, placeholder: 'Leave a note on this plant…', className: 'flex-1 border-2 px-2 py-1', style: Object.assign({}, pxS, { fontSize:'12px', color:theme.txtP, borderColor: theme.rowBorder, background: theme.cardBg }) }),
-                                React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: function(){ leaveNote(p); }, disabled: !String(noteDrafts[p.uid]||'').trim() }, 'Post')
-                            )
-                        )
-                    );
-                })
-            )
+                        (stats.topGenera || []).length > 0 && React.createElement('div', { style: { marginTop: 10, display: 'flex', gap: 5, flexWrap: 'wrap' } },
+                            stats.topGenera.map(function(g) {
+                                return React.createElement('span', { key: g.genus, style: {
+                                    fontFamily: "'Pixelify Sans',cursive", fontSize: '11px',
+                                    background: theme.btnP.bg, color: theme.btnP.fg,
+                                    border: '1px solid ' + theme.cardBorder, padding: '2px 8px', fontWeight: 700
+                                } }, g.genus + ' ×' + g.count);
+                            }))
+                    ),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 10 }) },
+                        'Read-only view. Tap a plant to see details and leave notes.'),
+                    // ---------- PHOTO GRID ----------
+                    (garden.plants || []).length === 0
+                        ? React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, padding: '12px', textAlign: 'center', border: '2px dashed ' + theme.rowBorder }) }, 'This friend has not added any plants yet.')
+                        : React.createElement('div', { style: { display: 'grid', gridTemplateColumns: gridCols, gap: isSmall ? 8 : 12 } },
+                            (garden.plants || []).map(function(p) {
+                                const pNotes = notesForPlant(p.uid);
+                                const displayName = p.nickname || p.primary || p.uid;
+                                const botanical = [p.genus, p.taxon || p.species].filter(Boolean).join(' ');
+                                return React.createElement('div', { key: p.uid,
+                                    onClick: function() { openPlantDetail(p); },
+                                    style: {
+                                        border: '2px solid ' + theme.cardBorder, background: theme.cardBg,
+                                        cursor: 'pointer', overflow: 'hidden',
+                                        display: 'flex', flexDirection: 'column',
+                                        transition: 'transform 0.1s'
+                                    },
+                                    onMouseDown: function(e){ e.currentTarget.style.transform='scale(0.98)'; },
+                                    onMouseUp: function(e){ e.currentTarget.style.transform='scale(1)'; },
+                                    onMouseLeave: function(e){ e.currentTarget.style.transform='scale(1)'; }
+                                },
+                                    // Thumbnail square
+                                    React.createElement('div', { style: { width: '100%', aspectRatio: '1/1', background: theme.rowBg, position: 'relative', overflow: 'hidden', borderBottom: '2px solid ' + theme.rowBorder } },
+                                        p.thumbUrl
+                                            ? React.createElement('img', { src: p.thumbUrl, alt: displayName, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' }, onError: function(e){ e.target.style.display = 'none'; } })
+                                            : React.createElement('div', { style: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '42px' } }, '🌱'),
+                                        // Badges (top-right)
+                                        (p.overlapInCollection || p.overlapInWishlist) && React.createElement('div', { style: { position: 'absolute', top: 4, right: 4, display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' } },
+                                            p.overlapInCollection && React.createElement('span', { title: 'You have this', style: { fontFamily:"'Pixelify Sans',cursive", fontSize: '10px', background: '#1E4A14', color: '#B8E89A', border: '1px solid #3A7A20', padding: '1px 5px' } }, '✅'),
+                                            p.overlapInWishlist && React.createElement('span', { title: 'On your wishlist', style: { fontFamily:"'Pixelify Sans',cursive", fontSize: '10px', background: '#4A3A10', color: '#FFE08A', border: '1px solid #8A6A20', padding: '1px 5px' } }, '⭐')),
+                                        // Note count (bottom-right)
+                                        pNotes.length > 0 && React.createElement('div', { style: { position: 'absolute', bottom: 4, right: 4, fontFamily: "'Pixelify Sans',cursive", fontSize: '10px', background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '1px 6px' } }, '💬 ' + pNotes.length)
+                                    ),
+                                    // Info strip
+                                    React.createElement('div', { style: { padding: '6px 8px' } },
+                                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isSmall ? '12px' : '13px', fontWeight: 900, color: theme.txtP, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }) }, displayName),
+                                        botanical && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }) }, botanical),
+                                        p.location && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 2 }) }, '📍 ' + p.location)
+                                    )
+                                );
+                            })
+                        ),
+                    // ---------- DETAIL MODAL ----------
+                    detail && React.createElement(FriendPlantDetailModal, {
+                        detail: detail,
+                        loading: detailLoading,
+                        photoIdx: detailPhotoIdx,
+                        setPhotoIdx: setDetailPhotoIdx,
+                        noteDraft: detailNoteDraft,
+                        setNoteDraft: setDetailNoteDraft,
+                        postNote: postDetailNote,
+                        onClose: closePlantDetail,
+                        me: me,
+                        theme: theme,
+                        isSmall: isSmall
+                    })
+                );
+            })()
         )
     );
 }

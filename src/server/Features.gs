@@ -201,6 +201,7 @@ function doPost(e) {
       plantosRemoveFriend: plantosRemoveFriend,
       plantosGetFriendsOverview: plantosGetFriendsOverview,
       plantosGetFriendGarden: plantosGetFriendGarden,
+      plantosGetFriendPlantDetail: plantosGetFriendPlantDetail,
       plantosGetPlantNotesForGarden: plantosGetPlantNotesForGarden,
       plantosAddPlantNote: plantosAddPlantNote,
       plantosGetNotesOnMyPlants: plantosGetNotesOnMyPlants,

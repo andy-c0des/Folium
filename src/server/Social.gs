@@ -222,12 +222,81 @@ function plantosGetFriendGarden(friendUserId) {
     });
   });
 
+  // --- friendStats: plantCount, genusCount, topGenera, photoCount ---
+  var genusTally = {};
+  var photoCount = 0;
+  friendPlants.forEach(function(p) {
+    var g = String(p.genus || '').trim();
+    if (g) genusTally[g] = (genusTally[g] || 0) + 1;
+    if (p.thumbUrl) photoCount++;
+  });
+  var topGenera = Object.keys(genusTally)
+    .map(function(k) { return { genus: k, count: genusTally[k] }; })
+    .sort(function(a, b) { return b.count - a.count; })
+    .slice(0, 5);
+  var friendStats = {
+    plantCount: friendPlants.length,
+    genusCount: Object.keys(genusTally).length,
+    photoCount: photoCount,
+    topGenera: topGenera
+  };
+
   var notes = plantosSupabaseRequest_('get', 'plant_notes?recipient_id=eq.' + encodeURIComponent(targetId) + '&author_id=eq.' + encodeURIComponent(me) + '&order=created_at.desc', undefined) || [];
   return {
     ok: true,
     friend: { userId: targetId, username: targetUser.username || targetId, email: targetUser.email || '' },
     plants: friendPlants,
-    notes: notes
+    notes: notes,
+    friendStats: friendStats
+  };
+}
+
+/* Read-only deep-dive on a single friend's plant. Returns full plant, all photos, and
+   all notes I've left on it. Mirrors the user-switching pattern from plantosGetFriendGarden. */
+function plantosGetFriendPlantDetail(friendUserId, plantUid) {
+  var targetId = String(friendUserId || '').trim().toLowerCase();
+  var uid = String(plantUid || '').trim();
+  if (!targetId) return { ok: false, error: 'friendUserId required' };
+  if (!uid) return { ok: false, error: 'plantId required' };
+  plantosEnsureFriends_(targetId);
+
+  var me = plantosSocialUserId_();
+  var targetUser = plantosGetUserById_(targetId);
+  if (!targetUser) return { ok: false, error: 'User not found' };
+
+  var meBackup = _currentUser;
+  _currentUser = {
+    username: targetUser.username,
+    isAdmin: !!targetUser.isAdmin,
+    inventorySheet: targetUser.inventorySheet || (targetUser.isAdmin ? PLANTOS_BACKEND_CFG.INVENTORY_SHEET : targetUser.username + ' - ' + PLANTOS_BACKEND_CFG.INVENTORY_SHEET)
+  };
+  var plantRes = null, photosRes = null, err = null;
+  try {
+    plantRes = plantosGetPlant(uid);
+    try { photosRes = plantosGetAllPhotos(uid); } catch (ep) { photosRes = { ok: false, photos: [] }; }
+  } catch (e) {
+    err = e && e.message ? e.message : String(e);
+  } finally {
+    _currentUser = meBackup;
+  }
+  if (err) return { ok: false, error: err };
+  if (!plantRes || !plantRes.ok) return { ok: false, error: (plantRes && plantRes.reason) || 'Plant not found' };
+
+  // Notes left by me on this specific plant, for this recipient
+  var notes = plantosSupabaseRequest_(
+    'get',
+    'plant_notes?plant_id=eq.' + encodeURIComponent(uid) +
+      '&recipient_id=eq.' + encodeURIComponent(targetId) +
+      '&order=created_at.desc',
+    undefined
+  ) || [];
+
+  return {
+    ok: true,
+    plant: plantRes.plant,
+    photos: (photosRes && photosRes.photos) || [],
+    notes: notes,
+    friend: { userId: targetId, username: targetUser.username || targetId }
   };
 }
 
