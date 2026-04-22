@@ -5611,6 +5611,9 @@ function PlantDataProvider({ children }) {
         addPlantNote: function() { return Promise.resolve({ ok: true }); },
         getNotesOnMyPlants: function() { return Promise.resolve({ ok: true, notes: [] }); },
         getFriendsFeed: function() { return Promise.resolve({ ok: true, feed: [] }); },
+        giftPlant: function() { return Promise.resolve({ ok: true, newUid: 'demo', photoCount: 0, recipientUsername: 'demo' }); },
+        getGiftsReceived: function() { return Promise.resolve({ ok: true, gifts: [] }); },
+        getGiftsSent: function() { return Promise.resolve({ ok: true, gifts: [] }); },
     } : {
         locations, homeData, refreshHome, removeProgressDue, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
@@ -5679,6 +5682,9 @@ function PlantDataProvider({ children }) {
         addPlantNote: (plantId, recipientId, noteText) => gasCall('plantosAddPlantNote', plantId, recipientId, noteText),
         getNotesOnMyPlants: () => gasCall('plantosGetNotesOnMyPlants'),
         getFriendsFeed: () => gasCall('plantosGetFriendsFeed'),
+        giftPlant: (plantUid, recipientUserId, message) => gasCall('plantosGiftPlant', plantUid, recipientUserId, message || ''),
+        getGiftsReceived: () => gasCall('plantosGetGiftsReceived'),
+        getGiftsSent: () => gasCall('plantosGetGiftsSent'),
     };
     return React.createElement(PlantDataContext.Provider, { value: ctxValue }, children);
 }
@@ -17359,7 +17365,7 @@ function SalesSection() {
 }
 
 function CompostModal({ plant, onClose, onDone }) {
-    const { archivePlant } = usePlantData();
+    const { archivePlant, getFriendsOverview, giftPlant } = usePlantData();
     const theme = useTheme();
     const { isSmall: _isSmall } = useScreenSize();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: _isSmall ? '8px' : '11px' };
@@ -17368,14 +17374,46 @@ function CompostModal({ plant, onClose, onDone }) {
         document.body.style.overflow = 'hidden'; window.scrollTo(0, 0);
         return function() { document.body.style.overflow = ''; };
     }, []);
-    const [type, setType] = useState(null); // 'deceased' | 'rehomed'
+    const [type, setType] = useState(null); // 'deceased' | 'rehomed' | 'gifted'
     const [causeCat, setCauseCat] = useState(null);
     const [cause, setCause] = useState(null);
     const [detail, setDetail] = useState('');
     const [salePrice, setSalePrice] = useState('');
     const [saving, setSaving] = useState(false);
+    // --- gift flow state ---
+    const [friendsList, setFriendsList] = useState(null); // null = not loaded yet, [] = loaded empty
+    const [friendsLoading, setFriendsLoading] = useState(false);
+    const [selectedFriend, setSelectedFriend] = useState(null);
+    const [giftMessage, setGiftMessage] = useState('');
+    const [giftResult, setGiftResult] = useState(null);
+    const [giftError, setGiftError] = useState('');
+    async function loadFriendsForGift() {
+        setFriendsLoading(true);
+        try {
+            const res = await getFriendsOverview();
+            setFriendsList((res && res.friends) || []);
+        } catch (e) {
+            setFriendsList([]);
+        } finally { setFriendsLoading(false); }
+    }
     async function handleConfirm() {
         setSaving(true);
+        if (type === 'gifted') {
+            setGiftError('');
+            try {
+                const res = await giftPlant(plant.uid, selectedFriend.userId, giftMessage.trim());
+                if (res && res.ok === false) {
+                    setGiftError(res.error || 'Gift failed');
+                    setSaving(false);
+                    return;
+                }
+                setGiftResult(res || { ok: true });
+                setStep('gift_done');
+            } catch (e) {
+                setGiftError((e && e.message) || String(e));
+            } finally { setSaving(false); }
+            return;
+        }
         const extraFields = type === 'rehomed' && salePrice ? { salePrice: salePrice.trim() } : {};
         await archivePlant(plant.uid, type, cause, detail, extraFields);
         setSaving(false);
@@ -17398,7 +17436,8 @@ function CompostModal({ plant, onClose, onDone }) {
             step === 'type' && (React.createElement(React.Fragment, null,
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginBottom: 10 }) }, "What happened to this plant?"),
                 React.createElement("button", { type: "button", style: btnStyle(type === 'deceased', '#c0392b'), onClick: () => { setType('deceased'); setStep('cause_cat'); } }, "\uD83E\uDEA6 Compost Bin \u2014 it didn't make it"),
-                React.createElement("button", { type: "button", style: btnStyle(type === 'rehomed', '#27ae60'), onClick: () => { setType('rehomed'); setStep('confirm'); } }, "\uD83C\uDFE0 Given Away \u2014 rehomed to a new home"))),
+                React.createElement("button", { type: "button", style: btnStyle(type === 'rehomed', '#27ae60'), onClick: () => { setType('rehomed'); setStep('confirm'); } }, "\uD83C\uDFE0 Given Away \u2014 rehomed to a new home"),
+                React.createElement("button", { type: "button", style: btnStyle(type === 'gifted', '#7B4A8C'), onClick: () => { setType('gifted'); setStep('gift_friend'); if (friendsList === null) loadFriendsForGift(); } }, "\uD83C\uDF81 Gift to a Folium friend \u2014 transfer all data & photos"))),
             step === 'cause_cat' && (React.createElement(React.Fragment, null,
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginBottom: 10 }) }, "What was the main cause?"),
                 Object.entries(DEATH_CAUSES).map(([key, cat]) => (React.createElement("button", { key: key, type: "button", style: btnStyle(causeCat === key, cat.color), onClick: () => { setCauseCat(key); setCause(null); setStep('cause_option'); } }, cat.label))),
@@ -17409,6 +17448,46 @@ function CompostModal({ plant, onClose, onDone }) {
                     " \u2014 which specifically?"),
                 DEATH_CAUSES[causeCat].options.map(opt => (React.createElement("button", { key: opt, type: "button", style: btnStyle(cause === opt, DEATH_CAUSES[causeCat].color), onClick: () => { setCause(opt); setStep('confirm'); } }, opt))),
                 React.createElement("button", { type: "button", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', marginTop: 4 }), onClick: () => setStep('cause_cat') }, "\< Back"))),
+            // ---------- GIFT FLOW ----------
+            step === 'gift_friend' && (React.createElement(React.Fragment, null,
+                React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, marginBottom: 10 }) }, "Pick a Folium friend to gift this plant to:"),
+                friendsLoading && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS }) }, "Loading your friends\u2026"),
+                !friendsLoading && friendsList !== null && friendsList.length === 0 && React.createElement("div", { style: { padding: '10px 12px', border: `2px dashed ${theme.rowBorder}`, background: theme.rowBg } },
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtP, fontWeight: 900, marginBottom: 4 }) }, "No friends yet"),
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS }) }, "Add a friend in the Friends screen first, then come back to gift them a plant.")),
+                !friendsLoading && friendsList && friendsList.map(function(f) {
+                    return React.createElement("button", { key: f.userId, type: "button",
+                        style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, padding: '10px 12px', width: '100%', border: `3px solid ${selectedFriend && selectedFriend.userId === f.userId ? '#7B4A8C' : theme.rowBorder}`, background: selectedFriend && selectedFriend.userId === f.userId ? '#7B4A8C' : theme.rowBg, color: selectedFriend && selectedFriend.userId === f.userId ? '#fff' : theme.txtP, cursor: 'pointer', marginBottom: 6, textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }),
+                        onClick: function(){ setSelectedFriend(f); setStep('gift_confirm'); }
+                    },
+                        React.createElement("span", { style: { display: 'inline-flex', width: 28, height: 28, borderRadius: '50%', background: '#7B4A8C', color: '#fff', alignItems: 'center', justifyContent: 'center', fontFamily: "'Press Start 2P',cursive", fontSize: 12, flexShrink: 0 } }, String(f.username || '?').charAt(0).toUpperCase()),
+                        React.createElement("span", { style: { flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, '@' + f.username),
+                        React.createElement("span", { style: { flexShrink: 0, opacity: 0.6 } }, '\u203A'));
+                }),
+                React.createElement("button", { type: "button", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtS, background: 'none', border: 'none', cursor: 'pointer', marginTop: 6 }), onClick: function(){ setStep('type'); setSelectedFriend(null); } }, "\< Back"))),
+            step === 'gift_confirm' && selectedFriend && (React.createElement(React.Fragment, null,
+                React.createElement("div", { style: { marginBottom: 12, padding: '10px 12px', border: '2px solid #7B4A8C', background: '#f4efff' } },
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, color: '#7B4A8C', marginBottom: 4 }) }, '\uD83C\uDF81 Gifting to @' + selectedFriend.username),
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: '#333', lineHeight: 1.5 }) },
+                        "The full plant record \u2014 name, genus, schedule, pot, substrate, photos, and history \u2014 will be copied into their collection. Your copy will be archived with a gift note."),
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', color: '#666', marginTop: 6, fontStyle: 'italic' }) }, "This cannot be undone.")),
+                React.createElement("div", { style: { marginBottom: 12 } },
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 4 }) }, "Note for @" + selectedFriend.username + " (optional)"),
+                    React.createElement("textarea", { value: giftMessage, onChange: function(e){ setGiftMessage(e.target.value); }, rows: 3, placeholder: "e.g. Enjoy! This one loves bright indirect light. Happy birthday \uD83C\uDF89", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', width: '100%', border: `3px solid ${theme.cardBorder}`, padding: '8px', resize: 'none', background: theme.rowBg, color: theme.txtP }) })),
+                giftError && React.createElement("div", { style: { marginBottom: 10, padding: '7px 10px', border: '2px solid #c0392b', background: '#fdf0ee', color: '#c0392b', fontFamily: "'Pixelify Sans',cursive", fontSize: '12px' } }, giftError),
+                React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                    React.createElement("button", { type: "button", onClick: handleConfirm, disabled: saving, style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, flex: 1, padding: '12px', border: '3px solid #7B4A8C', background: '#7B4A8C', color: '#fff', cursor: saving ? 'default' : 'pointer', boxShadow: '0 3px 0 #5a356a', opacity: saving ? 0.7 : 1 }) }, saving ? "Sending\u2026" : "\uD83C\uDF81 Send gift"),
+                    React.createElement("button", { type: "button", onClick: function(){ setStep('gift_friend'); setGiftError(''); }, disabled: saving, style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, background: 'none', border: `2px solid ${theme.rowBorder}`, padding: '12px 16px', cursor: saving ? 'default' : 'pointer' }) }, "\< Back")))),
+            step === 'gift_done' && giftResult && (React.createElement(React.Fragment, null,
+                React.createElement("div", { style: { padding: '14px 16px', border: '3px solid #7B4A8C', background: '#f4efff', marginBottom: 14, textAlign: 'center' } },
+                    React.createElement("div", { style: { fontSize: 36, marginBottom: 8 } }, '\uD83C\uDF81'),
+                    React.createElement("div", { style: Object.assign(Object.assign({}, px8S), { color: '#7B4A8C', marginBottom: 6 }) }, "GIFT SENT"),
+                    React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: '#333', lineHeight: 1.5 }) },
+                        (plant.nickname || plant.primary || 'This plant') + " is now in @" + (giftResult.recipientUsername || selectedFriend.username) + "'s garden."),
+                    (giftResult.photoCount || 0) > 0 && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: '#666', marginTop: 6 }) },
+                        '\uD83D\uDCF7 ' + giftResult.photoCount + ' photo' + (giftResult.photoCount !== 1 ? 's' : '') + ' transferred'),
+                    giftResult.warning && React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '11px', color: '#c0392b', marginTop: 8, fontStyle: 'italic' }) }, giftResult.warning)),
+                React.createElement("button", { type: "button", onClick: onDone, style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, width: '100%', padding: '12px', border: '3px solid #7B4A8C', background: '#7B4A8C', color: '#fff', cursor: 'pointer', boxShadow: '0 3px 0 #5a356a' }) }, "Done"))),
             step === 'confirm' && (React.createElement(React.Fragment, null,
                 React.createElement("div", { style: { marginBottom: 12, padding: '8px 12px', border: `2px solid ${type === 'deceased' ? '#c0392b' : '#27ae60'}`,
                         background: type === 'deceased' ? '#fdf0ee' : '#f0fdf4' } },
