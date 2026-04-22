@@ -16556,6 +16556,7 @@ function SalesSection() {
     const { isSmall, isDesktop } = useScreenSize();
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [subView, setSubView] = useState('listings'); // 'listings' | 'orders'
     const [filter, setFilter] = useState('active'); // active | all | Sold | Listed | Drafted
     const [editing, setEditing] = useState(null); // listing object
     const [quickSoldFor, setQuickSoldFor] = useState(null); // listingId being quick-sold
@@ -16755,7 +16756,51 @@ function SalesSection() {
             sub && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '9px', color: theme.txtS, opacity: 0.7, marginTop: 1 }) }, sub));
     }
 
+    // Build order-grouped data for Orders view
+    var soldListings = sales.filter(s => getUnitStatuses(s).Sold > 0 || s.status === 'Sold');
+    var orderGroups = (function() {
+        var groups = {};
+        soldListings.forEach(function(s) {
+            var key = (s.orderNumber || '').trim() || '__NO_ORDER__';
+            if (!groups[key]) groups[key] = { orderNumber: key === '__NO_ORDER__' ? '' : key, listings: [], total: 0, date: '', marketplaces: {}, buyer: '' };
+            groups[key].listings.push(s);
+            var us = getUnitStatuses(s);
+            var lineTotal = unitPrice(s) * us.Sold;
+            groups[key].total += lineTotal;
+            if (s.soldAt && (!groups[key].date || s.soldAt > groups[key].date)) groups[key].date = s.soldAt;
+            if (s.listingLocation) groups[key].marketplaces[s.listingLocation] = true;
+            if (s.buyer && !groups[key].buyer) groups[key].buyer = s.buyer;
+        });
+        var arr = Object.keys(groups).map(function(k) { return Object.assign({ _key: k }, groups[k]); });
+        // Sort by order number (natural — "10" > "2"), untagged at the end
+        arr.sort(function(a, b) {
+            if (a._key === '__NO_ORDER__') return 1;
+            if (b._key === '__NO_ORDER__') return -1;
+            return String(a.orderNumber).localeCompare(String(b.orderNumber), undefined, { numeric: true });
+        });
+        return arr;
+    })();
+
     return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', minWidth: 0, paddingTop: 8 } },
+        // Sub-view toggle: Listings vs Orders
+        React.createElement('div', { style: { display: 'flex', gap: 0, borderBottom: '2px solid ' + theme.cardBorder } },
+            [['listings', '\uD83D\uDCCB Listings', sales.filter(function(s) { return getUnitStatuses(s).Sold < (parseInt(s.quantity,10) || 1); }).length],
+             ['orders',   '\uD83E\uDDFE Orders',   orderGroups.length]
+            ].map(function(tab) {
+                var id = tab[0], label = tab[1], count = tab[2];
+                var active = subView === id;
+                return React.createElement('button', { key: id, type: 'button',
+                    onClick: function() { setSubView(id); },
+                    style: Object.assign({}, pxS, { flex: 1, padding: '10px 8px', cursor: 'pointer',
+                        background: active ? theme.cardBg : 'transparent',
+                        border: 'none', borderBottom: '3px solid ' + (active ? theme.btnP.bg : 'transparent'),
+                        color: active ? theme.txtP : theme.txtS,
+                        fontSize: isSmall ? '12px' : '14px', fontWeight: active ? 900 : 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }) },
+                    label,
+                    React.createElement('span', { style: { fontSize: '11px', opacity: 0.7 } }, '(' + count + ')'));
+            })),
+
         // Metrics row (top)
         sales.length > 0 && React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isSmall ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 } },
             React.createElement(Metric, { icon: '\uD83D\uDCB5', label: 'Revenue', value: '$' + totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), sub: totalUnitsSold + ' unit' + (totalUnitsSold !== 1 ? 's' : '') + ' sold' }),
@@ -16764,8 +16809,8 @@ function SalesSection() {
             avgTimeToSell != null && React.createElement(Metric, { icon: '\u23F1', label: 'Avg Days to Sell', value: avgTimeToSell + 'd' }),
             mktTop.length > 0 && React.createElement(Metric, { icon: '\uD83C\uDFEA', label: 'Top Marketplace', value: mktTop[0].length > 14 ? mktTop[0].slice(0,12)+'…' : mktTop[0], sub: mktBreakdown[mktTop[0]] + ' sold' })),
 
-        // Filter tabs (responsive grid — wraps cleanly on narrow screens)
-        React.createElement('div', { style: { display: 'flex', flexDirection: isSmall ? 'column' : 'row', gap: 6, alignItems: isSmall ? 'stretch' : 'center', width: '100%', boxSizing: 'border-box' } },
+        // Filter tabs (listings view only)
+        subView === 'listings' && React.createElement('div', { style: { display: 'flex', flexDirection: isSmall ? 'column' : 'row', gap: 6, alignItems: isSmall ? 'stretch' : 'center', width: '100%', boxSizing: 'border-box' } },
             React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isSmall ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(72px, 1fr))', gap: 4, flex: 1, minWidth: 0 } },
                 [['active', 'Active'], ['Listed', 'Listed'], ['Drafted', 'Drafted'], ['Pending', 'Pending'], ['Sold', 'Sold'], ['all', 'All']].map(([id, label]) => {
                     var active = filter === id;
@@ -16793,8 +16838,8 @@ function SalesSection() {
                     whiteSpace: 'nowrap', flexShrink: 0 }) }, '\u2B07 CSV')),
 
         // Listings
-        loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, textAlign: 'center', padding: 20 }) }, 'Loading\u2026'),
-        !loading && filtered.length === 0 && React.createElement('div', {
+        subView === 'listings' && loading && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, textAlign: 'center', padding: 20 }) }, 'Loading\u2026'),
+        subView === 'listings' && !loading && filtered.length === 0 && React.createElement('div', {
             style: { padding: '36px 20px', textAlign: 'center', background: theme.cardBg, border: '3px dashed ' + theme.cardBorder }
         },
             React.createElement('div', { style: { fontSize: 44, marginBottom: 10, lineHeight: 1 } }, sales.length === 0 ? '\uD83D\uDCB0' : '\uD83D\uDD0D'),
@@ -16809,8 +16854,8 @@ function SalesSection() {
                     background: 'rgba(58,138,40,0.12)', color: '#2A5A10', border: '2px solid #3A8A28' }) },
                 '\uD83D\uDCE5 Import previous sales from Archive')),
 
-        // Spreadsheet-style listing table
-        filtered.length > 0 && (function() {
+        // Spreadsheet-style listing table (Listings view only)
+        subView === 'listings' && filtered.length > 0 && (function() {
             var thStyle = Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, color: theme.txtS, padding: '8px 6px',
                 textAlign: 'left', borderBottom: '2px solid ' + theme.cardBorder, background: theme.rowBg, whiteSpace: 'nowrap',
                 letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' });
@@ -16960,6 +17005,90 @@ function SalesSection() {
                             filteredListedValue > 0 && React.createElement('span', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) },
                                 'Listed value: ', React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtP } }, '$' + filteredListedValue.toLocaleString(undefined, { maximumFractionDigits: 0 }))));
                     })()));
+        })(),
+
+        // ── ORDERS VIEW — invoice-style cards grouped by order number ──
+        subView === 'orders' && (function() {
+            if (orderGroups.length === 0) {
+                return React.createElement('div', { style: { padding: '36px 20px', textAlign: 'center', background: theme.cardBg, border: '3px dashed ' + theme.cardBorder } },
+                    React.createElement('div', { style: { fontSize: 44, marginBottom: 10, lineHeight: 1 } }, '\uD83E\uDDFE'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '15px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'No orders yet'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, lineHeight: 1.5, maxWidth: 320, margin: '0 auto' }) },
+                        'Orders appear here once you mark listings as Sold.'));
+            }
+            // Grand totals summary
+            var grandTotal = orderGroups.reduce(function(a, g) { return a + g.total; }, 0);
+            var grandUnits = orderGroups.reduce(function(a, g) { return a + g.listings.reduce(function(b, s) { return b + getUnitStatuses(s).Sold; }, 0); }, 0);
+            return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+                // Summary bar
+                React.createElement('div', { style: { display: 'flex', gap: 10, flexWrap: 'wrap', padding: '10px 12px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, boxShadow: '3px 3px 0 ' + theme.cardBorder } },
+                    React.createElement('div', { style: { flex: 1, minWidth: 120 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.04em' }) }, 'TOTAL ORDERS'),
+                        React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '14px', color: theme.txtP, marginTop: 2 } }, orderGroups.length)),
+                    React.createElement('div', { style: { flex: 1, minWidth: 120 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.04em' }) }, 'UNITS SHIPPED'),
+                        React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '14px', color: theme.txtP, marginTop: 2 } }, grandUnits)),
+                    React.createElement('div', { style: { flex: 1, minWidth: 120 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.04em' }) }, 'GRAND TOTAL'),
+                        React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '14px', color: '#2A6B1A', marginTop: 2 } }, '$' + grandTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })))),
+
+                // Invoice cards
+                orderGroups.map(function(g) {
+                    var orderLabel = g.orderNumber || 'Untagged sale' + (g.listings.length > 1 ? 's' : '');
+                    var orderKey = g._key;
+                    var markets = Object.keys(g.marketplaces);
+                    var unitCount = g.listings.reduce(function(a, s) { return a + getUnitStatuses(s).Sold; }, 0);
+                    return React.createElement('div', { key: orderKey, style: { background: theme.cardBg, border: '3px solid ' + theme.cardBorder, boxShadow: '4px 4px 0 ' + theme.cardBorder } },
+                        // Invoice header
+                        React.createElement('div', { style: { padding: '10px 14px', borderBottom: '2px dashed ' + theme.sep, background: theme.rowBg, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 } },
+                            React.createElement('div', { style: { minWidth: 0 } },
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.05em' }) }, 'ORDER'),
+                                React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '13px', color: theme.txtP, marginTop: 2 } }, '#' + orderLabel),
+                                g.date && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 4 }) }, '\uD83D\uDCC5 ' + g.date),
+                                markets.length > 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, '\uD83C\uDFEA ' + markets.join(', ')),
+                                g.buyer && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, '\uD83D\uDC64 ' + g.buyer)),
+                            React.createElement('div', { style: { textAlign: 'right' } },
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, fontWeight: 700, letterSpacing: '0.05em' }) }, 'TOTAL'),
+                                React.createElement('div', { style: { fontFamily: "'Press Start 2P'", fontSize: '15px', color: '#2A6B1A', marginTop: 2 } }, '$' + g.total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })),
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) }, unitCount + ' unit' + (unitCount !== 1 ? 's' : '')))),
+                        // Line items table
+                        React.createElement('div', { style: { width: '100%', overflowX: 'auto' } },
+                            React.createElement('table', { style: { width: '100%', minWidth: isSmall ? 360 : 'auto', borderCollapse: 'collapse' } },
+                                React.createElement('thead', null,
+                                    React.createElement('tr', null,
+                                        React.createElement('th', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid ' + theme.sep, letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 700 }) }, 'Item'),
+                                        React.createElement('th', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid ' + theme.sep, letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 700, whiteSpace: 'nowrap' }) }, 'Qty'),
+                                        React.createElement('th', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid ' + theme.sep, letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 700, whiteSpace: 'nowrap' }) }, 'Unit $'),
+                                        React.createElement('th', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, padding: '8px 10px', textAlign: 'right', borderBottom: '1px solid ' + theme.sep, letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 700, whiteSpace: 'nowrap' }) }, 'Line $'))),
+                                React.createElement('tbody', null,
+                                    g.listings.map(function(s, idx) {
+                                        var us = getUnitStatuses(s);
+                                        var unit = unitPrice(s);
+                                        var line = unit * us.Sold;
+                                        var rowBg = idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)';
+                                        return React.createElement('tr', { key: s.listingId, style: { background: rowBg } },
+                                            React.createElement('td', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, padding: '8px 10px', borderBottom: idx < g.listings.length - 1 ? '1px solid ' + theme.sep : 'none' }) },
+                                                React.createElement('div', { onClick: function() { if (s.plantUID) navigate('plant', { uid: s.plantUID }); },
+                                                    style: { cursor: s.plantUID ? 'pointer' : 'default', textDecoration: s.plantUID ? 'underline' : 'none', textDecorationColor: theme.sep, fontWeight: 700 } }, s.plantName || '#' + s.plantUID),
+                                                s.notes && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, opacity: 0.8, marginTop: 2, fontStyle: 'italic' }) }, s.notes.length > 50 ? s.notes.slice(0, 48) + '\u2026' : s.notes)),
+                                            React.createElement('td', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtP, padding: '8px 10px', textAlign: 'center', borderBottom: idx < g.listings.length - 1 ? '1px solid ' + theme.sep : 'none' } }, us.Sold),
+                                            React.createElement('td', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: theme.txtP, padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', borderBottom: idx < g.listings.length - 1 ? '1px solid ' + theme.sep : 'none' } }, '$' + unit.toFixed(2)),
+                                            React.createElement('td', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#2A6B1A', padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 900, borderBottom: idx < g.listings.length - 1 ? '1px solid ' + theme.sep : 'none' } }, '$' + line.toFixed(2)));
+                                    })))),
+                        // Footer — actions
+                        React.createElement('div', { style: { padding: '8px 14px', borderTop: '2px dashed ' + theme.sep, background: 'rgba(0,0,0,0.02)', display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' } },
+                            g.listings.some(function(s) { return s.listingUrl; }) && g.listings.filter(function(s) { return s.listingUrl; }).map(function(s, i) {
+                                return React.createElement('a', { key: 'u' + i, href: s.listingUrl, target: '_blank', rel: 'noopener noreferrer',
+                                    style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px',
+                                        background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A', textDecoration: 'none' }) }, '\uD83D\uDD17 ' + (s.listingLocation || 'Listing') + (g.listings.length > 1 ? ' ' + (i+1) : ''));
+                            }),
+                            React.createElement('button', { type: 'button', onClick: function() { window.print(); },
+                                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
+                                    background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\uD83D\uDDA8 Print'),
+                            g.listings.length === 1 && React.createElement('button', { type: 'button', onClick: function() { setEditing(g.listings[0]); },
+                                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 10px', cursor: 'pointer',
+                                    background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder }) }, '\u270F Edit')));
+                }));
         })(),
 
         // Quick-sold inline modal (replaces inline expansion now that we use a table)
