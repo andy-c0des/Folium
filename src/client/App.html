@@ -6233,8 +6233,7 @@ function HomeScreen() {
         function avatarBg(name) { var h = 0; for (var i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) & 0xffff; return avatarPalette[h % avatarPalette.length]; }
 
         function visitFriendFromHome(userId) {
-            try { sessionStorage.setItem('plantos_pending_friend_visit', userId); } catch(e) {}
-            navigate('friends');
+            navigate('friend-garden', { userId: userId });
         }
 
         return React.createElement(DashCard, { title: 'FRIENDS', emoji: '\uD83D\uDC65', noPad: true },
@@ -19167,6 +19166,297 @@ function FriendPlantDetailModal(props) {
     );
 }
 
+// ===========================================================================
+// FriendGardenScreen — full-page cozy pixel-art view of a friend's collection
+// ===========================================================================
+function FriendGardenScreen(props) {
+    const userId = (props && props.userId) || '';
+    const { navigate } = useNavigation();
+    const theme = useTheme();
+    const { isSmall, isDesktop } = useScreenSize();
+    const { getFriendGarden, getFriendPlantDetail, addPlantNote } = usePlantData();
+    const me = (function(){ try { return (localStorage.getItem('plantos_username') || '').toLowerCase(); } catch(e){ return ''; } })();
+
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState('');
+    const [garden, setGarden] = React.useState({ friend: null, plants: [], notes: [], friendStats: null });
+    const [detail, setDetail] = React.useState(null);
+    const [detailLoading, setDetailLoading] = React.useState(false);
+    const [detailPhotoIdx, setDetailPhotoIdx] = React.useState(0);
+    const [detailNoteDraft, setDetailNoteDraft] = React.useState('');
+
+    React.useEffect(function() {
+        if (!userId) { setError('No friend selected.'); setLoading(false); return; }
+        let alive = true;
+        setLoading(true);
+        getFriendGarden(userId).then(function(res) {
+            if (!alive) return;
+            if (res && res.ok === false) { setError(res.error || 'Could not load garden'); setLoading(false); return; }
+            setGarden({
+                friend: (res && res.friend) || null,
+                plants: (res && res.plants) || [],
+                notes: (res && res.notes) || [],
+                friendStats: (res && res.friendStats) || null
+            });
+            setLoading(false);
+        }).catch(function(e) {
+            if (!alive) return;
+            setError((e && e.message) || 'Could not load garden'); setLoading(false);
+        });
+        return function() { alive = false; };
+    }, [userId]);
+
+    // Group plants by location (case-preserving) with an "Unplaced" bucket
+    const grouped = React.useMemo(function() {
+        const groups = {};
+        (garden.plants || []).forEach(function(p) {
+            const key = String(p.location || '').trim() || '__unplaced__';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(p);
+        });
+        // Sort: real locations alphabetically, __unplaced__ last
+        const ordered = Object.keys(groups).filter(function(k){ return k !== '__unplaced__'; }).sort(function(a,b){ return a.localeCompare(b); });
+        if (groups['__unplaced__']) ordered.push('__unplaced__');
+        return ordered.map(function(k){ return { key: k, label: k === '__unplaced__' ? 'Unplaced' : k, plants: groups[k] }; });
+    }, [garden.plants]);
+
+    function notesForPlant(uid) {
+        return (garden.notes || []).filter(function(n){ return String(n.plant_id) === String(uid); });
+    }
+
+    async function openPlantDetail(plant) {
+        if (!garden.friend || !plant || !plant.uid) return;
+        setDetailLoading(true);
+        setDetail({ plant: plant, photos: [], notes: [], friend: garden.friend, _stub: true });
+        setDetailPhotoIdx(0);
+        setDetailNoteDraft('');
+        try {
+            const res = await getFriendPlantDetail(garden.friend.userId, plant.uid);
+            if (res && res.ok) {
+                setDetail({ plant: res.plant || plant, photos: res.photos || [], notes: res.notes || [], friend: res.friend || garden.friend });
+            }
+        } catch (e) { /* keep stub */ } finally { setDetailLoading(false); }
+    }
+    function closePlantDetail() { setDetail(null); setDetailPhotoIdx(0); setDetailNoteDraft(''); }
+
+    async function postDetailNote() {
+        if (!detail || !detail.plant || !detail.friend) return;
+        const txt = String(detailNoteDraft || '').trim();
+        if (!txt) return;
+        try {
+            await addPlantNote(detail.plant.uid, detail.friend.userId, txt);
+            setDetailNoteDraft('');
+            const fresh = await getFriendPlantDetail(detail.friend.userId, detail.plant.uid);
+            if (fresh && fresh.ok) setDetail(prev => Object.assign({}, prev, { notes: fresh.notes || [] }));
+        } catch (e) {}
+    }
+
+    // --- Pixel-art helpers ---
+    // Room "emoji picker" — guesses a vibe based on location name
+    function roomEmoji(name) {
+        const n = String(name || '').toLowerCase();
+        if (/bed|sleep/.test(n)) return '🛏️';
+        if (/bath|shower/.test(n)) return '🛁';
+        if (/kitchen|counter/.test(n)) return '🍳';
+        if (/office|desk|study/.test(n)) return '💻';
+        if (/living|lounge/.test(n)) return '🛋️';
+        if (/window|sill/.test(n)) return '🪟';
+        if (/sun|south|bright/.test(n)) return '🌞';
+        if (/balcony|patio|deck/.test(n)) return '🌤️';
+        if (/green ?house|greenhouse|grow ?tent|tent/.test(n)) return '🏕️';
+        if (/cabinet|shelf|rack/.test(n)) return '📚';
+        if (/basement|cellar/.test(n)) return '🕯️';
+        if (/garden|yard|outdoor/.test(n)) return '🌳';
+        if (/hallway|entry|foyer/.test(n)) return '🚪';
+        if (name === 'Unplaced') return '🌿';
+        return '🏡';
+    }
+    // Cozy per-room tint — a palette of soft earth/pastels keyed off the name hash
+    const roomTints = [
+        { bg: '#F5E9D1', border: '#8A6E3E', shadow: '#C9AE72' }, // warm
+        { bg: '#D9E8D4', border: '#4A6E3E', shadow: '#82AE72' }, // sage
+        { bg: '#D4DDE8', border: '#3E5A8A', shadow: '#728EAE' }, // blue
+        { bg: '#E8D4E0', border: '#7A3E6A', shadow: '#AE728E' }, // pink
+        { bg: '#FFE9C2', border: '#A87238', shadow: '#E5B56B' }, // honey
+        { bg: '#D4E8DF', border: '#3E8A6E', shadow: '#72AE95' }, // mint
+    ];
+    function tintFor(name) {
+        var h = 0; for (let i = 0; i < name.length; i++) h = (h*31 + name.charCodeAt(i)) & 0xffff;
+        return roomTints[h % roomTints.length];
+    }
+
+    // Cute greetings
+    const greetings = [
+        'A cozy corner of Folium ✿',
+        'Welcome in — mind the watering can 🚿',
+        'Pixels and petals ✨',
+        'Pull up a stool, stay awhile 🍵',
+        'Fresh leaves, fresh notes 🌱'
+    ];
+    const greetingIdx = garden.friend ? (garden.friend.userId.charCodeAt(0) % greetings.length) : 0;
+
+    // --- Render ---
+    if (!userId) {
+        return React.createElement('div', { className: `flex flex-col ${isSmall ? 'p-3' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: 900, margin: '0 auto' } },
+            React.createElement(PlantCard, { title: "🌱 GARDEN" },
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS }) }, 'Open the Friends screen and pick a garden to visit.'),
+                React.createElement(PlantButton, { block: false, onClick: function(){ navigate('friends'); } }, 'Go to Friends')));
+    }
+
+    const stats = garden.friendStats || { plantCount: (garden.plants||[]).length, genusCount: 0, photoCount: 0, topGenera: [] };
+
+    // Plant-tile grid cols (different from the old modal: wider for desktop)
+    const tileCols = isSmall ? 'repeat(2, 1fr)' : (isDesktop ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)');
+
+    return React.createElement('div', {
+        className: 'screen-enter',
+        style: { width: '100%', maxWidth: 1080, margin: '0 auto', padding: isSmall ? '12px 10px 40px' : '18px 16px 60px' }
+    },
+        // ---------------- HERO ----------------
+        React.createElement('div', { style: {
+            position: 'relative', overflow: 'hidden',
+            border: '4px solid ' + theme.cardBorder,
+            background: 'repeating-linear-gradient(135deg, #2A4D20 0 12px, #1F3B18 12px 24px)',
+            color: '#F5E9D1', padding: isSmall ? '18px 14px' : '26px 22px',
+            marginBottom: 16, boxShadow: '0 4px 0 ' + theme.cardBorder
+        } },
+            // pixel-art cloud dots (cheap decoration)
+            React.createElement('div', { style: { position: 'absolute', top: 10, right: 14, fontSize: 20, opacity: 0.85 } }, '☁️'),
+            React.createElement('div', { style: { position: 'absolute', top: 30, right: 60, fontSize: 14, opacity: 0.6 } }, '☁️'),
+            React.createElement('div', { style: { position: 'absolute', bottom: 6, left: 0, right: 0, height: 10, background: 'repeating-linear-gradient(90deg, #5A8244 0 6px, #4A6E3A 6px 12px)' } }),
+            React.createElement('div', { style: { position: 'relative', zIndex: 1 } },
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: isSmall ? '10px' : '13px', color: '#F5E9D1', letterSpacing: '0.05em', marginBottom: 8, textShadow: '2px 2px 0 #1A2E12' }) },
+                    loading ? '🌱 Loading garden…' :
+                    garden.friend ? ('🌱 ' + (garden.friend.username || garden.friend.userId) + "'s Garden") :
+                    '🌱 Garden'),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: '#E8D4A0', fontStyle: 'italic' }) }, greetings[greetingIdx]),
+                !loading && !error && React.createElement('div', { style: { display: 'flex', gap: isSmall ? 10 : 20, marginTop: 14, flexWrap: 'wrap' } },
+                    [
+                        { icon: '🌱', value: stats.plantCount, label: 'plant' + (stats.plantCount === 1 ? '' : 's') },
+                        { icon: '🧬', value: stats.genusCount, label: 'gen' + (stats.genusCount === 1 ? 'us' : 'era') },
+                        { icon: '📷', value: stats.photoCount, label: 'photo' + (stats.photoCount === 1 ? '' : 's') },
+                        { icon: '🏡', value: grouped.length, label: 'room' + (grouped.length === 1 ? '' : 's') }
+                    ].map(function(s, i) {
+                        return React.createElement('div', { key: i, style: { minWidth: 70 } },
+                            React.createElement('div', { style: Object.assign({}, px8, { fontSize: isSmall ? '12px' : '15px', color: '#FFF8DC', textShadow: '2px 2px 0 #1A2E12' }) }, s.icon + ' ' + s.value),
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#C9AE72', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 2 }) }, s.label));
+                    })),
+                // Top-genera chips inside hero
+                !loading && (stats.topGenera || []).length > 0 && React.createElement('div', { style: { display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 12 } },
+                    stats.topGenera.map(function(g) {
+                        return React.createElement('span', { key: g.genus, style: Object.assign({}, pxS, {
+                            fontSize: '11px', background: '#F5E9D1', color: '#4A6E3A',
+                            border: '2px solid #2A4D20', padding: '2px 8px', fontWeight: 900, boxShadow: '2px 2px 0 #1A2E12'
+                        }) }, g.genus + ' ×' + g.count);
+                    }))
+            )
+        ),
+
+        // ---------------- ERROR / EMPTY ----------------
+        error && React.createElement('div', { style: { padding: '14px 16px', border: '3px solid #c0392b', background: '#fdf0ee', color: '#c0392b', fontFamily: "'Pixelify Sans',cursive", marginBottom: 12 } }, error),
+        !loading && !error && (garden.plants || []).length === 0 && React.createElement('div', {
+            style: { textAlign: 'center', padding: '40px 20px', border: '3px dashed ' + theme.rowBorder, background: theme.rowBg, borderRadius: 0 }
+        },
+            React.createElement('div', { style: { fontSize: 48, marginBottom: 10 } }, '🌱'),
+            React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtP, marginBottom: 8 }) }, 'A QUIET GARDEN'),
+            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtS, fontStyle: 'italic' }) }, "No plants here yet — maybe gift them one of yours 🎁")),
+
+        // ---------------- ROOMS ----------------
+        !loading && !error && grouped.map(function(group) {
+            const tint = tintFor(group.label);
+            const roomGenera = {};
+            group.plants.forEach(function(p) { const g = String(p.genus || '').trim(); if (g) roomGenera[g] = (roomGenera[g]||0)+1; });
+            const topInRoom = Object.keys(roomGenera).sort(function(a,b){ return roomGenera[b] - roomGenera[a]; })[0] || '';
+            return React.createElement('div', { key: group.key, style: {
+                marginBottom: 18,
+                border: '4px solid ' + tint.border,
+                background: tint.bg,
+                boxShadow: '0 4px 0 ' + tint.shadow
+            } },
+                // Room roof / title bar
+                React.createElement('div', { style: {
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap',
+                    padding: isSmall ? '7px 10px' : '9px 14px',
+                    background: tint.border,
+                    color: '#FFF8DC',
+                    borderBottom: '3px solid ' + tint.shadow
+                } },
+                    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 } },
+                        React.createElement('span', { style: { fontSize: isSmall ? 18 : 22, flexShrink: 0 } }, roomEmoji(group.label)),
+                        React.createElement('div', { style: { minWidth: 0 } },
+                            React.createElement('div', { style: Object.assign({}, px8, { fontSize: isSmall ? '10px' : '12px', color: '#FFF8DC', textShadow: '2px 2px 0 rgba(0,0,0,0.35)', letterSpacing: '0.05em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }) }, group.label),
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: 'rgba(255,248,220,0.8)' }) },
+                                group.plants.length + ' plant' + (group.plants.length !== 1 ? 's' : '') + (topInRoom ? ' · mostly ' + topInRoom : '')))
+                    )
+                ),
+                // Plants grid inside the room
+                React.createElement('div', { style: {
+                    display: 'grid', gridTemplateColumns: tileCols, gap: isSmall ? 8 : 12,
+                    padding: isSmall ? 10 : 14
+                } },
+                    group.plants.map(function(p, idx) {
+                        const pNotes = notesForPlant(p.uid);
+                        const displayName = p.nickname || p.primary || p.uid;
+                        const botanical = [p.genus, p.taxon || p.species].filter(Boolean).join(' ');
+                        // slight stagger on the bob animation so the garden looks alive
+                        const bobDelay = (idx % 5) * 0.2;
+                        return React.createElement('button', { key: p.uid, type: 'button',
+                            onClick: function(){ openPlantDetail(p); },
+                            className: 'folium-bob',
+                            style: {
+                                display: 'flex', flexDirection: 'column', padding: 0, margin: 0,
+                                background: '#FFF8DC', border: '3px solid ' + tint.border,
+                                cursor: 'pointer', textAlign: 'left', overflow: 'hidden',
+                                boxShadow: '0 3px 0 ' + tint.shadow,
+                                animationDelay: bobDelay + 's'
+                            }
+                        },
+                            // thumbnail
+                            React.createElement('div', { style: { position: 'relative', width: '100%', aspectRatio: '1/1', background: tint.bg, overflow: 'hidden', borderBottom: '3px solid ' + tint.border } },
+                                p.thumbUrl
+                                    ? React.createElement('img', { src: p.thumbUrl, alt: displayName, loading: 'lazy', style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block', imageRendering: 'auto' }, onError: function(e){ e.target.style.display='none'; } })
+                                    : React.createElement('div', { style: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isSmall ? 32 : 44 } }, '🌱'),
+                                (p.overlapInCollection || p.overlapInWishlist) && React.createElement('div', { style: { position: 'absolute', top: 4, right: 4, display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' } },
+                                    p.overlapInCollection && React.createElement('span', { title: 'You have this', style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '10px', background: '#1E4A14', color: '#B8E89A', border: '1px solid #3A7A20', padding: '1px 5px' } }, '✅'),
+                                    p.overlapInWishlist && React.createElement('span', { title: 'On your wishlist', style: { fontFamily: "'Pixelify Sans',cursive", fontSize: '10px', background: '#4A3A10', color: '#FFE08A', border: '1px solid #8A6A20', padding: '1px 5px' } }, '⭐')),
+                                pNotes.length > 0 && React.createElement('div', { style: { position: 'absolute', bottom: 4, right: 4, fontFamily: "'Pixelify Sans',cursive", fontSize: '10px', background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '1px 6px' } }, '💬 ' + pNotes.length)
+                            ),
+                            // name
+                            React.createElement('div', { style: { padding: '6px 8px 8px' } },
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: isSmall ? '12px' : '13px', fontWeight: 900, color: '#2A4D20', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }) }, displayName),
+                                botanical && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: '#6B5030', fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }) }, botanical))
+                        );
+                    })
+                )
+            );
+        }),
+
+        // ---------------- INJECT KEYFRAMES ----------------
+        // Inline <style> — bob animation used by plant tiles. Only injected once per mount.
+        React.createElement('style', null, `
+            .folium-bob { animation: foliumBob 4s ease-in-out infinite; transition: transform 0.15s ease-out; }
+            .folium-bob:hover { transform: translateY(-3px) scale(1.02); animation-play-state: paused; }
+            .folium-bob:active { transform: translateY(1px) scale(0.98); }
+            @keyframes foliumBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+        `),
+
+        // ---------------- DETAIL MODAL ----------------
+        detail && React.createElement(FriendPlantDetailModal, {
+            detail: detail,
+            loading: detailLoading,
+            photoIdx: detailPhotoIdx,
+            setPhotoIdx: setDetailPhotoIdx,
+            noteDraft: detailNoteDraft,
+            setNoteDraft: setDetailNoteDraft,
+            postNote: postDetailNote,
+            onClose: closePlantDetail,
+            me: me,
+            theme: theme,
+            isSmall: isSmall
+        })
+    );
+}
+
 function FriendsScreen() {
     const { navigate } = useNavigation();
     const theme = useTheme();
@@ -19412,7 +19702,7 @@ function FriendsScreen() {
                     return React.createElement('div', { key: fr.userId, style: { border: '1px solid ' + theme.rowBorder, background: theme.rowBg, padding: '7px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 } },
                         React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900 }) }, fr.username),
                         React.createElement('div', { className: 'flex gap-2' },
-                            React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: function(){ visitFriend(fr.userId); }, disabled: visiting===fr.userId }, visiting===fr.userId ? 'Loading…' : 'Visit garden'),
+                            React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: function(){ navigate('friend-garden', { userId: fr.userId }); } }, 'Visit garden'),
                             React.createElement(PlantButton, { block: false, variant: 'ghost', onClick: async function(){ await removeFriend(fr.userId); await loadOverview(); if(garden.friend && garden.friend.userId===fr.userId) setGarden({ friend:null, plants:[], notes:[] }); } }, 'Remove')));
                 })
             ),
@@ -19682,6 +19972,7 @@ function SettingsScreen() {
   window.DiaryScreen = DiaryScreen;
   window.SettingsScreen = SettingsScreen;
 window.FriendsScreen = FriendsScreen;
+window.FriendGardenScreen = FriendGardenScreen;
   window.DEMO_MODE = typeof DEMO_MODE !== 'undefined' ? DEMO_MODE : false;
   window.gasCall = gasCall;
   window.kbCacheLoad = typeof kbCacheLoad !== 'undefined' ? kbCacheLoad : window.kbCacheLoad;
@@ -20064,6 +20355,7 @@ function AppContent() {
             case 'batch-fertilize': return React.createElement(window.BatchFertilizeScreen, null);
             case 'settings': return React.createElement(window.SettingsScreen, null);
             case 'friends': return React.createElement(window.FriendsScreen, null);
+            case 'friend-garden': return React.createElement(window.FriendGardenScreen, { userId: (route.params && route.params.userId) ? route.params.userId : '' });
             case 'dev': return React.createElement(window.DevScreen, null);
             default: return React.createElement(window.HomeScreen, null);
         }
