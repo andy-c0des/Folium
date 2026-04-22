@@ -19247,6 +19247,16 @@ function FriendGardenScreen(props) {
         setLoading(true);
         getFriendGarden(userId).then(function(res) {
             if (!alive) return;
+            // Temp debug: log first plant so we can see thumbUrl in Network/console
+            try {
+                var firstP = (res && res.plants && res.plants[0]) || null;
+                console.log('[friend-garden]', {
+                    friend: res && res.friend,
+                    plantCount: res && res.plants ? res.plants.length : 0,
+                    firstPlant: firstP ? { uid: firstP.uid, nickname: firstP.nickname, thumbUrl: firstP.thumbUrl || '(empty)', viewUrl: firstP.viewUrl || '(empty)', location: firstP.location } : null,
+                    fromCache: res && res._fromCache ? true : false
+                });
+            } catch(e) {}
             if (res && res.ok === false) { setError(res.error || 'Could not load garden'); setLoading(false); return; }
             setGarden({
                 friend: (res && res.friend) || null,

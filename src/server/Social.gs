@@ -187,8 +187,9 @@ function plantosGetFriendGarden(friendUserId) {
 
   // Short-lived cache keyed per (viewer, target). 2-minute TTL — long enough to
   // mask the two sheet reads on repeat visits, short enough that note edits /
-  // new plants show up on re-entry.
-  var cacheKey = 'folium_fg_v1::' + me + '::' + targetId;
+  // new plants show up on re-entry. v2: bumped to invalidate any bad cache
+  // from earlier server versions where thumbUrl wasn't flowing through.
+  var cacheKey = 'folium_fg_v2::' + me + '::' + targetId;
   try {
     var cache = CacheService.getScriptCache();
     var hit = cache.get(cacheKey);
@@ -224,6 +225,14 @@ function plantosGetFriendGarden(friendUserId) {
     if (key && key !== '|') myWishKeys[key] = true;
   });
 
+  // Diag: log whether the friend's sheet read produced thumbUrls
+  try {
+    var _dbgPlants = (friendPlantsRes && friendPlantsRes.plants) || [];
+    var _withThumb = 0;
+    for (var _i = 0; _i < _dbgPlants.length; _i++) if (_dbgPlants[_i].thumbUrl) _withThumb++;
+    Logger.log('[friendGarden] target=' + targetId + ' plants=' + _dbgPlants.length + ' withThumb=' + _withThumb + ' sheetName=' + (_currentUser && _currentUser.inventorySheet));
+    if (_dbgPlants.length > 0) Logger.log('[friendGarden] firstPlant.thumbUrl=' + (_dbgPlants[0].thumbUrl || '(empty)'));
+  } catch (edbg) {}
   var friendPlants = ((friendPlantsRes && friendPlantsRes.plants) ? friendPlantsRes.plants : []).map(function(p) {
     var key = ((p.genus || '') + '|' + (p.taxon || p.species || '')).toLowerCase().trim();
     return Object.assign({}, p, {
