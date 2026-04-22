@@ -641,9 +641,13 @@
 
     .plant-tab-bar {
       display: flex; gap: 0; border-bottom: 3px solid;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+    .plant-tab-bar::-webkit-scrollbar { display: none; }
     .plant-tab {
-      flex: 1; padding: 10px 8px; text-align: center;
+      flex: 1 0 auto; padding: 10px 8px; text-align: center;
       font-family: var(--font-pixel);
       font-size: var(--fs-micro); font-weight: 900;
       letter-spacing: 0.04em;
@@ -653,6 +657,10 @@
       transition: all 0.15s ease;
       min-height: 44px;
       position: relative;
+      white-space: nowrap;
+    }
+    @media (max-width: 480px) {
+      .plant-tab { padding: 10px 10px; min-width: 72px; font-size: 10px; }
     }
     .plant-tab.active {
       border-bottom-color: currentColor;
@@ -748,6 +756,16 @@ const px8 = { fontFamily: "'Press Start 2P', cursive" };
 function normStr(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
 const PLANTOS_CACHE_PREFIX = 'plantos_cache_v1:';
 const inMemoryCache = Object.create(null);
+// Local-date ISO string (YYYY-MM-DD) — avoids UTC off-by-one in western timezones.
+// new Date().toISOString() returns UTC; at 8pm Pacific on the 21st, UTC is already
+// the 22nd, so slicing the ISO gives the wrong "today". Use local date components.
+function localDateStr(d) {
+    d = d || new Date();
+    var yr = d.getFullYear();
+    var mo = String(d.getMonth() + 1).padStart(2, '0');
+    var dy = String(d.getDate()).padStart(2, '0');
+    return yr + '-' + mo + '-' + dy;
+}
 function cacheRead(key, maxAgeMs) {
     try {
         const mem = inMemoryCache[key];
@@ -4945,7 +4963,7 @@ function PlantDataProvider({ children }) {
                 rootstockUID:     String(payload.rootstockUID || '').trim(),
                 notes:            String(payload.notes || '').trim(),
                 status: 'Trying',
-                startDate: String(payload.startDate || new Date().toISOString().slice(0,10)).trim(),
+                startDate: String(payload.startDate || localDateStr()).trim(),
             };
             setDemoGrafts(prev => [newGraft, ...(prev || [])]);
             demoPushGraftLog_(graftId, 'CREATED', 'Graft started — ' + (newGraft.graftTechnique || 'Graft'));
@@ -5016,7 +5034,7 @@ function PlantDataProvider({ children }) {
     };
     const sellGraft = (graftId, priceSold) => {
         if (DEMO_MODE) {
-            setDemoGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Sold', priceSold: String(priceSold || ''), soldDate: new Date().toISOString().slice(0,10) })));
+            setDemoGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Sold', priceSold: String(priceSold || ''), soldDate: localDateStr() })));
             const priceStr = priceSold ? ` for ${priceSold}` : '';
             demoPushGraftLog_(graftId, 'SOLD', `Graft sold${priceStr}.`);
             return Promise.resolve({ ok: true });
@@ -5535,7 +5553,7 @@ function PlantDataProvider({ children }) {
         getGrafts, getGraftTimeline, createGraft, updateGraftStatus, addGraftNote, uploadGraftPhoto, graduateGraft, sellGraft, updateGraft,
         demoGrafts, demoGraftTimelines,
         sellProp: (propId, priceSold) => {
-            setDemoProps(prev => (prev || []).map(p => p.propId !== propId ? p : Object.assign({}, p, { status: 'Sold', priceSold: String(priceSold || ''), soldDate: new Date().toISOString().slice(0,10) })));
+            setDemoProps(prev => (prev || []).map(p => p.propId !== propId ? p : Object.assign({}, p, { status: 'Sold', priceSold: String(priceSold || ''), soldDate: localDateStr() })));
             const priceStr = priceSold ? ` for ${priceSold}` : '';
             demoPushPropLog_(propId, 'SOLD', `Prop sold${priceStr}.`);
             return Promise.resolve({ ok: true });
@@ -5563,7 +5581,7 @@ function PlantDataProvider({ children }) {
             return function() { return Promise.resolve((window.__demoWishlist || []).slice()); };
         }()),
         addToWishlist: function(item) {
-            var entry = Object.assign({}, item, { wishlistId: 'WL' + Date.now(), dateAdded: new Date().toISOString().slice(0,10) });
+            var entry = Object.assign({}, item, { wishlistId: 'WL' + Date.now(), dateAdded: localDateStr() });
             if (!window.__demoWishlist) window.__demoWishlist = [];
             window.__demoWishlist.unshift(entry);
             return Promise.resolve({ ok: true, item: entry, wishlist: window.__demoWishlist.slice() });
@@ -6845,7 +6863,7 @@ function WateringScreen() {
     const [subContains, setSubContains] = useState(''); // free-text contains
     const [metaByUid, setMetaByUid] = useState({}); // uid -> { location, subText }
     const [metaLoading, setMetaLoading] = useState(false);
-    const [logDate, setLogDate] = useState(new Date().toISOString().slice(0,10));
+    const [logDate, setLogDate] = useState(localDateStr());
     // Dynamic substrate buttons built from actual plant substrates in collection
     const SUB_PRESETS = useMemo(() => {
         const seen = new Set();
@@ -7189,13 +7207,13 @@ function WateringScreen() {
                 React.createElement("input", {
                     type: "date",
                     value: logDate,
-                    max: new Date().toISOString().slice(0,10),
+                    max: localDateStr(),
                     onChange: function(e) { setLogDate(e.target.value); },
                     style: Object.assign({}, px8S, { fontSize: '11px', flex: 1, border: '2px solid rgba(26,122,160,0.3)', padding: '3px 6px', background: '#EFF8FF', color: '#1A3A5A' })
                 }),
-                logDate !== new Date().toISOString().slice(0,10) && React.createElement("button", {
+                logDate !== localDateStr() && React.createElement("button", {
                     type: "button",
-                    onClick: function() { setLogDate(new Date().toISOString().slice(0,10)); },
+                    onClick: function() { setLogDate(localDateStr()); },
                     style: { fontSize: '10px', border: '2px solid #1A7AA0', background: '#1E6A8A', color: '#A0D8F4', padding: '3px 7px', cursor: 'pointer' }
                 }, "Today")
             ),
@@ -8506,7 +8524,7 @@ function AddScreen({ prefill, openMode }) {
                 species:    propIsGraft ? String(propScionSpecies || '').trim() : String(taxon || '').trim(),
                 propType:   propIsGraft ? 'Graft' : propType,
                 substrate:  propIsGraft ? '' : propSubstrate,
-                startDate:  birthday || new Date().toISOString().slice(0, 10),
+                startDate:  birthday || localDateStr(),
                 parentUID:  null,
                 notes:      sourceNote,
                 isGraft:    propIsGraft,
@@ -8931,7 +8949,7 @@ function AddScreen({ prefill, openMode }) {
                         "BATCH_",
                         previewUids[0],
                         "_",
-                        new Date().toISOString().slice(0, 10).replace(/-/g, '')),
+                        localDateStr().replace(/-/g, '')),
                     React.createElement("span", { style: { marginLeft: 6, opacity: 0.6 } }, "\u2014 links siblings in family tree"))))),
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 8px' } },
                 React.createElement("div", { style: { height: 2, flex: 1, background: theme.sep, opacity: 0.4 } }),
@@ -10985,7 +11003,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         species: (prefill && prefill.species) || '',
         propType: 'Stem cutting',
         substrate: 'Sphagnum moss',
-        startDate: new Date().toISOString().slice(0,10),
+        startDate: localDateStr(),
         parentUID: (prefill && prefill.parentUID) || '',
         notes: '',
         hybridType: false,
@@ -11125,7 +11143,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             }
         }
         setFormStatus({ type: 'loading', message: 'Creating...' });
-        let payload = Object.assign(Object.assign({}, form), { startDate: form.startDate || new Date().toISOString().slice(0, 10) });
+        let payload = Object.assign(Object.assign({}, form), { startDate: form.startDate || localDateStr() });
         if (form.hybridType) {
             const mGenus = form.motherGenus.trim() || form.motherFreetext.trim();
             const fGenus = form.fatherGenus.trim() || form.fatherFreetext.trim();
@@ -11887,7 +11905,7 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         scionUID: (prefill && prefill.parentUID) || '',
         rootstockGenus: '', rootstockSpecies: '', rootstockUID: '',
         graftTechnique: 'Approach graft',
-        startDate: new Date().toISOString().slice(0, 10), notes: '',
+        startDate: localDateStr(), notes: '',
     });
     const [formStatus, setFormStatus] = useState(null);
     const [noteText, setNoteText] = useState('');
@@ -11948,12 +11966,12 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         if (!String(form.scionGenus || '').trim()) { setFormStatus({ type: 'error', message: 'Scion genus is required.' }); return; }
         setFormStatus({ type: 'loading', message: 'Creating...' });
         let res;
-        try { res = await createGraft(Object.assign({}, form, { startDate: form.startDate || new Date().toISOString().slice(0,10) })); }
+        try { res = await createGraft(Object.assign({}, form, { startDate: form.startDate || localDateStr() })); }
         catch(e) { setFormStatus({ type: 'error', message: 'Error: ' + (e && e.message || String(e)) }); return; }
         if (res && res.ok) {
             setFormStatus({ type: 'success', message: 'Graft recorded! \uD83D\uDD17' });
             setShowForm(false);
-            setForm({ scionGenus: '', scionSpecies: '', scionUID: '', rootstockGenus: '', rootstockSpecies: '', rootstockUID: '', graftTechnique: 'Approach graft', startDate: new Date().toISOString().slice(0,10), notes: '' });
+            setForm({ scionGenus: '', scionSpecies: '', scionUID: '', rootstockGenus: '', rootstockSpecies: '', rootstockUID: '', graftTechnique: 'Approach graft', startDate: localDateStr(), notes: '' });
             await new Promise(r => setTimeout(r, 300));
             refreshGrafts();
             setTimeout(() => setFormStatus(null), 1500);
@@ -11982,7 +12000,7 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         if (!noteText.trim()) return;
         const note = noteText.trim(); setNoteText('');
         await addGraftNote(graftId, note);
-        setTimeline(prev => [{ action: 'NOTE', details: note, ts: new Date().toISOString().slice(0,10) }, ...(prev || [])]);
+        setTimeline(prev => [{ action: 'NOTE', details: note, ts: localDateStr() }, ...(prev || [])]);
     }
     async function handleGraftPhotoPicked(graftId, e) {
         const file = e.target.files && e.target.files[0];
@@ -11990,7 +12008,7 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         e.target.value = '';
         const preview = await readFileAsDataUrl(file);
         const exifDate = await readExifDate(file);
-        setPendingGraftPhoto({ graftId, file, preview, exifDate, manualDate: exifDate || new Date().toISOString().slice(0,10), caption: '' });
+        setPendingGraftPhoto({ graftId, file, preview, exifDate, manualDate: exifDate || localDateStr(), caption: '' });
     }
     async function submitPendingGraftPhoto() {
         if (!pendingGraftPhoto) return;
@@ -12002,7 +12020,7 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             const res = await uploadGraftPhoto(graftId, dataUrl, file.name || 'photo.jpg');
             const photoUrl = res && (res.thumbUrl || res.url);
             await addGraftNote(graftId, caption || manualDate || '', photoUrl);
-            setTimeline(prev => [{ action: 'PHOTO', details: caption || '', ts: manualDate || new Date().toISOString().slice(0,10), photoUrl }, ...(prev || [])]);
+            setTimeline(prev => [{ action: 'PHOTO', details: caption || '', ts: manualDate || localDateStr(), photoUrl }, ...(prev || [])]);
             setGraftPhotoMsg({ type: 'success', text: 'Photo saved!' });
             setTimeout(() => setGraftPhotoMsg(null), 1500);
         } catch(e) { setGraftPhotoMsg({ type: 'error', text: 'Upload failed' }); setTimeout(() => setGraftPhotoMsg(null), 3000); }
@@ -12024,7 +12042,7 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
         try {
             const res = await sellGraft(graftId, sellPrice);
             if (res && res.ok) {
-                setGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Sold', priceSold: sellPrice, soldDate: new Date().toISOString().slice(0,10) })));
+                setGrafts(prev => (prev || []).map(g => g.graftId !== graftId ? g : Object.assign({}, g, { status: 'Sold', priceSold: sellPrice, soldDate: localDateStr() })));
                 setSellStatus({ type: 'success', message: 'Sale logged!' });
                 setShowSell(false);
                 setTimeout(() => setSellStatus(null), 1500);
@@ -16242,7 +16260,7 @@ function SaleListingModal({ plant, listing, extraPayload, onClose, onDone }) {
     const theme = useTheme();
     const { isSmall } = useScreenSize();
     const isEdit = !!(listing && listing.listingId);
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayIso = localDateStr();
     const [listPrice, setListPrice] = useState(isEdit ? (listing.listPrice || '') : '');
     const [quantity, setQuantity] = useState(isEdit ? (parseInt(listing.quantity, 10) || 1) : 1);
     const [quantitySold, setQuantitySold] = useState(isEdit ? (parseInt(listing.quantitySold, 10) || 0) : 0);
@@ -16559,7 +16577,7 @@ function SalesSection() {
                 case 'sold':        return s.soldAt || s.listedAt || s.createdAt || '';
                 case 'age': {
                     var start = s.createdAt || s.listedAt || '';
-                    var end = s.soldAt || new Date().toISOString().slice(0, 10);
+                    var end = s.soldAt || localDateStr();
                     if (!start) return 0;
                     try { return Math.max(0, Math.round((new Date(end) - new Date(start)) / 86400000)); } catch(e) { return 0; }
                 }
@@ -16623,7 +16641,7 @@ function SalesSection() {
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'folium-sales-' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.download = 'folium-sales-' + localDateStr() + '.csv';
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -16741,7 +16759,7 @@ function SalesSection() {
                             var rowBg = rowIdx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)';
                             // Compute age in days (listing → sold, or listing → today if unsold)
                             var ageStart = s.createdAt || s.listedAt || '';
-                            var ageEnd = s.soldAt || new Date().toISOString().slice(0, 10);
+                            var ageEnd = s.soldAt || localDateStr();
                             var ageDays = 0;
                             if (ageStart) { try { ageDays = Math.max(0, Math.round((new Date(ageEnd) - new Date(ageStart)) / 86400000)); } catch(e) {} }
                             return React.createElement('tr', { key: s.listingId, style: { background: rowBg, borderLeft: '4px solid ' + c.border } },
@@ -18836,7 +18854,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
         if (progSaving) return;
         setProgSaving(true);
         try {
-            const dateVal = (logDate) || (typeof todayStr === 'function' ? todayStr() : new Date().toISOString().slice(0,10));
+            const dateVal = (logDate) || (typeof todayStr === 'function' ? todayStr() : localDateStr());
             if (quickLog) await quickLog(uid, { progressUpdate: true, notes: progComment.trim(), date: dateVal, progressStatus: progStatus, heightCm: progHeight, observationTags: progObs.join(',') });
             if (updatePlant) await updatePlant(uid, { progressStatus: progStatus, heightCm: progHeight, observationTags: progObs.join(',') });
             if (onDone) onDone();
@@ -19087,7 +19105,7 @@ function ProgressUpdatesScreen() {
                 React.createElement(ProgressUpdateForm, {
                     uid: modalPlant.uid, plant: modalPlant,
                     quickLog: quickLog, updatePlant: updatePlant, uploadPlantPhoto: uploadPlantPhoto,
-                    logDate: null, todayStr: function() { return new Date().toISOString().slice(0, 10); },
+                    logDate: null, todayStr: function() { return localDateStr(); },
                     theme: theme, pxS: pxS, isSmall: isSmall,
                     onDone: function() {
                         removeProgressDue(modalUid);

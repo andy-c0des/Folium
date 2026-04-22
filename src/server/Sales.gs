@@ -162,6 +162,13 @@ function plantosUpdateSaleStatus(listingId, newStatus, salePrice, soldAt) {
     sales[idx].soldAt = soldDateOverride || sales[idx].soldAt || now;
     if (salePrice != null && String(salePrice).trim()) sales[idx].salePrice = plantosSafeStr_(salePrice).trim();
   }
+  // Sync per-unit status breakdown — put ALL units in the new status so the
+  // frontend's getUnitStatuses display stays consistent with the overall status.
+  var qty = parseInt(sales[idx].quantity, 10) || 1;
+  var us = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+  us[newStatus] = qty;
+  sales[idx].unitStatuses = us;
+  sales[idx].quantitySold = newStatus === 'Sold' ? qty : 0;
   plantosSaveSales_(sales);
   return { ok: true, listing: sales[idx] };
 }
