@@ -269,6 +269,114 @@ function plantosRepairPhotoSharing(cursor) {
   };
 }
 
+/* ===================== BACKFILL LATEST-PHOTO COLUMNS =====================
+   For the current user's inventory, walks each plant row, finds the newest
+   image in its Drive Photos folder, and writes the Latest Photo Thumb/View
+   URLs back to the sheet if they're empty.
+
+   Fixes friend-garden cards that show 🌱 placeholders — the plants HAVE photos
+   in Drive but the sheet columns were never populated (older uploads, imports,
+   or manual Drive uploads that bypassed plantosUploadPlantPhoto).
+
+   Paginated like the repair function: 20s budget per call, returns a cursor
+   that indexes into the inventory's rows. Client loops until done.
+*/
+function plantosBackfillLatestPhotos(cursor) {
+  cursor = String(cursor || '');
+  var startMs = Date.now();
+  var softStop = 20 * 1000;
+
+  var inv = plantosReadInventory_();
+  var values = inv.values, hmap = inv.hmap, sh = inv.sh;
+  var H = PLANTOS_BACKEND_CFG.HEADERS;
+  var uidCol = plantosCol_(hmap, H.UID);
+  if (uidCol < 0) return { ok: false, error: 'No UID column in inventory' };
+  var thumbCol = plantosCol_(hmap, H.LATEST_PHOTO_THUMB);
+  var viewCol = plantosCol_(hmap, H.LATEST_PHOTO_VIEW);
+  // Auto-create missing columns so writes land somewhere
+  if (thumbCol < 0) {
+    var newCol = sh.getLastColumn() + 1;
+    sh.getRange(1, newCol).setValue(H.LATEST_PHOTO_THUMB);
+    SpreadsheetApp.flush();
+    thumbCol = newCol - 1;
+  }
+  if (viewCol < 0) {
+    var newCol2 = sh.getLastColumn() + 1;
+    sh.getRange(1, newCol2).setValue(H.LATEST_PHOTO_VIEW);
+    SpreadsheetApp.flush();
+    viewCol = newCol2 - 1;
+  }
+
+  var plantsRoot = plantosGetPlantsRoot_();
+  var startRow = Math.max(1, parseInt(cursor, 10) || 1); // row index in values (header = 0)
+  var totalRows = values.length - 1; // exclude header
+  var filled = 0, skippedHasThumb = 0, skippedNoPhoto = 0, errors = 0, rowsScanned = 0;
+
+  var r = startRow;
+  for (; r < values.length; r++) {
+    if (Date.now() - startMs > softStop) break;
+    try {
+      var row = values[r];
+      var uid = plantosSafeStr_(row[uidCol]).trim();
+      if (!uid) { rowsScanned++; continue; }
+      // Skip rows that already have a thumb URL
+      var existingThumb = plantosSafeStr_(row[thumbCol]).trim();
+      if (existingThumb) { skippedHasThumb++; rowsScanned++; continue; }
+
+      // Find the newest image file in this plant's Photos folder
+      var plantFolder = plantosResolveOrCreatePlantFolder_(plantsRoot, uid);
+      var photosIter = plantFolder.getFoldersByName(PLANTOS_BACKEND_CFG.PHOTOS_SUBFOLDER);
+      if (!photosIter.hasNext()) { skippedNoPhoto++; rowsScanned++; continue; }
+      var photosFolder = photosIter.next();
+      var files = photosFolder.getFiles();
+      var newest = null;
+      while (files.hasNext()) {
+        var f = files.next();
+        var mt = f.getMimeType ? f.getMimeType() : '';
+        if (mt && mt.indexOf('image/') !== 0) continue;
+        var t = f.getLastUpdated ? f.getLastUpdated() : new Date(0);
+        if (!newest || t > newest.t) newest = { f: f, t: t };
+      }
+      if (!newest) { skippedNoPhoto++; rowsScanned++; continue; }
+
+      // Ensure the file is publicly viewable so thumbnails render in any browser
+      try {
+        var acc = newest.f.getSharingAccess();
+        if (acc !== DriveApp.Access.ANYONE_WITH_LINK && acc !== DriveApp.Access.ANYONE) {
+          newest.f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        }
+      } catch (esh) {}
+
+      var fileId = newest.f.getId();
+      var thumbUrl = plantosDriveThumbUrl_(fileId, 300);
+      var viewUrl = newest.f.getUrl();
+      sh.getRange(r + 1, thumbCol + 1).setValue(thumbUrl);
+      sh.getRange(r + 1, viewCol + 1).setValue(viewUrl);
+      filled++;
+      rowsScanned++;
+    } catch (e) {
+      errors++;
+      rowsScanned++;
+      Logger.log('[backfill] row=' + r + ' err=' + (e && e.message));
+    }
+  }
+  SpreadsheetApp.flush();
+
+  var done = r >= values.length;
+  return {
+    ok: true,
+    filled: filled,
+    skippedHasThumb: skippedHasThumb,
+    skippedNoPhoto: skippedNoPhoto,
+    errors: errors,
+    rowsScanned: rowsScanned,
+    totalRows: totalRows,
+    nextCursor: done ? '' : String(r),
+    done: done,
+    ms: Date.now() - startMs
+  };
+}
+
 /* Diagnostic helper — lists the Drive hierarchy to trace where photos actually
    live. Run from Dev Tools. Returns root + up to 10 subfolder names + for one
    of them, up to 10 of its contents. */

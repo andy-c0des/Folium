@@ -211,6 +211,7 @@ function doPost(e) {
       plantosGetGiftsSent: plantosGetGiftsSent,
       plantosRepairPhotoSharing: plantosRepairPhotoSharing,
       plantosDiagnosePhotoStorage: plantosDiagnosePhotoStorage,
+      plantosBackfillLatestPhotos: plantosBackfillLatestPhotos,
       plantosDebug: plantosDebug,
       plantosDebugLocations: plantosDebugLocations,
       kbGetPlantFacts: kbGetPlantFacts,

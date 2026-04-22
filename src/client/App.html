@@ -18689,6 +18689,41 @@ function DevScreen() {
                         if (el) { el.style.color = '#F87171'; el.textContent = 'Diag failed: ' + (e && e.message ? e.message : String(e)); }
                     }
                 }}, '🩺 Diagnose'),
+                React.createElement(PlantButton, { onClick: async function() {
+                    var el = document.getElementById('repairout');
+                    var totals = { filled: 0, skippedHasThumb: 0, skippedNoPhoto: 0, errors: 0, rowsScanned: 0, totalRows: 0, batches: 0 };
+                    var cursor = '';
+                    function render(status) {
+                        if (!el) return;
+                        el.style.color = status === 'done' ? '#7BE87B' : status === 'error' ? '#F87171' : '#A0A8FF';
+                        var pct = totals.totalRows ? Math.round(100 * totals.rowsScanned / totals.totalRows) : 0;
+                        el.textContent =
+                            (status === 'done' ? '✓ Backfill complete' : status === 'error' ? '✗ Failed' : '⏳ Batch ' + totals.batches + (totals.totalRows ? ' — ' + pct + '% (' + totals.rowsScanned + '/' + totals.totalRows + ' rows)' : '')) +
+                            '\n   filled: ' + totals.filled +
+                            '\n   skipped (had thumb): ' + totals.skippedHasThumb +
+                            '\n   skipped (no photo in Drive): ' + totals.skippedNoPhoto +
+                            '\n   errors: ' + totals.errors;
+                    }
+                    try {
+                        while (true) {
+                            totals.batches++;
+                            render('running');
+                            var res = await gasCall('plantosBackfillLatestPhotos', cursor);
+                            if (!res || res.ok === false) throw new Error((res && res.error) || 'Empty response');
+                            totals.filled += res.filled || 0;
+                            totals.skippedHasThumb += res.skippedHasThumb || 0;
+                            totals.skippedNoPhoto += res.skippedNoPhoto || 0;
+                            totals.errors += res.errors || 0;
+                            totals.rowsScanned += res.rowsScanned || 0;
+                            totals.totalRows = res.totalRows || totals.totalRows;
+                            if (res.done) { render('done'); break; }
+                            cursor = res.nextCursor || '';
+                            if (!cursor) { render('done'); break; }
+                        }
+                    } catch (err) {
+                        if (el) { el.style.color = '#F87171'; el.textContent = '✗ Failed: ' + (err && err.message ? err.message : String(err)); }
+                    }
+                }}, '📸 Backfill photo links'),
                 React.createElement('div', { id: 'repairout', style: Object.assign({}, pxS, { fontSize: '11px', marginTop: 8, padding: '6px 10px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS, minHeight: 36, wordBreak: 'break-all', lineHeight: 1.6, whiteSpace: 'pre-wrap' }) }, 'Tap to repair.')
             ),
             React.createElement('div', { style: sectionStyle },
@@ -19247,16 +19282,32 @@ function FriendGardenScreen(props) {
         setLoading(true);
         getFriendGarden(userId).then(function(res) {
             if (!alive) return;
-            // Temp debug: log first plant so we can see thumbUrl in Network/console
+            // Debug: count how many plants have populated thumbUrl, and surface one that does
             try {
-                var firstP = (res && res.plants && res.plants[0]) || null;
-                console.log('[friend-garden]', {
-                    friend: res && res.friend,
-                    plantCount: res && res.plants ? res.plants.length : 0,
-                    firstPlant: firstP ? { uid: firstP.uid, nickname: firstP.nickname, thumbUrl: firstP.thumbUrl || '(empty)', viewUrl: firstP.viewUrl || '(empty)', location: firstP.location } : null,
-                    fromCache: res && res._fromCache ? true : false
+                var ps = (res && res.plants) || [];
+                var withThumb = 0;
+                var firstWith = null;
+                for (var k = 0; k < ps.length; k++) {
+                    if (ps[k].thumbUrl) { withThumb++; if (!firstWith) firstWith = ps[k]; }
+                }
+                console.log('[friend-garden] SUMMARY', {
+                    friend: res && res.friend && res.friend.userId,
+                    totalPlants: ps.length,
+                    plantsWithThumbUrl: withThumb,
+                    plantsWithoutThumbUrl: ps.length - withThumb
                 });
-            } catch(e) {}
+                if (firstWith) {
+                    console.log('[friend-garden] PLANT WITH PHOTO:', {
+                        uid: firstWith.uid,
+                        nickname: firstWith.nickname,
+                        thumbUrl: firstWith.thumbUrl,
+                        viewUrl: firstWith.viewUrl
+                    });
+                    console.log('[friend-garden] Try opening this URL directly:', firstWith.thumbUrl);
+                } else {
+                    console.warn('[friend-garden] NO plant has a thumbUrl — backfill required. The Latest Photo Thumb column in the friend\'s sheet is empty for all rows.');
+                }
+            } catch(e) { console.error('[friend-garden] debug failed', e); }
             if (res && res.ok === false) { setError(res.error || 'Could not load garden'); setLoading(false); return; }
             setGarden({
                 friend: (res && res.friend) || null,
