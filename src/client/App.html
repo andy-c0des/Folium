@@ -12142,7 +12142,18 @@ function GraftSection({ locations, prefill, showForm: showFormProp, onSetShowFor
     }
     async function handleStatusUpdate(graftId, newStatus) {
         if (newStatus === 'Failed' && !failCause) { setShowStatusPicker(true); return; }
-        try { var res = await updateGraftStatus(graftId, newStatus, failCause || null, failDetail || null); if (res && res.ok === false) return; } catch(e) { return; }
+        setFormStatus({ type: 'loading', message: 'Updating\u2026' });
+        try {
+            var res = await updateGraftStatus(graftId, newStatus, failCause || null, failDetail || null);
+            if (res && res.ok === false) {
+                setFormStatus({ type: 'error', message: 'Failed: ' + (res.error || res.reason || 'unknown') });
+                return;
+            }
+            setFormStatus(null);
+        } catch(e) {
+            setFormStatus({ type: 'error', message: 'Failed: ' + ((e && e.message) || String(e)) });
+            return;
+        }
         setShowStatusPicker(false);
         if (newStatus !== 'Failed') setShowPhotoPrompt(graftId);
         setFailCause(''); setFailDetail('');
@@ -15725,12 +15736,12 @@ function UnifiedCarePanel({ plant, physics, env, pxS, theme, onEditOpen, onSaveI
 
     const speciesTab = React.createElement(PlantKnowledgePanel, { plant: plant });
 
-    const carlTab = React.createElement(CarlNPCPanel, { plant: plant, pxS: pxS, theme: theme, activeChar: activeChar, setActiveChar: setActiveChar, kbEnabled: kbEnabled, setKbEnabled: setKbEnabled });
-
+    // Carl AI is archived — the old `: carlTab` fallback referenced CarlNPCPanel
+    // which no longer exists and crashed the tab bar. Fall back to statusTab.
     const content = tab === 'status'   ? statusTab
                   : tab === 'schedule' ? scheduleTab
                   : tab === 'species'  ? speciesTab
-                  : carlTab;
+                  : statusTab;
 
     return React.createElement('div', { style: {
         border: '2px solid ' + theme.cardBorder,
@@ -17414,7 +17425,18 @@ function CompostModal({ plant, onClose, onDone }) {
             return;
         }
         const extraFields = type === 'rehomed' && salePrice ? { salePrice: salePrice.trim() } : {};
-        await archivePlant(plant.uid, type, cause, detail, extraFields);
+        try {
+            const res = await archivePlant(plant.uid, type, cause, detail, extraFields);
+            if (res && res.ok === false) {
+                setGiftError('Archive failed: ' + (res.error || 'unknown')); // reuses the existing error banner rendered in gift_confirm — harmless to set outside gift flow
+                setSaving(false);
+                return;
+            }
+        } catch (e) {
+            setGiftError('Archive failed: ' + ((e && e.message) || String(e)));
+            setSaving(false);
+            return;
+        }
         setSaving(false);
         onDone();
     }
@@ -17503,6 +17525,7 @@ function CompostModal({ plant, onClose, onDone }) {
                 type === 'rehomed' && React.createElement("div", { style: { marginBottom: 12 } },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 4 }) }, "\uD83D\uDCB0 Price Sold (optional)"),
                     React.createElement("input", { value: salePrice, onChange: e => setSalePrice(e.target.value.replace(/[^0-9.]/g,'')), placeholder: "0.00", style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', width: '100%', border: `3px solid ${theme.cardBorder}`, padding: '8px', background: theme.rowBg, color: theme.txtP }) })),
+                giftError && React.createElement("div", { style: { marginBottom: 10, padding: '7px 10px', border: '2px solid #c0392b', background: '#fdf0ee', color: '#c0392b', fontFamily: "'Pixelify Sans',cursive", fontSize: '12px' } }, giftError),
                 React.createElement("div", { style: { display: 'flex', gap: 8 } },
                     React.createElement("button", { type: "button", onClick: handleConfirm, disabled: saving, style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', fontWeight: 900, flex: 1, padding: '12px', border: `3px solid ${type === 'deceased' ? '#c0392b' : '#27ae60'}`, background: type === 'deceased' ? '#c0392b' : '#27ae60', color: '#fff', cursor: 'pointer', boxShadow: `0 3px 0 ${type === 'deceased' ? '#922b21' : '#1e8449'}` }) }, saving ? '...' : type === 'deceased' ? '🪦 Confirm' : '🏠 Confirm Rehome'),
                     React.createElement("button", { type: "button", onClick: () => setStep(type === 'deceased' ? 'cause_option' : 'type'), style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, background: 'none', border: `2px solid ${theme.rowBorder}`, padding: '12px 16px', cursor: 'pointer' }) }, "\< Back")))))));
@@ -20178,6 +20201,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
     async function handleSubmit() {
         if (progSaving) return;
         setProgSaving(true);
+        setProgPhotoMsg(null); // repurpose the existing status strip for the submit outcome
         try {
             const dateVal = (logDate) || (typeof todayStr === 'function' ? todayStr() : localDateStr());
             if (quickLog) await quickLog(uid, { progressUpdate: true, notes: progComment.trim(), date: dateVal, progressStatus: progStatus, heightCm: progHeight, observationTags: progObs.join(',') });
@@ -20185,6 +20209,7 @@ function ProgressUpdateForm({ uid, plant, quickLog, updatePlant, uploadPlantPhot
             if (onDone) onDone();
         } catch(e) {
             console.error('ProgressUpdateForm submit error', e);
+            setProgPhotoMsg('Save failed: ' + (e && e.message ? e.message : 'unknown error — not saved'));
         }
         setProgSaving(false);
     }
@@ -20457,7 +20482,7 @@ function AppContent() {
             case 'quick-log': return React.createElement(window.WateringScreen, null);
             case 'add': return React.createElement(window.AddScreen, { prefill: (route.params && route.params.prefill) ? route.params.prefill : null, openMode: (route.params && route.params.openMode) ? route.params.openMode : null });
             case 'carl': navigate('progress-updates'); return null;
-            case 'carl-chat': return React.createElement(window.CarlClassicScreen, null);
+            case 'carl-chat': navigate('home'); return null; // Carl chat archived — redirect home
             case 'my-plants': return React.createElement(window.MyPlantsScreen, { openTab: (route.params && route.params.openTab) ? route.params.openTab : null, prefill: (route.params && route.params.prefill) ? route.params.prefill : null });
             case 'environments': return React.createElement(window.EnvironmentsScreen, null);
             case 'archive': return React.createElement(window.ArchiveScreen, null);

@@ -206,13 +206,20 @@ function plantosGetFriendGarden(friendUserId) {
   var targetUser = plantosGetUserById_(targetId);
   if (!targetUser) return { ok: false, error: 'User not found' };
 
-  _currentUser = {
-    username: targetUser.username,
-    isAdmin: !!targetUser.isAdmin,
-    inventorySheet: targetUser.inventorySheet || (targetUser.isAdmin ? PLANTOS_BACKEND_CFG.INVENTORY_SHEET : targetUser.username + ' - ' + PLANTOS_BACKEND_CFG.INVENTORY_SHEET)
-  };
-  var friendPlantsRes = plantosGetAllPlantsLite();
-  _currentUser = meBackup;
+  // try/finally guarantees _currentUser restore even if plantosGetAllPlantsLite throws.
+  // Previously an exception mid-swap would leak the friend context into subsequent
+  // calls in the same HTTP request.
+  var friendPlantsRes;
+  try {
+    _currentUser = {
+      username: targetUser.username,
+      isAdmin: !!targetUser.isAdmin,
+      inventorySheet: targetUser.inventorySheet || (targetUser.isAdmin ? PLANTOS_BACKEND_CFG.INVENTORY_SHEET : targetUser.username + ' - ' + PLANTOS_BACKEND_CFG.INVENTORY_SHEET)
+    };
+    friendPlantsRes = plantosGetAllPlantsLite();
+  } finally {
+    _currentUser = meBackup;
+  }
 
   var myCollectionKeys = {};
   myPlants.forEach(function(p) {
@@ -387,35 +394,40 @@ function plantosGetFriendsFeed() {
 
   var meBackup = _currentUser;
   var feed = [];
-  for (var i = 0; i < otherIds.length; i++) {
-    var otherId = otherIds[i];
-    var user = plantosGetUserById_(otherId);
-    if (!user) {
-      feed.push({ userId: otherId, username: otherId, plantCount: 0, thumbUrl: '', latestPlantName: '', error: true });
-      continue;
+  // try/finally so any unexpected throw (e.g. from plantosGetUserById_) doesn't
+  // leak the friend context into subsequent requests.
+  try {
+    for (var i = 0; i < otherIds.length; i++) {
+      var otherId = otherIds[i];
+      var user = plantosGetUserById_(otherId);
+      if (!user) {
+        feed.push({ userId: otherId, username: otherId, plantCount: 0, thumbUrl: '', latestPlantName: '', error: true });
+        continue;
+      }
+      try {
+        _currentUser = {
+          username: user.username,
+          isAdmin: !!user.isAdmin,
+          inventorySheet: user.inventorySheet || (user.isAdmin ? PLANTOS_BACKEND_CFG.INVENTORY_SHEET : user.username + ' - ' + PLANTOS_BACKEND_CFG.INVENTORY_SHEET)
+        };
+        var lite = plantosGetAllPlantsLite();
+        var plants = (lite && lite.plants) ? lite.plants : [];
+        var withPhoto = null;
+        for (var j = 0; j < plants.length; j++) { if (plants[j].thumbUrl) { withPhoto = plants[j]; break; } }
+        feed.push({
+          userId: otherId,
+          username: user.username || otherId,
+          plantCount: plants.length,
+          thumbUrl: withPhoto ? withPhoto.thumbUrl : '',
+          latestPlantName: withPhoto ? (withPhoto.nickname || withPhoto.primary || '') : ''
+        });
+      } catch (e) {
+        feed.push({ userId: otherId, username: (user && user.username) || otherId, plantCount: 0, thumbUrl: '', latestPlantName: '', error: true });
+      }
     }
-    try {
-      _currentUser = {
-        username: user.username,
-        isAdmin: !!user.isAdmin,
-        inventorySheet: user.inventorySheet || (user.isAdmin ? PLANTOS_BACKEND_CFG.INVENTORY_SHEET : user.username + ' - ' + PLANTOS_BACKEND_CFG.INVENTORY_SHEET)
-      };
-      var lite = plantosGetAllPlantsLite();
-      var plants = (lite && lite.plants) ? lite.plants : [];
-      var withPhoto = null;
-      for (var j = 0; j < plants.length; j++) { if (plants[j].thumbUrl) { withPhoto = plants[j]; break; } }
-      feed.push({
-        userId: otherId,
-        username: user.username || otherId,
-        plantCount: plants.length,
-        thumbUrl: withPhoto ? withPhoto.thumbUrl : '',
-        latestPlantName: withPhoto ? (withPhoto.nickname || withPhoto.primary || '') : ''
-      });
-    } catch (e) {
-      feed.push({ userId: otherId, username: (user && user.username) || otherId, plantCount: 0, thumbUrl: '', latestPlantName: '', error: true });
-    }
+  } finally {
+    _currentUser = meBackup;
   }
-  _currentUser = meBackup;
   feed.sort(function(a, b) { return b.plantCount - a.plantCount; });
   var out = { ok: true, feed: feed };
   try {
