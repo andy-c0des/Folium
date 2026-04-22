@@ -332,3 +332,54 @@ function plantosGetNotesOnMyPlants() {
   var notes = plantosSupabaseRequest_('get', 'plant_notes?recipient_id=eq.' + encodeURIComponent(me) + '&order=created_at.desc', undefined) || [];
   return { ok: true, notes: notes };
 }
+
+/* Home-widget feed: for each accepted friend, return plantCount + a representative thumbnail.
+   Iterates friends and switches _currentUser per friend (same pattern as plantosGetFriendGarden).
+   Kept cheap: no per-plant metadata beyond first thumb + count. */
+function plantosGetFriendsFeed() {
+  var me = plantosSocialUserId_();
+  var rows = plantosSupabaseRequest_('get',
+    'friendships?or=(user_id.eq.' + encodeURIComponent(me) + ',friend_id.eq.' + encodeURIComponent(me) + ')&status=eq.accepted',
+    undefined) || [];
+
+  // Build set of unique other-user ids
+  var otherIds = [];
+  rows.forEach(function(fr) {
+    var o = fr.user_id === me ? fr.friend_id : fr.user_id;
+    if (o && otherIds.indexOf(o) < 0) otherIds.push(o);
+  });
+
+  var meBackup = _currentUser;
+  var feed = [];
+  for (var i = 0; i < otherIds.length; i++) {
+    var otherId = otherIds[i];
+    var user = plantosGetUserById_(otherId);
+    if (!user) {
+      feed.push({ userId: otherId, username: otherId, plantCount: 0, thumbUrl: '', latestPlantName: '', error: true });
+      continue;
+    }
+    try {
+      _currentUser = {
+        username: user.username,
+        isAdmin: !!user.isAdmin,
+        inventorySheet: user.inventorySheet || (user.isAdmin ? PLANTOS_BACKEND_CFG.INVENTORY_SHEET : user.username + ' - ' + PLANTOS_BACKEND_CFG.INVENTORY_SHEET)
+      };
+      var lite = plantosGetAllPlantsLite();
+      var plants = (lite && lite.plants) ? lite.plants : [];
+      var withPhoto = null;
+      for (var j = 0; j < plants.length; j++) { if (plants[j].thumbUrl) { withPhoto = plants[j]; break; } }
+      feed.push({
+        userId: otherId,
+        username: user.username || otherId,
+        plantCount: plants.length,
+        thumbUrl: withPhoto ? withPhoto.thumbUrl : '',
+        latestPlantName: withPhoto ? (withPhoto.nickname || withPhoto.primary || '') : ''
+      });
+    } catch (e) {
+      feed.push({ userId: otherId, username: (user && user.username) || otherId, plantCount: 0, thumbUrl: '', latestPlantName: '', error: true });
+    }
+  }
+  _currentUser = meBackup;
+  feed.sort(function(a, b) { return b.plantCount - a.plantCount; });
+  return { ok: true, feed: feed };
+}

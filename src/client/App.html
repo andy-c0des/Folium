@@ -5610,6 +5610,7 @@ function PlantDataProvider({ children }) {
         getPlantNotesForGarden: function() { return Promise.resolve({ ok: true, notes: [] }); },
         addPlantNote: function() { return Promise.resolve({ ok: true }); },
         getNotesOnMyPlants: function() { return Promise.resolve({ ok: true, notes: [] }); },
+        getFriendsFeed: function() { return Promise.resolve({ ok: true, feed: [] }); },
     } : {
         locations, homeData, refreshHome, removeProgressDue, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
@@ -5677,6 +5678,7 @@ function PlantDataProvider({ children }) {
         getPlantNotesForGarden: (recipientId) => gasCall('plantosGetPlantNotesForGarden', recipientId),
         addPlantNote: (plantId, recipientId, noteText) => gasCall('plantosAddPlantNote', plantId, recipientId, noteText),
         getNotesOnMyPlants: () => gasCall('plantosGetNotesOnMyPlants'),
+        getFriendsFeed: () => gasCall('plantosGetFriendsFeed'),
     };
     return React.createElement(PlantDataContext.Provider, { value: ctxValue }, children);
 }
@@ -6175,25 +6177,36 @@ function HomeScreen() {
     // ── Dashboard Section (auto-layout + drag reorder) ──
     // Friends widget — live counts for requests + notes, tap to open Friends screen
     function DashFriends() {
-        const { getFriendsOverview, getNotesOnMyPlants } = usePlantData();
-        var _fs = React.useState({ friends: [], incoming: [], notes: [], loaded: false, error: false });
+        const { getFriendsOverview, getNotesOnMyPlants, getFriendsFeed } = usePlantData();
+        var _fs = React.useState({ friends: [], incoming: [], notes: [], feed: [], loaded: false, error: false });
         var friendsState = _fs[0], setFriendsState = _fs[1];
         React.useEffect(function() {
             var alive = true;
+            // Hydrate from localStorage cache (5-min TTL) for instant paint
+            try {
+                var raw = localStorage.getItem('plantos_friends_feed_cache');
+                if (raw) {
+                    var cached = JSON.parse(raw);
+                    if (cached && (Date.now() - cached.ts) < 5 * 60 * 1000) {
+                        setFriendsState(Object.assign({}, cached.data, { loaded: true, error: false }));
+                    }
+                }
+            } catch (e) {}
             function refresh() {
-                Promise.all([getFriendsOverview(), getNotesOnMyPlants()]).then(function(r) {
+                Promise.all([getFriendsOverview(), getNotesOnMyPlants(), getFriendsFeed()]).then(function(r) {
                     if (!alive) return;
-                    var ov = r[0] || {}, mine = r[1] || {};
-                    setFriendsState({
+                    var ov = r[0] || {}, mine = r[1] || {}, feedRes = r[2] || {};
+                    var data = {
                         friends: (ov.friends || []),
                         incoming: (ov.incoming || []),
                         notes: (mine.notes || []),
-                        loaded: true, error: false
-                    });
+                        feed: (feedRes.feed || [])
+                    };
+                    setFriendsState(Object.assign({}, data, { loaded: true, error: false }));
+                    try { localStorage.setItem('plantos_friends_feed_cache', JSON.stringify({ ts: Date.now(), data: data })); } catch(e) {}
                 }).catch(function() { if (alive) setFriendsState(function(p) { return Object.assign({}, p, { loaded: true, error: true }); }); });
             }
             refresh();
-            // Re-fetch when window regains focus so badges don't go stale
             function onFocus() { refresh(); }
             function onVis() { if (!document.hidden) refresh(); }
             window.addEventListener('focus', onFocus);
@@ -6207,23 +6220,86 @@ function HomeScreen() {
         var friendCount = friendsState.friends.length;
         var incomingCount = friendsState.incoming.length;
         var notesCount = friendsState.notes.length;
-        var totalBadges = incomingCount + notesCount;
-        return React.createElement(DashCard, { title: 'FRIENDS & NOTES', emoji: '\uD83D\uDC65', noPad: true },
-            React.createElement('button', { type: 'button', onClick: function() { navigate('friends'); },
-                style: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', width: '100%',
-                    background: 'transparent', border: 'none', borderLeft: '5px solid #7B4A8C', cursor: 'pointer', textAlign: 'left' } },
-                React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 } },
-                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP }) },
-                        friendsState.error ? 'Tap to set up Friends'
-                          : !friendsState.loaded ? 'Loading…'
-                          : friendCount === 0 ? 'No friends yet — find some!'
-                          : friendCount + ' friend' + (friendCount !== 1 ? 's' : '')),
-                    friendsState.loaded && !friendsState.error && totalBadges > 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, display: 'flex', flexWrap: 'wrap', gap: 8 }) },
-                        incomingCount > 0 && React.createElement('span', null, '\uD83D\uDD14 ' + incomingCount + ' request' + (incomingCount !== 1 ? 's' : '')),
-                        notesCount > 0 && React.createElement('span', null, '\uD83D\uDCAC ' + notesCount + ' new note' + (notesCount !== 1 ? 's' : '')))),
-                totalBadges > 0 && React.createElement('span', { style: { fontFamily: "'Press Start 2P'", fontSize: '11px', color: '#fff',
-                    background: 'var(--c-urgent)', padding: '4px 9px', boxShadow: '2px 2px 0 rgba(0,0,0,0.2)', flexShrink: 0 } }, totalBadges),
-                React.createElement('span', { style: { fontSize: 18, color: theme.txtS, flexShrink: 0, opacity: 0.5 } }, '\u203A')));
+        var feed = friendsState.feed || [];
+
+        // Color palette for avatar fallbacks, seeded by username
+        var avatarPalette = ['#7B4A8C','#4A7B8C','#8C5A4A','#4A8C5A','#8C7B4A','#6A4A8C','#4A8C7B','#8C4A6A'];
+        function avatarBg(name) { var h = 0; for (var i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) & 0xffff; return avatarPalette[h % avatarPalette.length]; }
+
+        function visitFriendFromHome(userId) {
+            try { sessionStorage.setItem('plantos_pending_friend_visit', userId); } catch(e) {}
+            navigate('friends');
+        }
+
+        return React.createElement(DashCard, { title: 'FRIENDS', emoji: '\uD83D\uDC65', noPad: true },
+            React.createElement('div', { style: { padding: '10px 12px 12px', borderLeft: '5px solid #7B4A8C' } },
+                // Top row: summary + enter-friends-screen chevron
+                React.createElement('button', { type: 'button', onClick: function() { navigate('friends'); },
+                    style: { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, marginBottom: feed.length > 0 || incomingCount > 0 || notesCount > 0 ? 10 : 0 } },
+                    React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP }) },
+                            friendsState.error ? 'Tap to set up Friends'
+                              : !friendsState.loaded ? 'Loading your circle…'
+                              : friendCount === 0 ? 'No friends yet — tap to find some' :
+                                friendCount + ' plant friend' + (friendCount !== 1 ? 's' : '')),
+                        friendsState.loaded && !friendsState.error && feed.length > 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 2 }) },
+                            (function() {
+                                var totalPlants = feed.reduce(function(s, f){ return s + (f.plantCount||0); }, 0);
+                                return totalPlants + ' plant' + (totalPlants !== 1 ? 's' : '') + ' across your network';
+                            })())
+                    ),
+                    React.createElement('span', { style: { fontSize: 18, color: theme.txtS, flexShrink: 0, opacity: 0.5 } }, '\u203A')),
+
+                // Incoming requests banner (prominent, actionable)
+                incomingCount > 0 && React.createElement('button', { type: 'button', onClick: function(){ navigate('friends'); },
+                    style: Object.assign({}, pxS, { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'var(--c-urgent)', color: '#fff', border: 'none', padding: '7px 10px', marginBottom: 8, cursor: 'pointer', fontSize: '12px', fontWeight: 900, textAlign: 'left', boxShadow: '2px 2px 0 rgba(0,0,0,0.25)' }) },
+                    React.createElement('span', { style: { fontSize: 14 } }, '\uD83D\uDD14'),
+                    React.createElement('span', { style: { flex: 1 } }, incomingCount + ' incoming friend request' + (incomingCount !== 1 ? 's' : '')),
+                    React.createElement('span', null, '\u203A')),
+
+                // Notes on your plants banner
+                notesCount > 0 && React.createElement('button', { type: 'button', onClick: function(){ navigate('friends'); },
+                    style: Object.assign({}, pxS, { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.rowBorder, padding: '6px 10px', marginBottom: 8, cursor: 'pointer', fontSize: '12px', fontWeight: 700, textAlign: 'left' }) },
+                    React.createElement('span', { style: { fontSize: 14 } }, '\uD83D\uDCAC'),
+                    React.createElement('span', { style: { flex: 1 } }, notesCount + ' note' + (notesCount !== 1 ? 's' : '') + ' on your plants'),
+                    React.createElement('span', null, '\u203A')),
+
+                // Friend tiles (horizontal scroll row)
+                feed.length > 0 && React.createElement('div', {
+                    style: { display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginTop: incomingCount > 0 || notesCount > 0 ? 4 : 0, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin' }
+                },
+                    feed.slice(0, 12).map(function(f) {
+                        var initial = String(f.username || '?').charAt(0).toUpperCase();
+                        return React.createElement('button', { key: f.userId, type: 'button',
+                            onClick: function(){ visitFriendFromHome(f.userId); },
+                            title: '@' + f.username + ' · ' + f.plantCount + ' plant' + (f.plantCount !== 1 ? 's' : ''),
+                            style: { flex: '0 0 auto', width: 88, background: theme.cardBg, border: '2px solid ' + theme.rowBorder, padding: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+                        },
+                            // Thumbnail/avatar
+                            React.createElement('div', { style: { width: '100%', aspectRatio: '1/1', background: avatarBg(f.username || f.userId), display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' } },
+                                f.thumbUrl
+                                    ? React.createElement('img', { src: f.thumbUrl, alt: f.username, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' }, onError: function(e){ e.target.style.display='none'; } })
+                                    : React.createElement('span', { style: { fontFamily: "'Press Start 2P', cursive", fontSize: 20, color: '#fff', fontWeight: 900 } }, initial),
+                                // Plant count pill
+                                React.createElement('span', { style: { position: 'absolute', bottom: 3, right: 3, fontFamily: "'Pixelify Sans',cursive", fontSize: '10px', fontWeight: 900, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '1px 5px' } }, '🌱 ' + f.plantCount)
+                            ),
+                            // Username strip
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, color: theme.txtP, padding: '4px 5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }) }, '@' + (f.username || f.userId))
+                        );
+                    }),
+                    // "+ Find more" tile at the end
+                    React.createElement('button', { key: '__find__', type: 'button', onClick: function(){ navigate('friends'); },
+                        style: { flex: '0 0 auto', width: 88, background: theme.rowBg, border: '2px dashed ' + theme.rowBorder, padding: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', overflow: 'hidden' } },
+                        React.createElement('div', { style: { width: '100%', aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, color: theme.txtS } }, '+'),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, padding: '4px 5px', textAlign: 'center' }) }, 'Find more')
+                    )
+                ),
+
+                // Empty-state CTA (no friends yet)
+                friendsState.loaded && !friendsState.error && friendCount === 0 && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginTop: 6, fontStyle: 'italic' }) },
+                    'Swap plants, share wishlists, leave notes on each other\u2019s gardens.')
+            )
+        );
     }
 
     var CONTENT_WIDGETS = { friends: DashFriends, genus: DashGenusChart, propFunnel: DashPropFunnel, graftFunnel: DashGraftFunnel, monthly: DashMonthlyChart, attention: DashAttention };
@@ -19051,6 +19127,18 @@ function FriendsScreen() {
     // Initial load + auto-refresh: on window/tab focus AND low-freq poll (every 60s) while screen is open.
     // Without this, Friend A sends request → Friend B's already-open screen never sees it until manual reload.
     React.useEffect(function() { loadOverview(); }, [loadOverview]);
+
+    // If we arrived here via a Dashboard friend-tile click, auto-open that friend's garden
+    React.useEffect(function() {
+        try {
+            var pending = sessionStorage.getItem('plantos_pending_friend_visit');
+            if (pending) {
+                sessionStorage.removeItem('plantos_pending_friend_visit');
+                // slight delay so overview loads first and PlantButton is hooked up
+                setTimeout(function() { visitFriend(pending); }, 100);
+            }
+        } catch (e) {}
+    }, []); // once per mount
     React.useEffect(function() {
         function onFocus() { loadOverview(true); }
         function onVis() { if (!document.hidden) loadOverview(true); }

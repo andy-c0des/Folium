@@ -205,6 +205,7 @@ function doPost(e) {
       plantosGetPlantNotesForGarden: plantosGetPlantNotesForGarden,
       plantosAddPlantNote: plantosAddPlantNote,
       plantosGetNotesOnMyPlants: plantosGetNotesOnMyPlants,
+      plantosGetFriendsFeed: plantosGetFriendsFeed,
       plantosDebug: plantosDebug,
       plantosDebugLocations: plantosDebugLocations,
       kbGetPlantFacts: kbGetPlantFacts,
