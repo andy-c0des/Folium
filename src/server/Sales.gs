@@ -122,8 +122,22 @@ function plantosUpdateSale(listingId, patch) {
   if (Object.prototype.hasOwnProperty.call(patch, 'quantitySold')) {
     var qs = parseInt(patch.quantitySold, 10); if (!isNaN(qs) && qs >= 0) sales[idx].quantitySold = qs;
   }
-  // Per-unit status breakdown
-  if (Object.prototype.hasOwnProperty.call(patch, 'unitStatuses')) {
+  // Per-unit status breakdown (also handles single-unit status changes)
+  // Defensive: if client sends `status` but no `unitStatuses`, synthesize one
+  // so overall status and breakdown always stay in sync.
+  var hasUS = Object.prototype.hasOwnProperty.call(patch, 'unitStatuses');
+  var hasStatus = Object.prototype.hasOwnProperty.call(patch, 'status');
+  if (!hasUS && hasStatus) {
+    var reqStatus = plantosSafeStr_(patch.status).trim();
+    if (SALE_STATUSES.indexOf(reqStatus) >= 0) {
+      var qSyn = parseInt(sales[idx].quantity, 10) || 1;
+      var synth = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+      synth[reqStatus] = qSyn;
+      patch = Object.assign({}, patch, { unitStatuses: synth });
+      hasUS = true;
+    }
+  }
+  if (hasUS) {
     var qtyForUS = parseInt(sales[idx].quantity, 10) || 1;
     var newUS = salesNormalizeUnitStatuses_(patch.unitStatuses, qtyForUS, sales[idx].status || 'Drafted', sales[idx].quantitySold);
     sales[idx].unitStatuses = newUS;

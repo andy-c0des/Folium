@@ -16327,8 +16327,16 @@ function SaleListingModal({ plant, listing, extraPayload, onClose, onDone }) {
                 orderNumber: orderNumber };
             // Merge extra payload fields (source/sourceId for prop/graft listings)
             if (extraPayload && typeof extraPayload === 'object') Object.assign(payload, extraPayload);
-            // Send unitStatuses if defined (multi-unit listings)
-            if (unitStatuses && quantity > 1) payload.unitStatuses = unitStatuses;
+            // Send unitStatuses every time — for single-unit listings too, so changing
+            // status in the modal actually persists. If user has multi-unit breakdown
+            // set, send that; otherwise synthesize a breakdown from the chosen status.
+            if (unitStatuses && quantity > 1) {
+                payload.unitStatuses = unitStatuses;
+            } else {
+                var synth = { Drafted: 0, Listed: 0, Pending: 0, Sold: 0, Withdrawn: 0 };
+                synth[status] = quantity;
+                payload.unitStatuses = synth;
+            }
             // Honor soldAt only when status is Sold
             if (status === 'Sold') payload.soldAt = soldAt;
             var res;
