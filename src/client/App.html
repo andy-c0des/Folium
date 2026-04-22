@@ -5600,6 +5600,15 @@ function PlantDataProvider({ children }) {
             window.__demoWishlist[idx] = Object.assign({}, window.__demoWishlist[idx], patch);
             return Promise.resolve({ ok: true, item: window.__demoWishlist[idx], wishlist: window.__demoWishlist.slice() });
         },
+        listPublicUsers: function() { return Promise.resolve({ ok: true, users: [] }); },
+        getFriendsOverview: function() { return Promise.resolve({ ok: true, friends: [], incoming: [], outgoing: [] }); },
+        sendFriendRequest: function() { return Promise.resolve({ ok: true }); },
+        respondFriendRequest: function() { return Promise.resolve({ ok: true }); },
+        removeFriend: function() { return Promise.resolve({ ok: true }); },
+        getFriendGarden: function() { return Promise.resolve({ ok: true, friend: null, plants: [], notes: [] }); },
+        getPlantNotesForGarden: function() { return Promise.resolve({ ok: true, notes: [] }); },
+        addPlantNote: function() { return Promise.resolve({ ok: true }); },
+        getNotesOnMyPlants: function() { return Promise.resolve({ ok: true, notes: [] }); },
     } : {
         locations, homeData, refreshHome, removeProgressDue, allPlantsCache, allPlantsCacheReady, refreshAllPlantsCache,
         getPlantsByLocation, getPlant, setNickname,
@@ -5657,6 +5666,15 @@ function PlantDataProvider({ children }) {
         addToWishlist: (item) => gasCall('plantosAddToWishlist', item),
         removeFromWishlist: (wishlistId) => gasCall('plantosRemoveFromWishlist', wishlistId),
         updateWishlistItem: (wishlistId, updates) => gasCall('plantosUpdateWishlistItem', wishlistId, updates),
+        listPublicUsers: (term) => gasCall('plantosListPublicUsers', term || ''),
+        getFriendsOverview: () => gasCall('plantosGetFriendsOverview'),
+        sendFriendRequest: (friendUserId) => gasCall('plantosSendFriendRequest', friendUserId),
+        respondFriendRequest: (friendshipId, action) => gasCall('plantosRespondFriendRequest', friendshipId, action),
+        removeFriend: (friendUserId) => gasCall('plantosRemoveFriend', friendUserId),
+        getFriendGarden: (friendUserId) => gasCall('plantosGetFriendGarden', friendUserId),
+        getPlantNotesForGarden: (recipientId) => gasCall('plantosGetPlantNotesForGarden', recipientId),
+        addPlantNote: (plantId, recipientId, noteText) => gasCall('plantosAddPlantNote', plantId, recipientId, noteText),
+        getNotesOnMyPlants: () => gasCall('plantosGetNotesOnMyPlants'),
     };
     return React.createElement(PlantDataContext.Provider, { value: ctxValue }, children);
 }
@@ -18616,6 +18634,154 @@ function DiaryScreen({ uid, name }) {
                 filtered.length === 1 ? 'y' : 'ies',
                 filter !== 'ALL' && ` (${timeline.length} total)`)))));
 }
+
+function FriendsScreen() {
+    const { navigate } = useNavigation();
+    const theme = useTheme();
+    const { isSmall, isDesktop } = useScreenSize();
+    const { listPublicUsers, getFriendsOverview, sendFriendRequest, respondFriendRequest, removeFriend, getFriendGarden, addPlantNote, getNotesOnMyPlants } = usePlantData();
+    const me = (function(){ try { return (localStorage.getItem('plantos_username') || '').toLowerCase(); } catch(e){ return ''; } })();
+
+    const [query, setQuery] = React.useState('');
+    const [searching, setSearching] = React.useState(false);
+    const [searchResults, setSearchResults] = React.useState([]);
+    const [overview, setOverview] = React.useState({ friends: [], incoming: [], outgoing: [] });
+    const [friendNotes, setFriendNotes] = React.useState([]);
+    const [status, setStatus] = React.useState(null);
+    const [visiting, setVisiting] = React.useState(null);
+    const [garden, setGarden] = React.useState({ friend: null, plants: [], notes: [] });
+    const [noteDrafts, setNoteDrafts] = React.useState({});
+
+    const loadOverview = React.useCallback(async function() {
+        try {
+            const [ov, mine] = await Promise.all([getFriendsOverview(), getNotesOnMyPlants()]);
+            setOverview({ friends: (ov && ov.friends) || [], incoming: (ov && ov.incoming) || [], outgoing: (ov && ov.outgoing) || [] });
+            setFriendNotes((mine && mine.notes) || []);
+        } catch (e) {
+            setStatus({ type: 'error', message: e && e.message ? e.message : 'Failed to load friends' });
+        }
+    }, [getFriendsOverview, getNotesOnMyPlants]);
+
+    React.useEffect(function() { loadOverview(); }, [loadOverview]);
+
+    async function runSearch() {
+        setSearching(true);
+        try {
+            const res = await listPublicUsers(query);
+            setSearchResults((res && res.users) || []);
+        } catch (e) {
+            setStatus({ type: 'error', message: e && e.message ? e.message : 'Search failed' });
+        } finally { setSearching(false); }
+    }
+
+    async function visitFriend(userId) {
+        setVisiting(userId);
+        try {
+            const res = await getFriendGarden(userId);
+            setGarden({ friend: (res && res.friend) || null, plants: (res && res.plants) || [], notes: (res && res.notes) || [] });
+        } catch (e) {
+            setStatus({ type: 'error', message: e && e.message ? e.message : 'Failed to load garden' });
+        } finally { setVisiting(null); }
+    }
+
+    async function leaveNote(plant) {
+        const txt = String(noteDrafts[plant.uid] || '').trim();
+        if (!txt || !garden.friend) return;
+        try {
+            await addPlantNote(plant.uid, garden.friend.userId, txt);
+            setNoteDrafts(prev => Object.assign({}, prev, { [plant.uid]: '' }));
+            await visitFriend(garden.friend.userId);
+        } catch (e) {
+            setStatus({ type: 'error', message: e && e.message ? e.message : 'Could not save note' });
+        }
+    }
+
+    function notesForPlant(uid) {
+        return (garden.notes || []).filter(function(n) { return String(n.plant_id) === String(uid); });
+    }
+
+    return React.createElement('div', { className: `flex flex-col ${isSmall ? 'p-3' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '900px' : '700px', margin: '0 auto' } },
+        React.createElement(PlantCard, { title: '🫶 FRIENDS' },
+            status && React.createElement(StatusMessage, { type: status.type, message: status.message }),
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr', gap: 12 } },
+                React.createElement('div', null,
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'Find Folium users'),
+                    React.createElement('div', { className: 'flex gap-2 mb-2' },
+                        React.createElement('input', { value: query, onChange: function(e){ setQuery(e.target.value); }, placeholder: 'Search username or email', className: 'flex-1 border-4 px-3 py-2 input-depth', style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
+                        React.createElement(PlantButton, { block: false, onClick: runSearch, disabled: searching }, searching ? '…' : 'Search')),
+                    (searchResults || []).map(function(u) {
+                        return React.createElement('div', { key: u.userId, style: { border: '1px solid ' + theme.rowBorder, background: theme.rowBg, padding: '7px 10px', display: 'flex', justifyContent: 'space-between', gap: 8 } },
+                            React.createElement('div', null,
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900 }) }, u.username),
+                                u.email && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, u.email)
+                            ),
+                            React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: async function(){ await sendFriendRequest(u.userId); loadOverview(); setStatus({ type:'success', message:'Friend request sent to ' + u.username }); } }, 'Add'));
+                    })
+                ),
+                React.createElement('div', null,
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'Incoming requests'),
+                    (!(overview.incoming || []).length) && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'No pending requests.'),
+                    (overview.incoming || []).map(function(req) {
+                        return React.createElement('div', { key: req.id, style: { border: '1px solid ' + theme.rowBorder, background: theme.rowBg, padding: '7px 10px', marginBottom: 6 } },
+                            React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900, marginBottom: 4 }) }, req.username),
+                            React.createElement('div', { className: 'flex gap-2' },
+                                React.createElement(PlantButton, { block: false, onClick: async function(){ await respondFriendRequest(req.id,'accept'); await loadOverview(); } }, 'Accept'),
+                                React.createElement(PlantButton, { block: false, variant: 'ghost', onClick: async function(){ await respondFriendRequest(req.id,'decline'); await loadOverview(); } }, 'Decline')));
+                    })
+                )
+            ),
+            React.createElement('div', { style: { marginTop: 14 } },
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'Your friends'),
+                !(overview.friends || []).length && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'No friends yet.'),
+                (overview.friends || []).map(function(fr) {
+                    return React.createElement('div', { key: fr.userId, style: { border: '1px solid ' + theme.rowBorder, background: theme.rowBg, padding: '7px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900 }) }, fr.username),
+                        React.createElement('div', { className: 'flex gap-2' },
+                            React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: function(){ visitFriend(fr.userId); }, disabled: visiting===fr.userId }, visiting===fr.userId ? 'Loading…' : 'Visit garden'),
+                            React.createElement(PlantButton, { block: false, variant: 'ghost', onClick: async function(){ await removeFriend(fr.userId); await loadOverview(); if(garden.friend && garden.friend.userId===fr.userId) setGarden({ friend:null, plants:[], notes:[] }); } }, 'Remove')));
+                })
+            ),
+            React.createElement('div', { style: { marginTop: 16, borderTop: '2px solid ' + theme.rowBorder, paddingTop: 10 } },
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'Notes left on your plants'),
+                !friendNotes.length && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'No notes yet.'),
+                friendNotes.slice(0, 15).map(function(n, idx) {
+                    return React.createElement('div', { key: String(n.id || idx), style: { padding: '6px 8px', border: '1px solid ' + theme.rowBorder, background: theme.cardBg, marginBottom: 5 } },
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) }, (n.author_id || '?') + ' · ' + (n.created_at || '').replace('T',' ').slice(0,16)),
+                        React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP }) }, n.note_text || ''));
+                })
+            ),
+            garden.friend && React.createElement('div', { style: { marginTop: 18, borderTop: '3px solid ' + theme.cardBorder, paddingTop: 12 } },
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtP, marginBottom: 8 }) }, '🌱 ' + (garden.friend.username || garden.friend.userId) + "'s Garden"),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, marginBottom: 8 }) }, 'Read-only view. You can leave notes, but cannot edit plants.'),
+                (garden.plants || []).map(function(p) {
+                    const pNotes = notesForPlant(p.uid);
+                    return React.createElement('div', { key: p.uid, style: { border: '2px solid ' + theme.rowBorder, background: theme.rowBg, padding: '9px 10px', marginBottom: 8 } },
+                        React.createElement('div', { style: { display:'flex', justifyContent:'space-between', gap:8, alignItems:'center' } },
+                            React.createElement('div', null,
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize:'13px', fontWeight:900, color: theme.txtP }) }, p.nickname || p.primary || p.uid),
+                                React.createElement('div', { style: Object.assign({}, pxS, { fontSize:'12px', color: theme.txtS }) }, [p.genus, p.taxon || p.species].filter(Boolean).join(' '))),
+                            React.createElement('div', { style: { display:'flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end' } },
+                                p.overlapInCollection && React.createElement('span', { style: { fontFamily:"'Pixelify Sans',cursive", fontSize:'11px', background:'#1E4A14', color:'#B8E89A', border:'1px solid #3A7A20', padding:'2px 6px' } }, '✅ You have this!'),
+                                p.overlapInWishlist && React.createElement('span', { style: { fontFamily:"'Pixelify Sans',cursive", fontSize:'11px', background:'#4A3A10', color:'#FFE08A', border:'1px solid #8A6A20', padding:'2px 6px' } }, '⭐ On your wishlist!')
+                            )
+                        ),
+                        React.createElement('div', { style: { marginTop: 8 } },
+                            pNotes.slice(0, 5).map(function(n, idx) {
+                                return React.createElement('div', { key: String(n.id || idx), style: { fontFamily:"'Pixelify Sans',cursive", fontSize:'12px', color: theme.txtS, marginBottom: 3 } },
+                                    (n.author_id === me ? 'You' : (n.author_id || '?')) + ' · ' + (n.created_at || '').replace('T', ' ').slice(0, 16) + ' — ' + (n.note_text || ''));
+                            }),
+                            React.createElement('div', { className: 'flex gap-2', style: { marginTop: 6 } },
+                                React.createElement('input', { value: noteDrafts[p.uid] || '', onChange: function(e){ setNoteDrafts(prev => Object.assign({}, prev, { [p.uid]: e.target.value })); }, placeholder: 'Leave a note on this plant…', className: 'flex-1 border-2 px-2 py-1', style: Object.assign({}, pxS, { fontSize:'12px', color:theme.txtP, borderColor: theme.rowBorder, background: theme.cardBg }) }),
+                                React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: function(){ leaveNote(p); }, disabled: !String(noteDrafts[p.uid]||'').trim() }, 'Post')
+                            )
+                        )
+                    );
+                })
+            )
+        )
+    );
+}
+
 function SettingsScreen() {
     const { navigate } = useNavigation();
     const { locations, addLocation } = usePlantData();
@@ -18733,6 +18899,8 @@ function SettingsScreen() {
                     React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('archive') }, "Open \>")),
                 React.createElement(Row, { label: "Environments", sublabel: "Manage grow spaces & physics" },
                     React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('environments') }, "Open \>")),
+                React.createElement(Row, { label: "Friends", sublabel: "Requests, gardens & social notes" },
+                    React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('friends') }, "Open \>")),
                 React.createElement(Row, { label: "Batch Water", sublabel: "Water multiple plants at once" },
                     React.createElement(PlantButton, { block: false, variant: "secondary", onClick: () => navigate('batch-water') }, "Open \>")),
                 React.createElement(Row, { label: "Batch Fertilize", sublabel: "Fertilize multiple plants at once" },
@@ -18773,6 +18941,7 @@ function SettingsScreen() {
   window.GalleryScreen = GalleryScreen;
   window.DiaryScreen = DiaryScreen;
   window.SettingsScreen = SettingsScreen;
+window.FriendsScreen = FriendsScreen;
   window.DEMO_MODE = typeof DEMO_MODE !== 'undefined' ? DEMO_MODE : false;
   window.gasCall = gasCall;
   window.kbCacheLoad = typeof kbCacheLoad !== 'undefined' ? kbCacheLoad : window.kbCacheLoad;
@@ -19154,6 +19323,7 @@ function AppContent() {
             case 'batch-water': return React.createElement(window.BatchWaterScreen, null);
             case 'batch-fertilize': return React.createElement(window.BatchFertilizeScreen, null);
             case 'settings': return React.createElement(window.SettingsScreen, null);
+            case 'friends': return React.createElement(window.FriendsScreen, null);
             case 'dev': return React.createElement(window.DevScreen, null);
             default: return React.createElement(window.HomeScreen, null);
         }
