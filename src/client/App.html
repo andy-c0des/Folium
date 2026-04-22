@@ -18635,6 +18635,32 @@ function DevScreen() {
                 ),
                 React.createElement('div', { id: 'gastestout', style: Object.assign({}, pxS, { fontSize: '11px', marginTop: 8, padding: '6px 10px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS, minHeight: 36, wordBreak: 'break-all', lineHeight: 1.6, whiteSpace: 'pre-wrap' }) }, 'Tap a button above to check.')
             ),
+            // --- Photo sharing repair: fixes friend-garden thumbnails that don't render ---
+            React.createElement('div', { style: sectionStyle },
+                React.createElement('div', { style: headStyle }, '📷 REPAIR PHOTO SHARING'),
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 10, lineHeight: 1.5 }) },
+                    "Fixes friend-garden thumbnails that don't render. Walks every plant's Photos folder and sets \"Anyone with link\" view access on each image. Safe to run multiple times — it skips already-public files."),
+                React.createElement(PlantButton, { onClick: function() {
+                    var el = document.getElementById('repairout');
+                    if (el) { el.style.color = '#A0A8FF'; el.textContent = 'Repairing photo sharing… (may take up to ~5 min for large libraries)'; }
+                    gasCall('plantosRepairPhotoSharing').then(function(res) {
+                        if (!res) { if (el) { el.style.color = '#F87171'; el.textContent = 'Null result — redeploy Apps Script'; } return; }
+                        var msg = (res.ok ? '✓ Done' : '⚠ Partial') +
+                            ' — fixed: ' + (res.fixed || 0) +
+                            ', skipped: ' + (res.skipped || 0) +
+                            ', errors: ' + (res.errors || 0) +
+                            ', folders scanned: ' + (res.foldersScanned || 0) +
+                            ' (' + Math.round((res.ms || 0) / 1000) + 's)' +
+                            (res.timedOut ? '\n⏰ Timed out — run again to continue.' : '');
+                        if (el) { el.style.color = res.errors ? '#F7C36B' : '#7BE87B'; el.textContent = msg; }
+                        // Bust local cache so thumbnails reload
+                        try { localStorage.removeItem('plantos_friends_feed_cache'); } catch(e) {}
+                    }).catch(function(err) {
+                        if (el) { el.style.color = '#F87171'; el.textContent = 'Failed: ' + (err && err.message ? err.message : String(err)); }
+                    });
+                }}, '🔧 Repair now'),
+                React.createElement('div', { id: 'repairout', style: Object.assign({}, pxS, { fontSize: '11px', marginTop: 8, padding: '6px 10px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS, minHeight: 36, wordBreak: 'break-all', lineHeight: 1.6, whiteSpace: 'pre-wrap' }) }, 'Tap to repair.')
+            ),
             React.createElement('div', { style: sectionStyle },
                 React.createElement('div', { style: headStyle }, '🔀 MIGRATE CARL → PLANT KB'),
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 10 }) }, 'Copy all Carl Learned entries into Plant Knowledge Base as ai_hint rows. Safe to run multiple times — skips already-migrated.'),

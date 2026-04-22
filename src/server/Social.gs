@@ -184,6 +184,18 @@ function plantosGetFriendGarden(friendUserId) {
   plantosEnsureFriends_(targetId);
 
   var me = plantosSocialUserId_();
+
+  // Short-lived cache keyed per (viewer, target). 2-minute TTL — long enough to
+  // mask the two sheet reads on repeat visits, short enough that note edits /
+  // new plants show up on re-entry.
+  var cacheKey = 'folium_fg_v1::' + me + '::' + targetId;
+  try {
+    var cache = CacheService.getScriptCache();
+    var hit = cache.get(cacheKey);
+    if (hit) {
+      try { var parsed = JSON.parse(hit); if (parsed && parsed.ok) return parsed; } catch (e) {}
+    }
+  } catch (e) {}
   var myPlantsRes = plantosGetAllPlantsLite();
   var myPlants = (myPlantsRes && myPlantsRes.plants) ? myPlantsRes.plants : [];
   var wishlistRes = plantosGetWishlist();
@@ -242,13 +254,19 @@ function plantosGetFriendGarden(friendUserId) {
   };
 
   var notes = plantosSupabaseRequest_('get', 'plant_notes?recipient_id=eq.' + encodeURIComponent(targetId) + '&author_id=eq.' + encodeURIComponent(me) + '&order=created_at.desc', undefined) || [];
-  return {
+  var out = {
     ok: true,
     friend: { userId: targetId, username: targetUser.username || targetId, email: targetUser.email || '' },
     plants: friendPlants,
     notes: notes,
     friendStats: friendStats
   };
+  // Write cache. Payloads > 100KB are skipped silently by CacheService.
+  try {
+    var ser = JSON.stringify(out);
+    if (ser.length < 95000) CacheService.getScriptCache().put(cacheKey, ser, 120);
+  } catch (e) {}
+  return out;
 }
 
 /* Read-only deep-dive on a single friend's plant. Returns full plant, all photos, and
@@ -338,6 +356,15 @@ function plantosGetNotesOnMyPlants() {
    Kept cheap: no per-plant metadata beyond first thumb + count. */
 function plantosGetFriendsFeed() {
   var me = plantosSocialUserId_();
+  // 5-min cache — home dashboard hits this every mount. Big perf win since we
+  // iterate every friend and read their sheet.
+  var cacheKey = 'folium_ff_v1::' + me;
+  try {
+    var cache = CacheService.getScriptCache();
+    var hit = cache.get(cacheKey);
+    if (hit) { try { var parsed = JSON.parse(hit); if (parsed && parsed.ok) return parsed; } catch (e) {} }
+  } catch (e) {}
+
   var rows = plantosSupabaseRequest_('get',
     'friendships?or=(user_id.eq.' + encodeURIComponent(me) + ',friend_id.eq.' + encodeURIComponent(me) + ')&status=eq.accepted',
     undefined) || [];
@@ -381,5 +408,10 @@ function plantosGetFriendsFeed() {
   }
   _currentUser = meBackup;
   feed.sort(function(a, b) { return b.plantCount - a.plantCount; });
-  return { ok: true, feed: feed };
+  var out = { ok: true, feed: feed };
+  try {
+    var ser = JSON.stringify(out);
+    if (ser.length < 95000) CacheService.getScriptCache().put(cacheKey, ser, 300);
+  } catch (e) {}
+  return out;
 }

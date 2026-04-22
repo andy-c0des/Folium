@@ -88,6 +88,9 @@ function plantosGiftPlant(plantUid, recipientUserId, message) {
           var srcFile = DriveApp.getFileById(ph.fileId);
           var copyName = srcFile.getName();
           var cp = srcFile.makeCopy(copyName, newPhotosFolder);
+          // Copies do NOT inherit sharing — explicitly make publicly viewable so
+          // drive.google.com/thumbnail renders in any browser session.
+          try { cp.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (esh) {}
           copies.push({ file: cp, fileId: cp.getId(), name: copyName, updated: (cp.getLastUpdated ? cp.getLastUpdated() : new Date()).toISOString() });
           copiedPhotoCount++;
         } catch (ep) {
@@ -153,6 +156,63 @@ function plantosGiftPlant(plantUid, recipientUserId, message) {
     photoCount: copiedPhotoCount,
     recipientUsername: rcptUser.username || rcpt
   };
+}
+
+/* ===================== PHOTO SHARING REPAIR =====================
+   Walks every plant + prop + graft photo folder under the Drive root and sets
+   ANYONE_WITH_LINK view sharing on each image. Run once from the Apps Script
+   editor (or via the Dev Tools button below) to fix historic photos that
+   weren't made public at upload time — those are why friend gardens show
+   broken thumbnails for viewers who aren't logged into the owner Google account.
+
+   Idempotent. Limited to 6 minutes of Apps Script execution — if you have a huge
+   Drive, you may need to run it more than once.
+*/
+function plantosRepairPhotoSharing(opts) {
+  opts = opts || {};
+  var root = plantosGetPlantsRoot_();
+  var startMs = Date.now();
+  var hardStop = 5.5 * 60 * 1000; // leave buffer before the 6-min Apps Script timeout
+  var fixed = 0, skipped = 0, errors = 0, foldersScanned = 0;
+  var subfolders = root.getFolders();
+  while (subfolders.hasNext()) {
+    if (Date.now() - startMs > hardStop) break;
+    var plantFolder = subfolders.next();
+    foldersScanned++;
+    // Plant folder -> Photos subfolder
+    try {
+      var photosIter = plantFolder.getFoldersByName(PLANTOS_BACKEND_CFG.PHOTOS_SUBFOLDER);
+      while (photosIter.hasNext()) {
+        var photosFolder = photosIter.next();
+        var files = photosFolder.getFiles();
+        while (files.hasNext()) {
+          if (Date.now() - startMs > hardStop) break;
+          var f = files.next();
+          try {
+            var mt = f.getMimeType ? f.getMimeType() : '';
+            if (mt && mt.indexOf('image/') !== 0) { skipped++; continue; }
+            var access = f.getSharingAccess();
+            if (access === DriveApp.Access.ANYONE_WITH_LINK || access === DriveApp.Access.ANYONE) {
+              skipped++;
+            } else {
+              f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+              fixed++;
+            }
+          } catch (e) {
+            errors++;
+            Logger.log('[repair] file err ' + f.getName() + ': ' + (e && e.message));
+          }
+        }
+      }
+    } catch (e) {
+      errors++;
+      Logger.log('[repair] folder err ' + plantFolder.getName() + ': ' + (e && e.message));
+    }
+  }
+  var ms = Date.now() - startMs;
+  var result = { ok: true, fixed: fixed, skipped: skipped, errors: errors, foldersScanned: foldersScanned, ms: ms, timedOut: (ms > hardStop) };
+  Logger.log('[repair] ' + JSON.stringify(result));
+  return result;
 }
 
 /* List gifts I've received (read the Supabase log; empty array if table missing). */
