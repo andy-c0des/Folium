@@ -19023,21 +19023,69 @@ function FriendsScreen() {
                                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900 }) }, u.username),
                                 u.email && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, u.email)
                             ),
-                            React.createElement(PlantButton, { block: false, variant: 'secondary', onClick: async function(){ await sendFriendRequest(u.userId); loadOverview(); setStatus({ type:'success', message:'Friend request sent to ' + u.username }); } }, 'Add'));
+                            React.createElement(PlantButton, { block: false, variant: 'secondary',
+                                onClick: async function() {
+                                    setStatus(null);
+                                    try {
+                                        var res = await sendFriendRequest(u.userId);
+                                        if (res && res.ok === false) {
+                                            setStatus({ type: 'error', message: (res.error || 'Failed to send request') + ' (target: ' + u.userId + ')' });
+                                        } else if (res && res.ok) {
+                                            setStatus({ type: 'success', message: 'Friend request sent to ' + u.username });
+                                        } else {
+                                            setStatus({ type: 'error', message: 'Unexpected response: ' + JSON.stringify(res) });
+                                        }
+                                    } catch (e) {
+                                        setStatus({ type: 'error', message: 'Send failed: ' + (e && e.message ? e.message : String(e)) });
+                                    }
+                                    loadOverview(false);
+                                }
+                            }, 'Add'));
                     })
                 ),
                 React.createElement('div', null,
-                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'Incoming requests'),
-                    (!(overview.incoming || []).length) && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'No pending requests.'),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'Incoming requests (' + ((overview.incoming || []).length) + ')'),
+                    (!(overview.incoming || []).length) && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) },
+                        'No pending requests. Requests appear within 60s of being sent, or hit ↻ Refresh above.'),
                     (overview.incoming || []).map(function(req) {
                         return React.createElement('div', { key: req.id, style: { border: '1px solid ' + theme.rowBorder, background: theme.rowBg, padding: '7px 10px', marginBottom: 6 } },
                             React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, fontWeight: 900, marginBottom: 4 }) }, req.username),
                             React.createElement('div', { className: 'flex gap-2' },
-                                React.createElement(PlantButton, { block: false, onClick: async function(){ await respondFriendRequest(req.id,'accept'); await loadOverview(); } }, 'Accept'),
-                                React.createElement(PlantButton, { block: false, variant: 'ghost', onClick: async function(){ await respondFriendRequest(req.id,'decline'); await loadOverview(); } }, 'Decline')));
+                                React.createElement(PlantButton, { block: false,
+                                    onClick: async function() {
+                                        setStatus(null);
+                                        try {
+                                            var res = await respondFriendRequest(req.id, 'accept');
+                                            if (res && res.ok === false) setStatus({ type: 'error', message: res.error || 'Accept failed' });
+                                            else setStatus({ type: 'success', message: 'Friend accepted!' });
+                                        } catch (e) {
+                                            setStatus({ type: 'error', message: 'Accept failed: ' + (e && e.message ? e.message : String(e)) });
+                                        }
+                                        await loadOverview(false);
+                                    }
+                                }, 'Accept'),
+                                React.createElement(PlantButton, { block: false, variant: 'ghost',
+                                    onClick: async function() {
+                                        setStatus(null);
+                                        try {
+                                            var res = await respondFriendRequest(req.id, 'decline');
+                                            if (res && res.ok === false) setStatus({ type: 'error', message: res.error || 'Decline failed' });
+                                        } catch (e) {
+                                            setStatus({ type: 'error', message: 'Decline failed: ' + (e && e.message ? e.message : String(e)) });
+                                        }
+                                        await loadOverview(false);
+                                    }
+                                }, 'Decline')));
                     })
                 )
             ),
+            // Diagnostic row — shows your identity + outgoing count so you can verify
+            React.createElement('div', { style: { marginTop: 10, padding: '6px 10px', background: 'rgba(0,0,0,0.04)', border: '1px dashed ' + theme.rowBorder, fontSize: '11px', color: theme.txtS, fontFamily: "'Pixelify Sans',cursive" } },
+                'Signed in as: ',
+                React.createElement('span', { style: { fontWeight: 900, color: theme.txtP } }, me || '(unknown)'),
+                '  \u2022  Outgoing: ' + ((overview.outgoing || []).length),
+                '  \u2022  Incoming: ' + ((overview.incoming || []).length),
+                '  \u2022  Friends: ' + ((overview.friends || []).length)),
             React.createElement('div', { style: { marginTop: 14 } },
                 React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, fontWeight: 900, marginBottom: 6 }) }, 'Your friends'),
                 !(overview.friends || []).length && React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS }) }, 'No friends yet.'),
