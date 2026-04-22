@@ -168,25 +168,60 @@ function plantosGiftPlant(plantUid, recipientUserId, message) {
    Idempotent. Limited to 6 minutes of Apps Script execution — if you have a huge
    Drive, you may need to run it more than once.
 */
-function plantosRepairPhotoSharing(opts) {
-  opts = opts || {};
-  var root = plantosGetPlantsRoot_();
-  var startMs = Date.now();
-  var hardStop = 5.5 * 60 * 1000; // leave buffer before the 6-min Apps Script timeout
-  var fixed = 0, skipped = 0, errors = 0, foldersScanned = 0;
-  var subfolders = root.getFolders();
-  while (subfolders.hasNext()) {
-    if (Date.now() - startMs > hardStop) break;
-    var plantFolder = subfolders.next();
-    foldersScanned++;
-    // Plant folder -> Photos subfolder
+function plantosRepairPhotoSharing(cursor) {
+  // Paginated: each invocation runs at most ~20s (well under the 30s client
+  // gasCall timeout). First call (empty cursor) builds the folder list and
+  // caches it; subsequent calls resume from the cached list at `nextCursor`.
+  // Client loops until result.done === true.
+  cursor = String(cursor || '');
+  var CACHE_KEY = 'folium_repair_folder_list_v1';
+  var scriptCache = CacheService.getScriptCache();
+  var folderIds = null;
+
+  // On fresh start, (re)build the folder list.
+  if (!cursor || cursor === 'restart') {
+    folderIds = [];
+    var root = plantosGetPlantsRoot_();
+    var it = root.getFolders();
+    while (it.hasNext()) folderIds.push(it.next().getId());
     try {
+      // Split across multiple keys if > ~90KB (cache value limit 100KB)
+      var ser = JSON.stringify(folderIds);
+      scriptCache.put(CACHE_KEY, ser.length < 95000 ? ser : '', 1800); // 30-min TTL
+    } catch (e) {}
+    cursor = '0';
+  } else {
+    var cached = scriptCache.get(CACHE_KEY);
+    if (cached) { try { folderIds = JSON.parse(cached); } catch (e) { folderIds = null; } }
+    if (!folderIds) {
+      // Cache expired or unsaved — rebuild (one-time extra work).
+      folderIds = [];
+      var root2 = plantosGetPlantsRoot_();
+      var it2 = root2.getFolders();
+      while (it2.hasNext()) folderIds.push(it2.next().getId());
+      try {
+        var ser2 = JSON.stringify(folderIds);
+        scriptCache.put(CACHE_KEY, ser2.length < 95000 ? ser2 : '', 1800);
+      } catch (e) {}
+    }
+  }
+
+  var startMs = Date.now();
+  var softStop = 20 * 1000; // leave margin under client's 30s timeout
+  var startIdx = parseInt(cursor, 10) || 0;
+  var fixed = 0, skipped = 0, errors = 0, foldersScanned = 0;
+  var i = startIdx;
+  for (; i < folderIds.length; i++) {
+    if (Date.now() - startMs > softStop) break;
+    try {
+      var plantFolder = DriveApp.getFolderById(folderIds[i]);
       var photosIter = plantFolder.getFoldersByName(PLANTOS_BACKEND_CFG.PHOTOS_SUBFOLDER);
       while (photosIter.hasNext()) {
+        if (Date.now() - startMs > softStop) break;
         var photosFolder = photosIter.next();
         var files = photosFolder.getFiles();
         while (files.hasNext()) {
-          if (Date.now() - startMs > hardStop) break;
+          if (Date.now() - startMs > softStop) break;
           var f = files.next();
           try {
             var mt = f.getMimeType ? f.getMimeType() : '';
@@ -198,21 +233,28 @@ function plantosRepairPhotoSharing(opts) {
               f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
               fixed++;
             }
-          } catch (e) {
-            errors++;
-            Logger.log('[repair] file err ' + f.getName() + ': ' + (e && e.message));
-          }
+          } catch (e) { errors++; }
         }
       }
+      foldersScanned++;
     } catch (e) {
       errors++;
-      Logger.log('[repair] folder err ' + plantFolder.getName() + ': ' + (e && e.message));
+      Logger.log('[repair] folder err idx=' + i + ': ' + (e && e.message));
     }
   }
-  var ms = Date.now() - startMs;
-  var result = { ok: true, fixed: fixed, skipped: skipped, errors: errors, foldersScanned: foldersScanned, ms: ms, timedOut: (ms > hardStop) };
-  Logger.log('[repair] ' + JSON.stringify(result));
-  return result;
+
+  var done = i >= folderIds.length;
+  return {
+    ok: true,
+    fixed: fixed,
+    skipped: skipped,
+    errors: errors,
+    foldersScanned: foldersScanned,
+    totalFolders: folderIds.length,
+    nextCursor: done ? '' : String(i),
+    done: done,
+    ms: Date.now() - startMs
+  };
 }
 
 /* List gifts I've received (read the Supabase log; empty array if table missing). */
