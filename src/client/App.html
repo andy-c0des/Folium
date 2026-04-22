@@ -18555,11 +18555,6 @@ function DevScreen() {
     return React.createElement('div', { className: 'flex flex-col w-full pb-4 fade-in', style: { maxWidth: 640, margin: '0 auto', padding: isSmall ? '12px 12px 80px' : '16px 16px 80px' } },
         React.createElement(PlantCard, { title: 'DEV TOOLS' },
             React.createElement('div', { style: sectionStyle },
-                React.createElement('div', { style: Object.assign({}, headStyle, { marginBottom: 6 }) }, '🧠 CARL LEARNED'),
-                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, marginBottom: 10 }) }, 'KB hints + conversation patterns Carl learned from online chats.'),
-                React.createElement(CarlLearnedViewer, null)
-            ),
-            React.createElement('div', { style: sectionStyle },
                 React.createElement('div', { style: headStyle }, 'TRAIN CARL'),
                 React.createElement('div', { style: labelStyle }, 'Genus (leave blank for general)'),
                 React.createElement('input', { value: trainGenus, onChange: function(e) { setTrainGenus(e.target.value); }, placeholder: 'e.g. Monstera', className: 'w-full border-4 px-3 py-2 mb-3 input-depth', style: inputStyle }),
