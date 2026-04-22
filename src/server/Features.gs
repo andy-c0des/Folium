@@ -210,6 +210,7 @@ function doPost(e) {
       plantosGetGiftsReceived: plantosGetGiftsReceived,
       plantosGetGiftsSent: plantosGetGiftsSent,
       plantosRepairPhotoSharing: plantosRepairPhotoSharing,
+      plantosDiagnosePhotoStorage: plantosDiagnosePhotoStorage,
       plantosDebug: plantosDebug,
       plantosDebugLocations: plantosDebugLocations,
       kbGetPlantFacts: kbGetPlantFacts,

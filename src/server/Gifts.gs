@@ -178,12 +178,20 @@ function plantosRepairPhotoSharing(cursor) {
   var scriptCache = CacheService.getScriptCache();
   var folderIds = null;
 
+  var diagRootName = '', diagRootId = '', diagSampleNames = [];
+
   // On fresh start, (re)build the folder list.
   if (!cursor || cursor === 'restart') {
     folderIds = [];
     var root = plantosGetPlantsRoot_();
+    diagRootId = root.getId();
+    diagRootName = root.getName();
     var it = root.getFolders();
-    while (it.hasNext()) folderIds.push(it.next().getId());
+    while (it.hasNext()) {
+      var f = it.next();
+      folderIds.push(f.getId());
+      if (diagSampleNames.length < 5) diagSampleNames.push(f.getName());
+    }
     try {
       // Split across multiple keys if > ~90KB (cache value limit 100KB)
       var ser = JSON.stringify(folderIds);
@@ -253,8 +261,72 @@ function plantosRepairPhotoSharing(cursor) {
     totalFolders: folderIds.length,
     nextCursor: done ? '' : String(i),
     done: done,
-    ms: Date.now() - startMs
+    ms: Date.now() - startMs,
+    // Diagnostics for when totalFolders is surprisingly 0
+    diagRootId: diagRootId,
+    diagRootName: diagRootName,
+    diagSampleNames: diagSampleNames
   };
+}
+
+/* Diagnostic helper — lists the Drive hierarchy to trace where photos actually
+   live. Run from Dev Tools. Returns root + up to 10 subfolder names + for one
+   of them, up to 10 of its contents. */
+function plantosDiagnosePhotoStorage() {
+  try {
+    var root = plantosGetPlantsRoot_();
+    var out = {
+      ok: true,
+      plantsRootId: root.getId(),
+      plantsRootName: root.getName(),
+      plantsRootUrl: root.getUrl(),
+      parents: [],
+      childFolders: [],
+      firstChildPhotos: null
+    };
+    try {
+      var pit = root.getParents();
+      while (pit.hasNext()) { var p = pit.next(); out.parents.push({ id: p.getId(), name: p.getName() }); }
+    } catch (e) {}
+    var fit = root.getFolders();
+    var first = null;
+    while (fit.hasNext()) {
+      var f = fit.next();
+      if (out.childFolders.length < 10) out.childFolders.push({ id: f.getId(), name: f.getName() });
+      if (!first) first = f;
+    }
+    if (first) {
+      out.firstChildName = first.getName();
+      out.firstChildId = first.getId();
+      var photoSubs = first.getFoldersByName(PLANTOS_BACKEND_CFG.PHOTOS_SUBFOLDER);
+      if (photoSubs.hasNext()) {
+        var ph = photoSubs.next();
+        out.firstChildPhotos = { id: ph.getId(), name: ph.getName(), files: [] };
+        var files = ph.getFiles();
+        while (files.hasNext() && out.firstChildPhotos.files.length < 5) {
+          var fl = files.next();
+          out.firstChildPhotos.files.push({ name: fl.getName(), mime: fl.getMimeType(), access: String(fl.getSharingAccess()) });
+        }
+      } else {
+        out.firstChildPhotos = 'No "' + PLANTOS_BACKEND_CFG.PHOTOS_SUBFOLDER + '" subfolder';
+      }
+    }
+    // Also try searching Drive by filename pattern to find photos anywhere
+    try {
+      var res = DriveApp.searchFiles("title contains '_UID' and mimeType contains 'image/'");
+      var found = [];
+      while (res.hasNext() && found.length < 5) {
+        var fl = res.next();
+        var par = [];
+        try { var piter = fl.getParents(); while (piter.hasNext() && par.length < 2) { var pp = piter.next(); par.push({ id: pp.getId(), name: pp.getName() }); } } catch (e) {}
+        found.push({ name: fl.getName(), access: String(fl.getSharingAccess()), parents: par });
+      }
+      out.searchFoundPhotos = found;
+    } catch (e) { out.searchError = e.message; }
+    return out;
+  } catch (e) {
+    return { ok: false, error: (e && e.message) || String(e) };
+  }
 }
 
 /* List gifts I've received (read the Supabase log; empty array if table missing). */

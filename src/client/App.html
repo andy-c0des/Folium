@@ -18650,11 +18650,13 @@ function DevScreen() {
                             '\n   errors: ' + totals.errors;
                     }
                     try {
+                        var firstRes = null;
                         while (true) {
                             totals.batches++;
                             render('running');
                             var res = await gasCall('plantosRepairPhotoSharing', cursor);
                             if (!res || res.ok === false) throw new Error((res && res.error) || 'Empty response');
+                            if (!firstRes) firstRes = res;
                             totals.fixed += res.fixed || 0;
                             totals.skipped += res.skipped || 0;
                             totals.errors += res.errors || 0;
@@ -18664,11 +18666,29 @@ function DevScreen() {
                             cursor = res.nextCursor || '';
                             if (!cursor) { render('done'); break; }
                         }
+                        // If 0 folders found, show diagnostic info
+                        if (firstRes && !firstRes.totalFolders && el) {
+                            el.style.color = '#F7C36B';
+                            el.textContent = '⚠ 0 plant folders found.\nPlantsRoot: "' + (firstRes.diagRootName || '?') + '" (' + (firstRes.diagRootId || '?') + ')\nSample children: ' + (firstRes.diagSampleNames && firstRes.diagSampleNames.length ? firstRes.diagSampleNames.join(', ') : '(none)') + '\n\nTap "Diagnose" to investigate further.';
+                        }
                         try { localStorage.removeItem('plantos_friends_feed_cache'); } catch(e) {}
                     } catch (err) {
                         if (el) { el.style.color = '#F87171'; el.textContent = '✗ Failed: ' + (err && err.message ? err.message : String(err)) + '\n   Partial totals — fixed: ' + totals.fixed + ', skipped: ' + totals.skipped + ', errors: ' + totals.errors; }
                     }
                 }}, '🔧 Repair now'),
+                React.createElement(PlantButton, { variant: 'ghost', onClick: async function() {
+                    var el = document.getElementById('repairout');
+                    if (el) { el.style.color = '#A0A8FF'; el.textContent = 'Diagnosing Drive hierarchy…'; }
+                    try {
+                        var d = await gasCall('plantosDiagnosePhotoStorage');
+                        if (el) {
+                            el.style.color = '#7BE87B';
+                            el.textContent = JSON.stringify(d, null, 2);
+                        }
+                    } catch (e) {
+                        if (el) { el.style.color = '#F87171'; el.textContent = 'Diag failed: ' + (e && e.message ? e.message : String(e)); }
+                    }
+                }}, '🩺 Diagnose'),
                 React.createElement('div', { id: 'repairout', style: Object.assign({}, pxS, { fontSize: '11px', marginTop: 8, padding: '6px 10px', background: theme.rowBg, border: '2px solid ' + theme.cardBorder, color: theme.txtS, minHeight: 36, wordBreak: 'break-all', lineHeight: 1.6, whiteSpace: 'pre-wrap' }) }, 'Tap to repair.')
             ),
             React.createElement('div', { style: sectionStyle },
