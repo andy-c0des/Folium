@@ -6178,17 +6178,29 @@ function HomeScreen() {
         var friendsState = _fs[0], setFriendsState = _fs[1];
         React.useEffect(function() {
             var alive = true;
-            Promise.all([getFriendsOverview(), getNotesOnMyPlants()]).then(function(r) {
-                if (!alive) return;
-                var ov = r[0] || {}, mine = r[1] || {};
-                setFriendsState({
-                    friends: (ov.friends || []),
-                    incoming: (ov.incoming || []),
-                    notes: (mine.notes || []),
-                    loaded: true, error: false
-                });
-            }).catch(function() { if (alive) setFriendsState(function(p) { return Object.assign({}, p, { loaded: true, error: true }); }); });
-            return function() { alive = false; };
+            function refresh() {
+                Promise.all([getFriendsOverview(), getNotesOnMyPlants()]).then(function(r) {
+                    if (!alive) return;
+                    var ov = r[0] || {}, mine = r[1] || {};
+                    setFriendsState({
+                        friends: (ov.friends || []),
+                        incoming: (ov.incoming || []),
+                        notes: (mine.notes || []),
+                        loaded: true, error: false
+                    });
+                }).catch(function() { if (alive) setFriendsState(function(p) { return Object.assign({}, p, { loaded: true, error: true }); }); });
+            }
+            refresh();
+            // Re-fetch when window regains focus so badges don't go stale
+            function onFocus() { refresh(); }
+            function onVis() { if (!document.hidden) refresh(); }
+            window.addEventListener('focus', onFocus);
+            document.addEventListener('visibilitychange', onVis);
+            return function() {
+                alive = false;
+                window.removeEventListener('focus', onFocus);
+                document.removeEventListener('visibilitychange', onVis);
+            };
         }, []);
         var friendCount = friendsState.friends.length;
         var incomingCount = friendsState.incoming.length;
@@ -18916,17 +18928,35 @@ function FriendsScreen() {
     const [garden, setGarden] = React.useState({ friend: null, plants: [], notes: [] });
     const [noteDrafts, setNoteDrafts] = React.useState({});
 
-    const loadOverview = React.useCallback(async function() {
+    const [refreshing, setRefreshing] = React.useState(false);
+    const [lastRefreshAt, setLastRefreshAt] = React.useState(null);
+    const loadOverview = React.useCallback(async function(silent) {
+        if (!silent) setRefreshing(true);
         try {
             const [ov, mine] = await Promise.all([getFriendsOverview(), getNotesOnMyPlants()]);
             setOverview({ friends: (ov && ov.friends) || [], incoming: (ov && ov.incoming) || [], outgoing: (ov && ov.outgoing) || [] });
             setFriendNotes((mine && mine.notes) || []);
+            setLastRefreshAt(Date.now());
         } catch (e) {
             setStatus({ type: 'error', message: e && e.message ? e.message : 'Failed to load friends' });
-        }
+        } finally { if (!silent) setRefreshing(false); }
     }, [getFriendsOverview, getNotesOnMyPlants]);
 
+    // Initial load + auto-refresh: on window/tab focus AND low-freq poll (every 60s) while screen is open.
+    // Without this, Friend A sends request → Friend B's already-open screen never sees it until manual reload.
     React.useEffect(function() { loadOverview(); }, [loadOverview]);
+    React.useEffect(function() {
+        function onFocus() { loadOverview(true); }
+        function onVis() { if (!document.hidden) loadOverview(true); }
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', onVis);
+        var poll = setInterval(function() { if (!document.hidden) loadOverview(true); }, 60000);
+        return function() {
+            window.removeEventListener('focus', onFocus);
+            document.removeEventListener('visibilitychange', onVis);
+            clearInterval(poll);
+        };
+    }, [loadOverview]);
 
     async function runSearch() {
         setSearching(true);
@@ -18966,6 +18996,20 @@ function FriendsScreen() {
 
     return React.createElement('div', { className: `flex flex-col ${isSmall ? 'p-3' : 'p-4'} w-full pb-4 screen-enter`, style: { maxWidth: isDesktop ? '900px' : '700px', margin: '0 auto' } },
         React.createElement(PlantCard, { title: '🫶 FRIENDS' },
+            // Refresh bar — incoming requests don't push, so explicit refresh helps
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, flexWrap: 'wrap' } },
+                React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS }) },
+                    lastRefreshAt ? ('Last updated ' + (function() {
+                        var s = Math.floor((Date.now() - lastRefreshAt) / 1000);
+                        if (s < 10) return 'just now';
+                        if (s < 60) return s + 's ago';
+                        if (s < 3600) return Math.floor(s / 60) + 'm ago';
+                        return Math.floor(s / 3600) + 'h ago';
+                    })()) : 'Loading…'),
+                React.createElement('button', { type: 'button', onClick: function() { loadOverview(false); }, disabled: refreshing,
+                    style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '5px 12px', cursor: refreshing ? 'default' : 'pointer',
+                        background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, opacity: refreshing ? 0.6 : 1 }) },
+                    refreshing ? '↻ …' : '↻ Refresh')),
             status && React.createElement(StatusMessage, { type: status.type, message: status.message }),
             React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr', gap: 12 } },
                 React.createElement('div', null,
