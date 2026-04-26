@@ -8519,6 +8519,9 @@ function AddScreen({ prefill, openMode }) {
     const [plantPhotoManualDate, setPlantPhotoManualDate] = useState('');
     const [plantPhotoCaption, setPlantPhotoCaption] = useState('');
     const plantPhotoRef = React.useRef(null);
+    // Track which wishlist item this Add session originated from, so we can
+    // remove it after a successful add. Set when prefill arrives with a wishlistId.
+    const [pendingWishlistId, setPendingWishlistId] = useState(null);
     // Load wishlist when entering wishlist tab
     useEffect(() => {
         if (mode !== 'wishlist') return;
@@ -8527,7 +8530,13 @@ function AddScreen({ prefill, openMode }) {
             setWishlistItems(Array.isArray(items) ? items : []);
         }).catch(function() { setWishlistItems([]); }).finally(function() { setWishlistLoading(false); });
     }, [mode]);
-    // Apply prefill when navigating from "Add to Collection"
+    // Sync mode when openMode prop changes (e.g. wishlist "Add to Collection" navigates here while we're already mounted)
+    useEffect(() => {
+        if (openMode && openMode !== mode) setMode(openMode);
+    }, [openMode]);
+    // Apply prefill when navigating from "Add to Collection". Re-runs whenever
+    // a new prefill arrives — previously [] deps meant the second click did nothing
+    // because AddScreen was already mounted.
     useEffect(() => {
         if (!prefill) return;
         if (prefill.genus) setGenus(prefill.genus);
@@ -8538,7 +8547,9 @@ function AddScreen({ prefill, openMode }) {
         if (prefill.infraEpithet) setInfraEpithet(prefill.infraEpithet);
         if (prefill.hybridNote) setHybridNote(prefill.hybridNote);
         if (prefill.cultivar || prefill.infraRank || prefill.infraEpithet || prefill.hybridNote) setShowOptional(true);
-    }, []);
+        // Remember the wishlist id so submitSingle can clean it up on success
+        if (prefill.wishlistId) setPendingWishlistId(prefill.wishlistId);
+    }, [prefill]);
     const previewUids = useNextUids(demoPlants, mode === 'batch' ? batchCount : 1);
     useEffect(() => {
         setNicknames(prev => {
@@ -8594,7 +8605,13 @@ function AddScreen({ prefill, openMode }) {
                 fertilizeEveryDays: String(fertilizeEveryDays || '').trim(),
                 purchasePrice: String(pricePurchased || '').trim(),
             };
-            let res; try { res = await createPlant(payload); } catch(e) { setStatus({ type: 'error', msg: 'GAS error: ' + (e&&e.message||String(e)) }); return; }
+            let res;
+            try { res = await createPlant(payload); }
+            catch(e) {
+                setStatus({ type: 'error', message: 'Could not create plant: ' + (e && e.message ? e.message : String(e)) });
+                setTimeout(() => setStatus(null), 3000);
+                return;
+            }
             const uid = res && res.uid ? String(res.uid) : '';
             if (uid && plantPhotoFile) {
                 try {
@@ -8603,7 +8620,13 @@ function AddScreen({ prefill, openMode }) {
                     await uploadPlantPhoto(uid, dataUrl, plantPhotoFile.name || 'photo.jpg');
                 } catch(photoErr) { /* non-fatal */ }
             }
-            setStatus({ type: 'success', message: 'Added ✓' });
+            // If this Add session originated from a wishlist item, remove it now that
+            // the plant is in the active collection. Non-fatal if the cleanup fails.
+            if (uid && pendingWishlistId) {
+                try { await removeFromWishlist(pendingWishlistId); } catch (eRem) { console.warn('wishlist cleanup failed', eRem); }
+                setPendingWishlistId(null);
+            }
+            setStatus({ type: 'success', message: pendingWishlistId ? 'Added to collection — removed from wishlist ✓' : 'Added ✓' });
             setTimeout(() => { setStatus(null); if (uid)
                 navigate('plant', { uid });
             else
@@ -8954,7 +8977,7 @@ function AddScreen({ prefill, openMode }) {
                                         React.createElement("button", { type: 'button', onClick: () => startEditWishItem(item), style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: theme.btnP.bg, opacity: 0.8, padding: '0 4px' }, title: 'Edit' }, '\u270F\uFE0F'),
                                         React.createElement("button", { type: 'button', onClick: () => removeWishItem(item.wishlistId), style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: theme.txtS, opacity: 0.5, padding: '0 2px' }, title: 'Remove' }, '\u00D7'))),
                                 React.createElement("button", { type: 'button',
-                                    onClick: () => navigate('add', { prefill: item, openMode: 'single' }),
+                                    onClick: () => navigate('add', { prefill: Object.assign({}, item, { wishlistId: item.wishlistId }), openMode: 'single' }),
                                     style: Object.assign({}, pxS, { fontSize: '11px', padding: '7px 10px', cursor: 'pointer', border: '2px solid #2E5A1A', background: 'linear-gradient(180deg,#3A6A1A,#2A5008)', color: '#D0F0A8', fontWeight: 900, letterSpacing: '0.04em', boxShadow: '0 2px 0 #1A3A08', width: '100%', textAlign: 'center' })
                                 }, '\uD83C\uDF3F Add to Collection')
                             );
