@@ -13724,7 +13724,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                 })(),
                 React.createElement("div", { style: { height: 2, background: theme.sep, margin: '6px 0 12px', opacity: 0.6 } }),
                 React.createElement("div", { style: isDesktop
-                        ? { display: 'grid', gridTemplateColumns: '180px 1fr 210px', gap: 16, alignItems: 'flex-start' }
+                        ? { display: 'grid', gridTemplateColumns: '200px 1fr 260px', gap: 16, alignItems: 'flex-start' }
                         : isMobileStack
                             ? { display: 'flex', flexDirection: 'column', gap: 10 }
                             : { display: 'flex', gap: 10, alignItems: 'flex-start' } },
@@ -14882,12 +14882,12 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                 }) }, '\u270F FIX IN SETTINGS')
             ),
 
-            React.createElement('div', { style: { marginTop: 12, paddingTop: 8, borderTop: '2px solid ' + theme.sep } },
-                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '2px 8px 3px', opacity: 0.6 }) }, 'WATERING'),
+            React.createElement('div', { style: { marginTop: 12, paddingTop: 8, borderTop: '2px solid ' + theme.sep, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px', alignItems: 'baseline' } },
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '2px 0 3px', opacity: 0.6, gridColumn: '1 / -1' }) }, 'WATERING'),
                 React.createElement(FactRow, { label: '\uD83D\uDCA7 Last Watered', value: plant.lastWatered, accent: '#42A5F5' }),
                 React.createElement(FactRow, { label: '\uD83D\uDCC5 Next Due', value: computedWaterNextDue, accent: '#42A5F5', color: computedWaterNextDue ? (new Date(computedWaterNextDue) <= today ? '#EF5350' : theme.txtP) : theme.txtS }),
                 React.createElement(FactRow, { label: '\uD83D\uDD01 Every', value: everyD ? everyD + 'd' : null, accent: '#42A5F5' }),
-                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '6px 8px 3px', opacity: 0.6 }) }, 'FERTILIZING'),
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '6px 0 3px', opacity: 0.6, gridColumn: '1 / -1' }) }, 'FERTILIZING'),
                 React.createElement(FactRow, { label: '\uD83C\uDF31 Last Fert', value: plant.lastFertilized, accent: '#66BB6A' }),
                 fertD > 0 && React.createElement(FactRow, { label: '\uD83D\uDD01 Every', value: fertD + 'd', accent: '#66BB6A' }),
                 (function() {
@@ -14930,6 +14930,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                         background: 'rgba(60,24,0,0.05)',
                         border: '2px dashed ' + theme.cardBorder,
                         borderLeft: '4px solid #C87820',
+                        gridColumn: '1 / -1',
                     }},
                         React.createElement('div', { style: Object.assign({}, px8, { fontSize: '9px', color: '#C87820', letterSpacing: '0.08em', marginBottom: 8 }) },
                             '\u26A0 INCOMPLETE SETUP'),
@@ -14975,7 +14976,7 @@ function CarePanel({ plant, physics, env, timeline, onEditOpen, onSaveInterval, 
                         }, quickSaving ? 'SAVING...' : '\u2713 SAVE')
                     );
                 })(),
-                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '6px 8px 3px', opacity: 0.6 }) }, 'HISTORY & SETUP'),
+                React.createElement('div', { style: Object.assign({}, px8, { fontSize: '10px', color: theme.txtS, letterSpacing: '0.09em', padding: '6px 0 3px', opacity: 0.6, gridColumn: '1 / -1' }) }, 'HISTORY & SETUP'),
                 React.createElement(FactRow, { label: '\uD83E\uDEB4 Last Repot', value: plant.lastRepotted, accent: theme.cardBorder }),
                 React.createElement(FactRow, { label: '\uD83C\uDF82 Birthday / Graduation Day', value: plant.birthday, accent: theme.cardBorder }),
                 React.createElement(FactRow, { label: '\uD83E\uDEB4 Pot', value: [plant.potSize, plant.potMaterial, plant.potShape].filter(Boolean).join(' · ') || null, accent: theme.cardBorder }),
