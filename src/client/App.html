@@ -13839,7 +13839,16 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 } },
                                     React.createElement("button", {
                                         type: "button",
-                                        onClick: function() { window.scrollTo(0, 0); setRepotOpen(v => !v); setRepotPot(plant.potSize || ''); setRepotSub(plant.substrate || plant.medium || ''); },
+                                        onClick: function(e) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            console.log('[mobile-repot] clicked. plant.uid=', plant && plant.uid, 'before repotOpen=', repotOpen);
+                                            setRepotPot(plant.potSize || '');
+                                            setRepotSub(plant.substrate || plant.medium || '');
+                                            setRepotOpen(true);
+                                            window.scrollTo(0, 0);
+                                            console.log('[mobile-repot] state setters called');
+                                        },
                                         style: Object.assign({}, pxS, {
                                             fontSize: '10px', padding: '8px', width: '100%',
                                             background: 'linear-gradient(180deg,#3A5A18,#1A3008)',
