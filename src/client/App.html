@@ -13835,17 +13835,42 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         })
                                     }, "\uD83D\uDCDD Save Note")
                                 ),
+                                // Mobile secondary actions — Repot + Edit Plant + List for Sale
+                                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 } },
+                                    React.createElement("button", {
+                                        type: "button",
+                                        onClick: function() { window.scrollTo(0, 0); setRepotOpen(v => !v); setRepotPot(plant.potSize || ''); setRepotSub(plant.substrate || plant.medium || ''); },
+                                        style: Object.assign({}, pxS, {
+                                            fontSize: '10px', padding: '8px', width: '100%',
+                                            background: 'linear-gradient(180deg,#3A5A18,#1A3008)',
+                                            border: '3px solid #2C5018', color: '#C8F0A8',
+                                            boxShadow: '0 3px 0 #0E1E04', cursor: 'pointer',
+                                            boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                        })
+                                    }, '\uD83E\uDEB4 Repot'),
+                                    React.createElement("button", {
+                                        type: "button",
+                                        onClick: function() { openEdit(plant); },
+                                        style: Object.assign({}, pxS, {
+                                            fontSize: '10px', padding: '8px', width: '100%',
+                                            background: 'linear-gradient(180deg,#5A3010,#2C1000)',
+                                            border: '3px solid #8A5030', color: '#D4A86A',
+                                            boxShadow: '0 3px 0 #1E0800', cursor: 'pointer',
+                                            boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                        })
+                                    }, '\u270F\uFE0F Edit Plant')
+                                ),
                                 React.createElement("button", {
                                     type: "button",
-                                    onClick: function() { openEdit(plant); },
+                                    onClick: () => { window.scrollTo(0, 0); setSaleListOpen(true); },
                                     style: Object.assign({}, pxS, {
                                         fontSize: '10px', padding: '8px', marginTop: 6, width: '100%',
-                                        background: 'linear-gradient(180deg,#5A3010,#2C1000)',
-                                        border: '3px solid #8A5030', color: '#D4A86A',
-                                        boxShadow: '0 3px 0 #1E0800', cursor: 'pointer',
+                                        background: 'rgba(200,168,75,0.15)', color: '#C8A84B',
+                                        border: '3px solid #8B7A30',
+                                        boxShadow: '0 3px 0 #5A4A10', cursor: 'pointer',
                                         boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                                     })
-                                }, '\u270F\uFE0F Edit Plant')
+                                }, '\uD83D\uDCB0 List for Sale')
                             )
 
                         ));
