@@ -8453,7 +8453,7 @@ function VariantSuggestions({ genus, species, onSelect, theme, pxS }) {
 function AddScreen({ prefill, openMode }) {
     const { goBack, navigate } = useNavigation();
     const { locations, createPlant, createBatch, createProp, demoPlants, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem, addLocation, uploadPlantPhoto } = usePlantData();
-    const { isSmall, isDesktop } = useScreenSize();
+    const { isSmall, isMobile, isDesktop } = useScreenSize();
     const theme = useTheme();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
     const labelSize = isSmall ? '12px' : '14px';
@@ -8847,7 +8847,7 @@ function AddScreen({ prefill, openMode }) {
                     )
                 ),
 
-                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
+                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Genus *"),
                         React.createElement(TaxonAutocomplete, {
@@ -8862,7 +8862,7 @@ function AddScreen({ prefill, openMode }) {
                     )
                 ),
 
-                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
+                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Type"),
                         React.createElement("select", { value: propType, onChange: e => setPropType(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
@@ -8878,7 +8878,7 @@ function AddScreen({ prefill, openMode }) {
                     )
                 ),
 
-                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
+                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Date received"),
                         React.createElement("input", { type: "date", value: birthday, onChange: e => setBirthday(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
@@ -9059,7 +9059,7 @@ function AddScreen({ prefill, openMode }) {
             }),
                         // Stack on mobile so the long left-label "Search (common or genus) *" doesn't
                         // wrap and misalign the right input. 2-col only on tablet+.
-                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
+                        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
                 React.createElement("div", null,
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Genus *"),
                     React.createElement(TaxonAutocomplete, {
