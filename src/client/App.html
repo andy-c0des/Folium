@@ -11224,7 +11224,7 @@ function GenusAutocompleteInput({ genusValue, speciesValue, onGenusChange, onSpe
 
 function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowForm, defaultPropTab }) {
     const { getProps, getPropTimeline, createProp, updatePropStatus, updateProp, addPropNote, uploadPropPhoto, graduateProp, sellProp, getPlant } = usePlantData();
-    const { isSmall, isDesktop } = useScreenSize();
+    const { isSmall, isMobile, isDesktop } = useScreenSize();
     const theme = useTheme();
     const { navigate } = useNavigation();
     const px8S = { fontFamily: "'Press Start 2P', cursive", fontSize: isSmall ? '8px' : '11px' };
@@ -11614,6 +11614,18 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         boxShadow: '2px 2px 0 #1A3008' })
                 }, form.hybridType ? '\uD83E\uDDEC Save Cross' : (bulkCount > 1 ? '\uD83C\uDF31 Save ' + bulkCount + ' Props' : '\uD83C\uDF31 Save Prop'))
             ),
+            // Bulk-count picker — visible at the top of the form so users notice it.
+            // Hidden for hybrid crosses (each cross is unique).
+            !form.hybridType && React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap', padding: '6px 10px', background: 'rgba(58,138,40,0.08)', border: '2px dashed rgba(58,138,40,0.4)' } },
+                React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 800, color: theme.txtS }) }, "How many cuttings?"),
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center' } },
+                    React.createElement("button", { type: "button", onClick: () => setBulkCount(c => Math.max(1, c - 1)),
+                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '4px 10px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, "\u2212"),
+                    React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '4px 14px', border: '3px solid ' + theme.cardBorder, borderLeft: 'none', borderRight: 'none', background: theme.cardBg, color: theme.txtP, minWidth: 36, textAlign: 'center' }) }, bulkCount),
+                    React.createElement("button", { type: "button", onClick: () => setBulkCount(c => Math.min(20, c + 1)),
+                        style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '4px 10px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, "+")),
+                bulkCount > 1 && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic' }) }, "siblings from same parent")
+            ),
             form.hybridType && prefill && prefill.parentUID && (
                 React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.btnP.bg, background: 'rgba(80,160,80,0.12)', border: `2px solid ${theme.btnP.border}`, padding: '6px 10px', marginBottom: 8 }) },
                     "\uD83C\uDF31 ",
@@ -11639,7 +11651,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         )
                     )
                 : !prefill?.parentUID && parentInCollection === true
-                    ? React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8 } },
+                    ? React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8 } },
                         React.createElement("div", { className: 'col-span-2' },
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 4 }) }, '\uD83D\uDD0D Parent plant (from your collection)'),
                             React.createElement(SpecimenSearchInput, { placeholder: 'Search collection...', value: form.parentUID, onChange: (uid, plant) => setForm(prev => Object.assign(Object.assign({}, prev), { parentUID: uid ? String(uid) : '', genus: plant && plant.genus ? plant.genus : prev.genus, species: plant && (plant.taxon || plant.species) ? (plant.taxon || plant.species) : prev.species })), theme: theme, pxS: pxS }),
@@ -11660,7 +11672,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                             React.createElement("textarea", { value: form.notes || '', onChange: e => setForm(prev => (Object.assign(Object.assign({}, prev), { notes: e.target.value }))), rows: 2, placeholder: "Conditions, vessel, observations...", className: "w-full border-4 px-2 py-1.5 resize-none", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }))
                     )
                 : React.createElement(React.Fragment, null,
-                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8 } },
+                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8 } },
                         ['Genus *', 'Species'].map((label, i) => {
                             const field = i === 0 ? 'genus' : 'species';
                             const isLocked = prefill && prefill.parentUID;
@@ -11696,7 +11708,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
             React.createElement(React.Fragment, null,
                 React.createElement("div", { style: { padding: '8px 10px', border: `2px solid ${theme.rowBorder}`, marginBottom: 8, borderLeft: `4px solid #c0392b` } },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: 'var(--c-urgent)', marginBottom: 6 }) }, "\u2640 Mother (seed parent)"),
-                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 6 } },
+                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 6 } },
                         React.createElement("div", { className: 'col-span-2' },
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, marginBottom: 2 }) }, "Search collection (or enter genus below)"),
                             React.createElement(SpecimenSearchInput, { placeholder: 'Search mother plant...', value: form.motherUID, onChange: (uid, plant) => setForm(p => (Object.assign(Object.assign({}, p), { motherUID: uid ? String(uid) : '', motherGenus: (plant && plant.genus) ? plant.genus : p.motherGenus, motherSpecies: (plant && plant.species) ? plant.species : p.motherSpecies }))), theme: theme, pxS: pxS })),
@@ -11712,7 +11724,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                         }))),
                 React.createElement("div", { style: { padding: '8px 10px', border: `2px solid ${theme.rowBorder}`, marginBottom: 8, borderLeft: `4px solid #1A6A9A` } },
                     React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, color: '#1A6A9A', marginBottom: 6 }) }, "\u2642 Father (pollen donor)"),
-                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 6 } },
+                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 6 } },
                         React.createElement("div", { className: 'col-span-2' },
                             React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '13px', color: theme.txtS, marginBottom: 2 }) }, "Search collection (or enter genus below)"),
                             React.createElement(SpecimenSearchInput, { placeholder: 'Search father plant...', value: form.fatherUID, onChange: (uid, plant) => setForm(p => (Object.assign(Object.assign({}, p), { fatherUID: uid ? String(uid) : '', fatherGenus: (plant && plant.genus) ? plant.genus : p.fatherGenus, fatherSpecies: (plant && plant.species) ? plant.species : p.fatherSpecies }))), theme: theme, pxS: pxS })),                        React.createElement(GenusAutocompleteInput, {
@@ -11724,7 +11736,7 @@ function PropsSection({ locations, prefill, showForm: showFormProp, onSetShowFor
                             genusPlaceholder: 'e.g. Monstera',
                             speciesPlaceholder: 'e.g. deliciosa'
                         }))),
-                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 8 } },
+                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 8 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', color: theme.txtS, fontWeight: 800, marginBottom: 2 }) }, "Cross Date"),
                         React.createElement("input", { type: "date", value: form.crossDate, onChange: e => setForm(p => (Object.assign(Object.assign({}, p), { crossDate: e.target.value }))), className: "w-full border-4 px-2 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })),
