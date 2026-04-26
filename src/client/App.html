@@ -7385,14 +7385,14 @@ function WateringScreen() {
                 React.createElement("select", {
                     value: locFilter, onChange: e => setLocFilter(e.target.value),
                     className: "border-2 px-2 py-1",
-                    style: Object.assign({}, pxS, { fontSize: '12px', color: '#2C1000', borderColor: '#7A4A1A', background: theme.cardBg, flex: '1 1 110px', minWidth: 110 })
+                    style: Object.assign({}, pxS, { fontSize: '12px', color: '#2C1000', borderColor: '#7A4A1A', background: '#fff8e7', flex: '1 1 110px', minWidth: 110 })
                 },
                     React.createElement("option", { value: "" }, "📍 All locations"),
                     (locations || []).map(loc => (React.createElement("option", { key: loc, value: loc }, loc)))),
                 React.createElement("select", {
                     value: subPreset, onChange: function(e) { setSubPreset(e.target.value); },
                     className: "border-2 px-2 py-1",
-                    style: Object.assign({}, pxS, { fontSize: '12px', color: '#2C1000', borderColor: '#7A4A1A', background: theme.cardBg, flex: '1 1 110px', minWidth: 110 })
+                    style: Object.assign({}, pxS, { fontSize: '12px', color: '#2C1000', borderColor: '#7A4A1A', background: '#fff8e7', flex: '1 1 110px', minWidth: 110 })
                 },
                     SUB_PRESETS.map(function(p) { return React.createElement("option", { key: p.key || 'all', value: p.key }, p.label); })),
                 filtersActive && React.createElement("button", { type: "button", onClick: clearFilters,
@@ -10034,46 +10034,29 @@ function MyPlantsScreen({ openTab, prefill }) {
                                 React.createElement("button", { type: "button", onClick: e => { e.stopPropagation(); isEditing ? closeEdit() : openEdit(p); }, className: "px-3 py-2 border-4 active:scale-[0.98]", style: Object.assign(Object.assign({}, pxS), { fontWeight: 900, color: isEditing ? theme.btnP.text : theme.txtP, fontSize: '12px', borderColor: isEditing ? theme.btnP.border : theme.sep, background: isEditing ? theme.btnP.bg : theme.cardBg }), title: isEditing ? "Close" : "Edit" }, isEditing ? "\u2715" : "\u270F\uFE0F")));
                     })
                 )) : (React.createElement(React.Fragment, null,
-                    React.createElement("div", { className: "mb-2" },
-                        // On mobile: a single-select dropdown (no horizontal-scroll button cluster).
-                        // On desktop: keep the chip row.
-                        isMobile
-                            ? React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
-                                React.createElement("select", {
-                                    value: isAny ? '__any__' : (selectedLocs.length === 1 ? selectedLocs[0] : '__any__'),
-                                    onChange: function(e) {
-                                        var val = e.target.value;
-                                        if (val === '__any__') toggleLoc('__any__');
-                                        else { /* set to single selected location */
-                                            // mimic toggling: clear current and select new
-                                            (selectedLocs || []).forEach(function(l){ if (l !== val) toggleLoc(l); });
-                                            if (!selectedLocs.includes(val)) toggleLoc(val);
-                                        }
-                                    },
-                                    className: "border-2 px-2 py-1.5",
-                                    style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, flex: 1, minWidth: 140 })
-                                },
-                                    React.createElement("option", { value: "__any__" }, "🌍 All locations"),
-                                    (locations || []).map(function(loc) { return React.createElement("option", { key: loc, value: loc }, loc); })),
-                                addingLoc
-                                    ? React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 4 } },
-                                        React.createElement("input", { autoFocus: true, value: newLocName, onChange: e => setNewLocName(e.target.value), onKeyDown: e => { if (e.key === 'Enter') handleAddLocation(); if (e.key === 'Escape') { setAddingLoc(false); setNewLocName(''); } }, placeholder: "Room name…", className: "border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, width: 100, color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
-                                        React.createElement("button", { type: "button", onClick: handleAddLocation, className: "btn-press border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, borderColor: theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text }) }, "✓"),
-                                        React.createElement("button", { type: "button", onClick: () => { setAddingLoc(false); setNewLocName(''); }, className: "btn-press border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, borderColor: theme.sep, background: theme.cardBg }) }, "✕"))
-                                    : React.createElement("button", { type: "button", onClick: () => setAddingLoc(true), className: "btn-press border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, borderColor: theme.sep, background: 'transparent', color: theme.txtS, flexShrink: 0 }) }, "＋"))
-                            : React.createElement("div", { className: "flex flex-wrap gap-1" },
-                                React.createElement(LocChip, { id: "__any__", label: "\uD83C\uDF0D All", active: isAny, onClick: () => toggleLoc('__any__') }),
-                                (locations || []).map(loc => (React.createElement(LocChip, { key: loc, id: loc, label: loc, active: !isAny && selectedLocs.includes(loc), onClick: () => toggleLoc(loc) }))),
-                                addingLoc ? (React.createElement("div", { className: "flex items-center gap-1" },
-                                    React.createElement("input", { autoFocus: true, value: newLocName, onChange: e => setNewLocName(e.target.value), onKeyDown: e => { if (e.key === 'Enter')
-                                            handleAddLocation(); if (e.key === 'Escape') {
-                                            setAddingLoc(false);
-                                            setNewLocName('');
-                                        } }, placeholder: "Room name...", className: "border-4  px-3 py-1.5 input-depth", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, width: 120, color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
-                                    React.createElement("button", { type: "button", onClick: handleAddLocation, className: "btn-press  border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, borderColor: theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text }) }, "\u2713"),
-                                    React.createElement("button", { type: "button", onClick: () => { setAddingLoc(false); setNewLocName(''); }, className: "btn-press  border-4 px-2 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '14px', fontWeight: 900, borderColor: theme.sep, background: theme.cardBg, color: theme.txtS }) }, "\u2715"))) : (React.createElement("button", { type: "button", onClick: () => setAddingLoc(true), className: "btn-press  border-4 px-3 py-1.5", style: Object.assign(Object.assign({}, pxS), { fontSize: '12px', fontWeight: 900, borderColor: theme.sep, background: 'transparent', color: theme.txtS }) }, "\uFF0B Add"))),
-                        selectedLocs.length > 1 && !isAny && (React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.btnP.bg, marginLeft: 6, fontStyle: 'italic' }) },
-                            selectedLocs.length + ' selected'))),
+                    React.createElement("div", { className: "mb-2", style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
+                        React.createElement("select", {
+                            value: isAny ? '__any__' : (selectedLocs.length === 1 ? selectedLocs[0] : '__any__'),
+                            onChange: function(e) {
+                                var val = e.target.value;
+                                if (val === '__any__') toggleLoc('__any__');
+                                else {
+                                    // single-select: clear others, set this one
+                                    (selectedLocs || []).forEach(function(l){ if (l !== val) toggleLoc(l); });
+                                    if (!selectedLocs.includes(val)) toggleLoc(val);
+                                }
+                            },
+                            className: "border-2 px-2 py-1.5",
+                            style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 900, color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg, flex: 1, minWidth: 160 })
+                        },
+                            React.createElement("option", { value: "__any__" }, "🌍 All locations"),
+                            (locations || []).map(function(loc) { return React.createElement("option", { key: loc, value: loc }, loc); })),
+                        addingLoc
+                            ? React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 4 } },
+                                React.createElement("input", { autoFocus: true, value: newLocName, onChange: e => setNewLocName(e.target.value), onKeyDown: e => { if (e.key === 'Enter') handleAddLocation(); if (e.key === 'Escape') { setAddingLoc(false); setNewLocName(''); } }, placeholder: "Room name…", className: "border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, width: 110, color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) }),
+                                React.createElement("button", { type: "button", onClick: handleAddLocation, className: "btn-press border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, borderColor: theme.btnP.border, background: theme.btnP.bg, color: theme.btnP.text }) }, "✓"),
+                                React.createElement("button", { type: "button", onClick: () => { setAddingLoc(false); setNewLocName(''); }, className: "btn-press border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtS, borderColor: theme.sep, background: theme.cardBg }) }, "✕"))
+                            : React.createElement("button", { type: "button", onClick: () => setAddingLoc(true), className: "btn-press border-2 px-2 py-1", style: Object.assign({}, pxS, { fontSize: '12px', fontWeight: 900, borderColor: theme.sep, background: 'transparent', color: theme.txtS, flexShrink: 0 }) }, "＋ Add")),
                     hasSelection && !loading && plants.length > 0 && (React.createElement("div", { className: "mb-2", style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
                         React.createElement("select", {
                             value: substrateFilter,
