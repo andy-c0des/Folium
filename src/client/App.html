@@ -13837,6 +13837,9 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         })
                                     }, "\uD83D\uDCDD Save Note")
                                 ),
+                                // DEBUG visual indicator — always rendered, shows live state values
+                                React.createElement("div", { style: { padding: '6px 10px', marginTop: 6, background: '#FFFF00', color: '#000', border: '2px dashed #000', fontFamily: 'monospace', fontSize: 11 } },
+                                    'DEBUG: repotOpen=' + String(repotOpen) + ' editOpen=' + String(editOpen) + ' compostOpen=' + String(compostOpen)),
                                 // Mobile secondary actions — Repot + Edit Plant + List for Sale
                                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 } },
                                     React.createElement("button", {
