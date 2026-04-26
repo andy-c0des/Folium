@@ -14057,7 +14057,8 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 'LIST FOR SALE'
                             )
                         )
-                    )), repotOpen && (React.createElement("div", {
+                    )), React.createElement("div", { id: 'repot-probe', style: { position: 'fixed', top: 60, right: 4, zIndex: 999999, background: '#FF00FF', color: '#fff', padding: '4px 8px', fontFamily: 'monospace', fontSize: 11, fontWeight: 900 } }, 'PROBE: repotOpen=' + String(repotOpen)),
+                    repotOpen && (React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
                         zIndex: 99999,
