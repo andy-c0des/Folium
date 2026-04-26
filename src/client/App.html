@@ -13114,6 +13114,8 @@ function PlantScreen({ uid }) {
         else { document.body.style.overflow = ''; }
         return () => { document.body.style.overflow = ''; };
     }, [editOpen, repotOpen, logProgress, compostOpen]);
+    // DEBUG: log repotOpen changes to confirm state flips after the mobile button click
+    useEffect(() => { try { console.log('[repot-state]', repotOpen ? 'OPEN' : 'closed'); } catch(e) {} }, [repotOpen]);
     function todayStr() {
         var d = new Date();
         var mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -14055,7 +14057,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                     )), repotOpen && (React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
-                        zIndex: 999,
+                        zIndex: 99999,
                         background: 'rgba(0,0,0,0.55)',
                         display: 'flex', alignItems: 'stretch', justifyContent: 'center',
                     },
