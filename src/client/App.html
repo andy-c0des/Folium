@@ -13114,8 +13114,6 @@ function PlantScreen({ uid }) {
         else { document.body.style.overflow = ''; }
         return () => { document.body.style.overflow = ''; };
     }, [editOpen, repotOpen, logProgress, compostOpen]);
-    // DEBUG: log repotOpen changes to confirm state flips after the mobile button click
-    useEffect(() => { try { console.log('[repot-state]', repotOpen ? 'OPEN' : 'closed'); } catch(e) {} }, [repotOpen]);
     function todayStr() {
         var d = new Date();
         var mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -13837,9 +13835,6 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         })
                                     }, "\uD83D\uDCDD Save Note")
                                 ),
-                                // DEBUG visual indicator — always rendered, shows live state values
-                                React.createElement("div", { style: { padding: '6px 10px', marginTop: 6, background: '#FFFF00', color: '#000', border: '2px dashed #000', fontFamily: 'monospace', fontSize: 11 } },
-                                    'DEBUG: repotOpen=' + String(repotOpen) + ' editOpen=' + String(editOpen) + ' compostOpen=' + String(compostOpen)),
                                 // Mobile secondary actions — Repot + Edit Plant + List for Sale
                                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 } },
                                     React.createElement("button", {
@@ -13847,12 +13842,10 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                         onClick: function(e) {
                                             e.preventDefault();
                                             e.stopPropagation();
-                                            console.log('[mobile-repot] clicked. plant.uid=', plant && plant.uid, 'before repotOpen=', repotOpen);
                                             setRepotPot(plant.potSize || '');
                                             setRepotSub(plant.substrate || plant.medium || '');
                                             setRepotOpen(true);
                                             window.scrollTo(0, 0);
-                                            console.log('[mobile-repot] state setters called');
                                         },
                                         style: Object.assign({}, pxS, {
                                             fontSize: '10px', padding: '8px', width: '100%',
@@ -14057,9 +14050,7 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 'LIST FOR SALE'
                             )
                         )
-                    )), React.createElement("div", { id: 'repot-probe', style: { position: 'fixed', top: 60, right: 4, zIndex: 999999, background: '#FF00FF', color: '#fff', padding: '4px 8px', fontFamily: 'monospace', fontSize: 11, fontWeight: 900 } }, 'PROBE: repotOpen=' + String(repotOpen)),
-                    repotOpen && React.createElement("div", { id: 'repot-green-probe', style: { position: 'fixed', top: 100, right: 4, zIndex: 999999, background: '#00FF00', color: '#000', padding: '8px 14px', fontFamily: 'monospace', fontSize: 14, fontWeight: 900, border: '3px solid #000' } }, 'GREEN-PROBE: REPOT MODAL CONDITION TRUE'),
-                    repotOpen && (React.createElement("div", {
+                    )), repotOpen && (React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
                         zIndex: 99999,
@@ -14090,8 +14081,8 @@ return (React.createElement("div", { className: `flex flex-col ${isSmall ? 'p-3'
                                 isCustomMix(repotSub) && React.createElement(CustomMixBuilder, { value: repotSub, onChange: setRepotSub, growingMethod: (plant && plant.growingMethod) || 'substrate', pxS: pxS, theme: theme }),
                             React.createElement("div", { className: "flex gap-2 pt-2" },
                                 React.createElement(PlantButton, { block: false, onClick: submitRepot }, "Save Repot"),
-                                React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => setRepotOpen(false) }, "Cancel")))))),
-                false && React.createElement("div", {/*EDIT_MODAL_MOVED*/})),
+                                React.createElement(PlantButton, { block: false, variant: "ghost", onClick: () => setRepotOpen(false) }, "Cancel"))))))),
+                false && React.createElement("div", {/*EDIT_MODAL_MOVED*/}),
         editOpen && React.createElement("div", {
                     style: {
                         position: 'fixed', inset: 0,
