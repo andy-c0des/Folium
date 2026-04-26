@@ -8503,6 +8503,7 @@ function AddScreen({ prefill, openMode }) {
     const [propRootstockGenus, setPropRootstockGenus] = useState('');
     const [propRootstockSpecies, setPropRootstockSpecies] = useState('');
     const [propGraftTechnique, setPropGraftTechnique] = useState('Approach graft');
+    const [propBulkCount, setPropBulkCount] = useState(1); // bulk-prop count for non-graft cuttings
     // — Wishlist state —
     const [wishGenus, setWishGenus] = useState('');
     const [wishTaxon, setWishTaxon] = useState('');
@@ -8705,13 +8706,15 @@ function AddScreen({ prefill, openMode }) {
             setTimeout(() => setStatus(null), 2200);
             return;
         }
-        setStatus({ type: 'loading', message: 'Logging prop...' });
+        // Bulk: N copies for non-graft cuttings (1 for grafts)
+        const n = propIsGraft ? 1 : Math.max(1, Math.min(20, propBulkCount));
+        setStatus({ type: 'loading', message: n > 1 ? ('Logging ' + n + ' props...') : 'Logging prop...' });
         try {
             const sourceNote = [
                 propSource.trim() ? 'Source: ' + propSource.trim() : '',
                 propNotes.trim(),
             ].filter(Boolean).join(' — ');
-            const payload = {
+            const basePayload = {
                 genus:      propIsGraft ? String(propScionGenus || '').trim() : String(genus || '').trim(),
                 species:    propIsGraft ? String(propScionSpecies || '').trim() : String(taxon || '').trim(),
                 propType:   propIsGraft ? 'Graft' : propType,
@@ -8726,9 +8729,32 @@ function AddScreen({ prefill, openMode }) {
                 rootstockSpecies: propIsGraft ? String(propRootstockSpecies || '').trim() : '',
                 graftTechnique: propIsGraft ? propGraftTechnique : '',
             };
-            const res = await createProp(payload);
-            if (!res || !res.ok) throw new Error('createProp returned not-ok');
-            setStatus({ type: 'success', message: 'Prop logged \uD83C\uDF31' });
+            // Sequential creation so each gets a distinct id and timeline entry
+            let okCount = 0;
+            const errors = [];
+            const createdIds = [];
+            for (let i = 0; i < n; i++) {
+                try {
+                    const res = await createProp(basePayload);
+                    if (res && res.ok) { okCount++; if (res.propId) createdIds.push(res.propId); }
+                    else errors.push('Prop ' + (i + 1) + ': ' + ((res && res.error) || 'create failed'));
+                } catch (eOne) {
+                    errors.push('Prop ' + (i + 1) + ': ' + ((eOne && eOne.message) || String(eOne)));
+                }
+            }
+            if (okCount === 0) throw new Error(errors[0] || 'createProp returned not-ok');
+            // Cross-link siblings if more than one created (so the prop card shows "x of N")
+            if (okCount > 1 && createdIds.length > 1) {
+                try {
+                    await Promise.all(createdIds.map(function(id) {
+                        const others = createdIds.filter(function(x) { return x !== id; });
+                        return (typeof window !== 'undefined' && window.gasCall)
+                            ? window.gasCall('plantosUpdateProp', id, { siblingPropIds: others })
+                            : Promise.resolve();
+                    }));
+                } catch (eLink) { /* non-fatal */ }
+            }
+            setStatus({ type: 'success', message: okCount > 1 ? (okCount + ' props logged \uD83C\uDF31') : 'Prop logged \uD83C\uDF31' });
             setTimeout(() => {
                 setStatus(null);
                 navigate('my-plants', { openTab: 'props' });
@@ -8821,7 +8847,7 @@ function AddScreen({ prefill, openMode }) {
                     )
                 ),
 
-                !propIsGraft && React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
+                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Genus *"),
                         React.createElement(TaxonAutocomplete, {
@@ -8836,7 +8862,7 @@ function AddScreen({ prefill, openMode }) {
                     )
                 ),
 
-                !propIsGraft && React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
+                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Type"),
                         React.createElement("select", { value: propType, onChange: e => setPropType(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) },
@@ -8852,7 +8878,7 @@ function AddScreen({ prefill, openMode }) {
                     )
                 ),
 
-                !propIsGraft && React.createElement("div", { className: "grid grid-cols-2 gap-2 mb-3" },
+                !propIsGraft && React.createElement("div", { style: { display: 'grid', gridTemplateColumns: isSmall ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: Object.assign({}, pxS, { fontSize: labelSize, fontWeight: 800, color: theme.txtS }) }, "Date received"),
                         React.createElement("input", { type: "date", value: birthday, onChange: e => setBirthday(e.target.value), className: "mt-1 w-full border-4 px-2 py-1.5 input-depth", style: Object.assign({}, pxS, { fontSize: '13px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
@@ -8915,8 +8941,22 @@ function AddScreen({ prefill, openMode }) {
                     React.createElement("textarea", { value: propNotes, onChange: e => setPropNotes(e.target.value), placeholder: "e.g. 2-node stem, looks healthy, wrapping in moss", rows: 2, className: "mt-1 w-full border-4 px-2 py-1.5 resize-none input-depth", style: Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, borderColor: theme.cardBorder, background: theme.cardBg }) })
                 ),
 
+                // Bulk count — for non-graft cuttings only
+                !propIsGraft && React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, marginBottom: 8, flexWrap: 'wrap' } },
+                    React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '13px', fontWeight: 800, color: theme.txtS }) }, "How many cuttings?"),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center' } },
+                        React.createElement("button", { type: "button", onClick: () => setPropBulkCount(c => Math.max(1, c - 1)),
+                            style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '4px 10px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, "\u2212"),
+                        React.createElement("div", { style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '4px 14px', border: '3px solid ' + theme.cardBorder, borderLeft: 'none', borderRight: 'none', background: theme.rowBg, color: theme.txtP, minWidth: 36, textAlign: 'center' }) }, propBulkCount),
+                        React.createElement("button", { type: "button", onClick: () => setPropBulkCount(c => Math.min(20, c + 1)),
+                            style: Object.assign({}, pxS, { fontSize: '14px', fontWeight: 900, padding: '4px 10px', border: '3px solid ' + theme.cardBorder, background: theme.cardBg, color: theme.txtP, cursor: 'pointer', lineHeight: 1 }) }, "+")
+                    ),
+                    propBulkCount > 1 && React.createElement("span", { style: Object.assign({}, pxS, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic' }) }, "logged as siblings")
+                ),
                 React.createElement("div", { className: "flex gap-2 mt-2" },
-                    React.createElement(PlantButton, { onClick: submitProp, disabled: propIsGraft ? !String(propScionGenus||'').trim() : !String(genus||'').trim() }, propIsGraft ? '\uD83D\uDD17 Record Graft' : '\u2705 Log Prop'),
+                    React.createElement(PlantButton, { onClick: submitProp, disabled: propIsGraft ? !String(propScionGenus||'').trim() : !String(genus||'').trim() },
+                        propIsGraft ? '\uD83D\uDD17 Record Graft' :
+                        (propBulkCount > 1 ? ('\u2705 Log ' + propBulkCount + ' Props') : '\u2705 Log Prop')),
                     React.createElement(PlantButton, { variant: "ghost", onClick: goBack }, "Back")
                 )
             ),
