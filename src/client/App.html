@@ -17048,30 +17048,30 @@ function SalesSection() {
             mktTop.length > 0 && React.createElement(Metric, { icon: '\uD83C\uDFEA', label: 'Top Marketplace', value: mktTop[0].length > 14 ? mktTop[0].slice(0,12)+'…' : mktTop[0], sub: mktBreakdown[mktTop[0]] + ' sold' })),
 
         // Filter tabs (listings view only)
-        subView === 'listings' && React.createElement('div', { style: { display: 'flex', flexDirection: isSmall ? 'column' : 'row', gap: 6, alignItems: isSmall ? 'stretch' : 'center', width: '100%', boxSizing: 'border-box' } },
-            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isSmall ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(72px, 1fr))', gap: 4, flex: 1, minWidth: 0 } },
+        subView === 'listings' && React.createElement('div', { style: { display: 'flex', flexDirection: isSmall ? 'column' : 'row', gap: 10, alignItems: isSmall ? 'stretch' : 'center', width: '100%', boxSizing: 'border-box' } },
+            React.createElement('div', { style: { display: 'grid', gridTemplateColumns: isSmall ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(80px, 1fr))', gap: 6, flex: 1, minWidth: 0 } },
                 [['active', 'Active'], ['Listed', 'Listed'], ['Drafted', 'Drafted'], ['Pending', 'Pending'], ['Sold', 'Sold'], ['all', 'All']].map(([id, label]) => {
                     var active = filter === id;
                     var count = id === 'active' ? sales.filter(s => s.status !== 'Sold' && s.status !== 'Withdrawn').length
                               : id === 'all' ? sales.length
                               : sales.filter(s => s.status === id).length;
                     return React.createElement('button', { key: id, type: 'button', onClick: () => setFilter(id),
-                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '6px 4px', cursor: 'pointer',
+                        style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '8px 8px', cursor: 'pointer',
                             background: active ? theme.btnP.bg : 'transparent', color: active ? theme.btnP.text : theme.txtS,
                             border: '2px solid ' + (active ? theme.btnP.border : theme.rowBorder),
                             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, boxSizing: 'border-box' }) },
                         label + ' (' + count + ')');
                 })),
             React.createElement('button', { type: 'button', onClick: () => { setPickerOpen(true); setPickerQuery(''); }, title: 'Create a new sales listing',
-                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, padding: '6px 10px', cursor: 'pointer',
+                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 900, padding: '8px 14px', cursor: 'pointer',
                     background: '#3A8A28', color: '#fff', border: '2px solid #2A5A10',
                     whiteSpace: 'nowrap', flexShrink: 0, boxShadow: '2px 2px 0 #1A3008' }) }, '+ New Listing'),
             React.createElement('button', { type: 'button', onClick: importFromArchive, title: 'Import previously sold plants from your Archive',
-                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '6px 10px', cursor: 'pointer',
+                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '8px 14px', cursor: 'pointer',
                     background: 'rgba(58,138,40,0.12)', color: '#2A5A10', border: '2px solid #3A8A28',
                     whiteSpace: 'nowrap', flexShrink: 0 }) }, '\uD83D\uDCE5 Import'),
             sales.length > 0 && React.createElement('button', { type: 'button', onClick: exportCSV,
-                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '6px 10px', cursor: 'pointer',
+                style: Object.assign({}, pxS, { fontSize: '11px', fontWeight: 700, padding: '8px 14px', cursor: 'pointer',
                     background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder,
                     whiteSpace: 'nowrap', flexShrink: 0 }) }, '\u2B07 CSV')),
 
@@ -17094,10 +17094,10 @@ function SalesSection() {
 
         // Spreadsheet-style listing table (Listings view only)
         subView === 'listings' && filtered.length > 0 && (function() {
-            var thStyle = Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, color: theme.txtS, padding: '8px 6px',
+            var thStyle = Object.assign({}, pxS, { fontSize: '10px', fontWeight: 900, color: theme.txtS, padding: '10px 10px',
                 textAlign: 'left', borderBottom: '2px solid ' + theme.cardBorder, background: theme.rowBg, whiteSpace: 'nowrap',
                 letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' });
-            var tdStyle = Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, padding: '7px 6px',
+            var tdStyle = Object.assign({}, pxS, { fontSize: '12px', color: theme.txtP, padding: '10px 10px',
                 borderBottom: '1px solid ' + theme.sep, verticalAlign: 'middle' });
             function sortIndicator(key) {
                 if (sortKey !== key) return React.createElement('span', { style: { opacity: 0.3, marginLeft: 3 } }, '\u2195');
@@ -17111,7 +17111,7 @@ function SalesSection() {
             }
             return React.createElement('div', { style: { width: '100%', overflowX: 'auto', border: '3px solid ' + theme.cardBorder,
                 background: theme.cardBg, boxShadow: '3px 3px 0 ' + theme.cardBorder } },
-                React.createElement('table', { style: { width: '100%', minWidth: 1050, borderCollapse: 'collapse', tableLayout: 'auto' } },
+                React.createElement('table', { style: { width: '100%', minWidth: 900, borderCollapse: 'collapse', tableLayout: 'auto' } },
                     React.createElement('thead', null,
                         React.createElement('tr', null,
                             React.createElement(ThSort, { id: 'plant',      label: 'Product' }),
@@ -17143,7 +17143,7 @@ function SalesSection() {
                             if (ageStart) { try { ageDays = Math.max(0, Math.round((new Date(ageEnd) - new Date(ageStart)) / 86400000)); } catch(e) {} }
                             return React.createElement('tr', { key: s.listingId, style: { background: rowBg, borderLeft: '4px solid ' + c.border } },
                                 // Product
-                                React.createElement('td', { style: Object.assign({}, tdStyle, { minWidth: 140 }) },
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { minWidth: 160, paddingRight: 16 }) },
                                     React.createElement('div', {
                                         onClick: () => {
                                             if (s.source === 'prop') navigate('my-plants', { openTab: 'props' });
@@ -17204,23 +17204,23 @@ function SalesSection() {
                                 React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'center', fontSize: '11px', color: theme.txtS, whiteSpace: 'nowrap' }) },
                                     ageStart ? (ageDays + 'd') : '\u2014'),
                                 // Notes
-                                React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic', maxWidth: 180, minWidth: 100 }) },
-                                    s.notes ? (s.notes.length > 60 ? React.createElement('span', { title: s.notes }, s.notes.slice(0, 58) + '\u2026') : s.notes) : '\u2014'),
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { fontSize: '11px', color: theme.txtS, fontStyle: 'italic', maxWidth: 220, minWidth: 100 }) },
+                                    s.notes ? (s.notes.length > 80 ? React.createElement('span', { title: s.notes }, s.notes.slice(0, 78) + '\u2026') : s.notes) : '\u2014'),
                                 // Actions
-                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', whiteSpace: 'nowrap' }) },
-                                    React.createElement('div', { style: { display: 'inline-flex', gap: 3 } },
+                                React.createElement('td', { style: Object.assign({}, tdStyle, { textAlign: 'right', whiteSpace: 'nowrap', paddingRight: 14 }) },
+                                    React.createElement('div', { style: { display: 'inline-flex', gap: 6 } },
                                         s.listingUrl && React.createElement('a', { href: s.listingUrl, target: '_blank', rel: 'noopener noreferrer', title: 'Open listing',
-                                            style: { padding: '4px 6px', background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A', textDecoration: 'none', fontSize: 12, lineHeight: 1 } }, '\uD83D\uDD17'),
+                                            style: { padding: '6px 8px', background: '#E0F0FF', color: '#1A4A7A', border: '2px solid #2A6B9A', textDecoration: 'none', fontSize: 14, lineHeight: 1, borderRadius: 4 } }, '\uD83D\uDD17'),
                                         s.listingUrl && React.createElement('button', { type: 'button', title: 'Copy URL',
                                             onClick: () => { navigator.clipboard && navigator.clipboard.writeText(s.listingUrl); },
-                                            style: { padding: '4px 6px', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\uD83D\uDCCB'),
+                                            style: { padding: '6px 8px', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, cursor: 'pointer', fontSize: 14, lineHeight: 1, borderRadius: 4 } }, '\uD83D\uDCCB'),
                                         s.status !== 'Withdrawn' && sold < qty && React.createElement('button', { type: 'button', title: qty > 1 ? 'Record sale' : 'Mark sold',
                                             onClick: () => { setQuickSoldFor(s.listingId); setQuickSoldPrice(s.listPrice || ''); setQuickSoldQty(1); },
-                                            style: { padding: '4px 6px', background: '#E0F8E0', color: '#2A5A10', border: '2px solid #3A8A28', cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\u2713'),
+                                            style: { padding: '6px 8px', background: '#E0F8E0', color: '#2A5A10', border: '2px solid #3A8A28', cursor: 'pointer', fontSize: 14, lineHeight: 1, borderRadius: 4 } }, '\u2713'),
                                         React.createElement('button', { type: 'button', title: 'Edit', onClick: () => setEditing(s),
-                                            style: { padding: '4px 6px', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\u270F'),
+                                            style: { padding: '6px 8px', background: theme.rowBg, color: theme.txtP, border: '2px solid ' + theme.cardBorder, cursor: 'pointer', fontSize: 14, lineHeight: 1, borderRadius: 4 } }, '\u270F'),
                                         React.createElement('button', { type: 'button', title: 'Delete', onClick: () => handleDelete(s.listingId),
-                                            style: { padding: '4px 6px', background: 'transparent', color: 'var(--c-urgent)', border: '2px solid var(--c-urgent)', cursor: 'pointer', fontSize: 12, lineHeight: 1 } }, '\uD83D\uDDD1'))));
+                                            style: { padding: '6px 8px', background: 'transparent', color: 'var(--c-urgent)', border: '2px solid var(--c-urgent)', cursor: 'pointer', fontSize: 14, lineHeight: 1, borderRadius: 4 } }, '\uD83D\uDDD1'))));
                         }))),
                 // Totals footer (like Excel status bar) — visible count + revenue sum for filtered rows
                 React.createElement('div', {
