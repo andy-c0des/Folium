@@ -3,53 +3,484 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Folium</title>
+    <title>Folium — Sale Listings</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
             color: #fff;
+            padding: 2rem;
         }
-        .container {
+        .header {
             text-align: center;
-            padding: 3rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+        }
+        .header .version {
+            font-size: 1.1rem;
+            color: #64ffda;
+            margin-top: 0.3rem;
+        }
+        .app {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
+            border-radius: 16px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
         }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: 2px;
-        }
-        .version {
-            font-size: 1.4rem;
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1.2rem;
             color: #64ffda;
-            margin-bottom: 1rem;
         }
-        .status {
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        .form-group label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
             font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #64ffda;
+        }
+        .form-group select option {
+            background: #1a2a33;
+            color: #fff;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #64ffda;
+            color: #0f2027;
+        }
+        .btn-primary:hover { background: #52e8c5; }
+        .btn-danger {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        .btn-danger:hover { background: rgba(255, 82, 82, 0.35); }
+        .btn-edit {
+            background: rgba(100, 255, 218, 0.15);
+            color: #64ffda;
+            border: 1px solid rgba(100, 255, 218, 0.25);
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        .btn-edit:hover { background: rgba(100, 255, 218, 0.3); }
+        .form-actions {
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+        .btn-cancel {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .btn-cancel:hover { background: rgba(255,255,255,0.2); }
+        .listings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .listings-table th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .listings-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+        .listings-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-active { background: rgba(100, 255, 218, 0.15); color: #64ffda; }
+        .status-sold { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .status-pending { background: rgba(33, 150, 243, 0.15); color: #42a5f5; }
+        .status-withdrawn { background: rgba(255, 82, 82, 0.15); color: #ff5252; }
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .listing-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar input, .filter-bar select {
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .filter-bar input:focus, .filter-bar select:focus {
+            border-color: #64ffda;
+        }
+        .filter-bar select option {
+            background: #1a2a33;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .stat-card .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #64ffda;
+        }
+        .stat-card .stat-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.3rem;
+        }
+        .backdate-hint {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 0.2rem;
+        }
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .listings-table th:nth-child(4),
+            .listings-table td:nth-child(4) { display: none; }
+            body { padding: 1rem; }
+            .header h1 { font-size: 1.8rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="header">
         <h1>Folium</h1>
-        <p class="version">Andy's version 4.3</p>
-        <p class="status">Everything is synced ✓</p>
-        <p class="status" style="margin-top: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.5);">Deployed: March 29, 2026</p>
+        <p class="version">Andy's version 4.4</p>
     </div>
+
+    <div class="app">
+        <div class="stats-row" id="stats-row"></div>
+
+        <div class="card" id="form-card">
+            <h2 id="form-title">Add New Listing</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="address">Property Address</label>
+                    <input type="text" id="address" placeholder="123 Main St">
+                </div>
+                <div class="form-group">
+                    <label for="price">Listing Price</label>
+                    <input type="number" id="price" placeholder="450000" min="0" step="1000">
+                </div>
+                <div class="form-group">
+                    <label for="listing-date">Listing Date</label>
+                    <input type="date" id="listing-date">
+                    <span class="backdate-hint">Select any past or future date</span>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status">
+                        <option value="Active">Active</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Sold">Sold</option>
+                        <option value="Withdrawn">Withdrawn</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sold-date">Sold / Closed Date</label>
+                    <input type="date" id="sold-date">
+                    <span class="backdate-hint">Optional — backdate if needed</span>
+                </div>
+                <div class="form-group">
+                    <label for="agent">Agent / Source</label>
+                    <input type="text" id="agent" placeholder="Agent name or source">
+                </div>
+                <div class="form-group full-width">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" placeholder="Any additional notes..."></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" id="save-btn" onclick="saveListing()">Add Listing</button>
+                <button class="btn btn-cancel" id="cancel-btn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Sale Listings</h2>
+            <div class="filter-bar">
+                <input type="text" id="search" placeholder="Search address..." oninput="renderListings()">
+                <select id="filter-status" onchange="renderListings()">
+                    <option value="">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Sold">Sold</option>
+                    <option value="Withdrawn">Withdrawn</option>
+                </select>
+                <input type="date" id="filter-from" onchange="renderListings()" title="From date">
+                <input type="date" id="filter-to" onchange="renderListings()" title="To date">
+            </div>
+            <div id="listings-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'folium_listings';
+        let listings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        let editingId = null;
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        }
+
+        function formatPrice(num) {
+            if (!num) return '—';
+            return '$' + Number(num).toLocaleString();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function saveListing() {
+            const address = document.getElementById('address').value.trim();
+            const price = document.getElementById('price').value;
+            const listingDate = document.getElementById('listing-date').value;
+            const status = document.getElementById('status').value;
+            const soldDate = document.getElementById('sold-date').value;
+            const agent = document.getElementById('agent').value.trim();
+            const notes = document.getElementById('notes').value.trim();
+
+            if (!address || !listingDate) {
+                alert('Please enter at least an address and listing date.');
+                return;
+            }
+
+            if (editingId) {
+                const idx = listings.findIndex(l => l.id === editingId);
+                if (idx !== -1) {
+                    listings[idx] = { ...listings[idx], address, price, listingDate, status, soldDate, agent, notes };
+                }
+                editingId = null;
+                document.getElementById('form-title').textContent = 'Add New Listing';
+                document.getElementById('save-btn').textContent = 'Add Listing';
+                document.getElementById('cancel-btn').style.display = 'none';
+            } else {
+                listings.push({ id: generateId(), address, price, listingDate, status, soldDate, agent, notes, createdAt: new Date().toISOString() });
+            }
+
+            persist();
+            clearForm();
+            renderListings();
+            renderStats();
+        }
+
+        function editListing(id) {
+            const listing = listings.find(l => l.id === id);
+            if (!listing) return;
+            editingId = id;
+            document.getElementById('address').value = listing.address;
+            document.getElementById('price').value = listing.price;
+            document.getElementById('listing-date').value = listing.listingDate;
+            document.getElementById('status').value = listing.status;
+            document.getElementById('sold-date').value = listing.soldDate || '';
+            document.getElementById('agent').value = listing.agent || '';
+            document.getElementById('notes').value = listing.notes || '';
+            document.getElementById('form-title').textContent = 'Edit Listing';
+            document.getElementById('save-btn').textContent = 'Update Listing';
+            document.getElementById('cancel-btn').style.display = 'inline-block';
+            document.getElementById('form-card').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            clearForm();
+            document.getElementById('form-title').textContent = 'Add New Listing';
+            document.getElementById('save-btn').textContent = 'Add Listing';
+            document.getElementById('cancel-btn').style.display = 'none';
+        }
+
+        function deleteListing(id) {
+            if (!confirm('Delete this listing?')) return;
+            listings = listings.filter(l => l.id !== id);
+            persist();
+            renderListings();
+            renderStats();
+        }
+
+        function clearForm() {
+            document.getElementById('address').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('listing-date').value = '';
+            document.getElementById('status').value = 'Active';
+            document.getElementById('sold-date').value = '';
+            document.getElementById('agent').value = '';
+            document.getElementById('notes').value = '';
+        }
+
+        function persist() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
+        }
+
+        function getFilteredListings() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const statusFilter = document.getElementById('filter-status').value;
+            const fromDate = document.getElementById('filter-from').value;
+            const toDate = document.getElementById('filter-to').value;
+
+            return listings.filter(l => {
+                if (search && !l.address.toLowerCase().includes(search)) return false;
+                if (statusFilter && l.status !== statusFilter) return false;
+                if (fromDate && l.listingDate < fromDate) return false;
+                if (toDate && l.listingDate > toDate) return false;
+                return true;
+            }).sort((a, b) => b.listingDate.localeCompare(a.listingDate));
+        }
+
+        function renderListings() {
+            const container = document.getElementById('listings-container');
+            const filtered = getFilteredListings();
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">No listings yet. Add your first sale listing above.</div>';
+                return;
+            }
+
+            const statusClass = { Active: 'status-active', Sold: 'status-sold', Pending: 'status-pending', Withdrawn: 'status-withdrawn' };
+
+            container.innerHTML = `
+                <table class="listings-table">
+                    <thead>
+                        <tr>
+                            <th>Address</th>
+                            <th>Price</th>
+                            <th>Listed</th>
+                            <th>Status</th>
+                            <th>Sold Date</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filtered.map(l => `
+                            <tr>
+                                <td>${escapeHtml(l.address)}</td>
+                                <td>${formatPrice(l.price)}</td>
+                                <td>${formatDate(l.listingDate)}</td>
+                                <td><span class="status-badge ${statusClass[l.status] || ''}">${escapeHtml(l.status)}</span></td>
+                                <td>${formatDate(l.soldDate)}</td>
+                                <td>
+                                    <div class="listing-actions">
+                                        <button class="btn btn-edit" onclick="editListing('${l.id}')">Edit</button>
+                                        <button class="btn btn-danger" onclick="deleteListing('${l.id}')">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderStats() {
+            const total = listings.length;
+            const active = listings.filter(l => l.status === 'Active').length;
+            const sold = listings.filter(l => l.status === 'Sold').length;
+            const pending = listings.filter(l => l.status === 'Pending').length;
+
+            document.getElementById('stats-row').innerHTML = `
+                <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Listings</div></div>
+                <div class="stat-card"><div class="stat-value">${active}</div><div class="stat-label">Active</div></div>
+                <div class="stat-card"><div class="stat-value">${pending}</div><div class="stat-label">Pending</div></div>
+                <div class="stat-card"><div class="stat-value">${sold}</div><div class="stat-label">Sold</div></div>
+            `;
+        }
+
+        renderListings();
+        renderStats();
+    </script>
 </body>
 </html>
