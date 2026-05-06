@@ -16582,6 +16582,7 @@ function SaleListingModal({ plant, listing, extraPayload, onClose, onDone }) {
     const [listingUrl, setListingUrl] = useState(isEdit ? (listing.listingUrl || '') : '');
     const [notes, setNotes] = useState(isEdit ? (listing.notes || '') : '');
     const [status, setStatus] = useState(isEdit ? (listing.status || 'Drafted') : 'Drafted');
+    const [listedAt, setListedAt] = useState(isEdit && listing.listedAt ? listing.listedAt : todayIso);
     const [soldAt, setSoldAt] = useState(isEdit && listing.soldAt ? listing.soldAt : todayIso);
     const [orderNumber, setOrderNumber] = useState(isEdit ? (listing.orderNumber || '') : '');
     const [archivePlantOnSold, setArchivePlantOnSold] = useState(false);
@@ -16651,7 +16652,7 @@ function SaleListingModal({ plant, listing, extraPayload, onClose, onDone }) {
                 synth[status] = quantity;
                 payload.unitStatuses = synth;
             }
-            // Honor soldAt only when status is Sold
+            payload.listedAt = listedAt;
             if (status === 'Sold') payload.soldAt = soldAt;
             var res;
             if (isEdit) res = await updateSale(listing.listingId, payload);
@@ -16746,6 +16747,10 @@ function SaleListingModal({ plant, listing, extraPayload, onClose, onDone }) {
                                     background: active ? c.border : c.bg, color: active ? '#fff' : c.fg,
                                     border: '2px solid ' + c.border }) }, s);
                         }))),
+                React.createElement('div', null,
+                    React.createElement('div', { style: label }, 'Listing Date'),
+                    React.createElement('input', { type: 'date', value: listedAt, onChange: e => setListedAt(e.target.value), style: input }),
+                    React.createElement('div', { style: Object.assign({}, pxS, { fontSize: '10px', color: theme.txtS, marginTop: 3, opacity: 0.7 }) }, 'Backdate to when it was originally listed')),
                 // Sale date + Order # — shown when sold (or partial sale)
                 (status === 'Sold' || (isEdit && quantitySold > 0)) && React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
                     React.createElement('div', null,
